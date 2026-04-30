@@ -21,9 +21,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             AddToClassList("dependency-graph-view");
             style.flexGrow = 1f;
             SetupZoom(0.05f, 2.0f);
-            AddManipulator(new ContentDragger());
-            AddManipulator(new SelectionDragger());
-            AddManipulator(new RectangleSelector());
+            this.AddManipulator(new ContentDragger());
+            this.AddManipulator(new SelectionDragger());
+            this.AddManipulator(new RectangleSelector());
 
             var grid = new GridBackground();
             Insert(0, grid);

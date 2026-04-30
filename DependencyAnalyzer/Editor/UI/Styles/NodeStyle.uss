@@ -28,7 +28,7 @@
 
 .dependency-status-label {
     color: #d7dae0;
-    unity-text-align: middle-left;
+    -unity-text-align: middle-left;
     flex-grow: 1;
 }
 
@@ -73,7 +73,7 @@
     flex-grow: 1;
     color: #f0f1f4;
     font-size: 12px;
-    unity-font-style: bold;
+    -unity-font-style: bold;
     overflow: hidden;
     white-space: normal;
 }
@@ -98,7 +98,7 @@
     background-color: rgba(0, 0, 0, 0.42);
     color: #ffffff;
     font-size: 10px;
-    unity-text-align: middle-center;
+    -unity-text-align: middle-center;
 }
 
 .dependency-node-warning {

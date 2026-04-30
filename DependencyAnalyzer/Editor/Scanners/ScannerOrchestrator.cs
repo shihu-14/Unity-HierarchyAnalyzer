@@ -40,8 +40,23 @@ namespace DependencyAnalyzer.Editor.Scanners
 
                 var scanner = scanners[i];
                 progress?.Report(new ScanProgress(scanner.Name, "Starting", 0, 1));
-                var graph = await scanner.ScanAsync(settings, cache, progress, cancellationToken);
-                mergedGraph.MergeFrom(graph);
+                try
+                {
+                    var graph = await scanner.ScanAsync(settings, cache, progress, cancellationToken);
+                    mergedGraph.MergeFrom(graph);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    mergedGraph.AddIssue(new DependencyScanIssueData(
+                        scanner.Name,
+                        scanner.Name,
+                        "Scanner failed: " + exception.Message,
+                        DependencyScanIssueSeverity.Error));
+                }
             }
 
             mergedGraph.RecalculateReferenceCounts();

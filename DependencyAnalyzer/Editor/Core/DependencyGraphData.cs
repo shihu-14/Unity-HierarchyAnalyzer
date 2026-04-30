@@ -9,11 +9,13 @@ namespace DependencyAnalyzer.Editor.Core
     {
         private readonly List<DependencyNodeData> nodes = new List<DependencyNodeData>();
         private readonly List<DependencyEdgeData> edges = new List<DependencyEdgeData>();
+        private readonly List<DependencyScanIssueData> issues = new List<DependencyScanIssueData>();
         private readonly Dictionary<string, DependencyNodeData> nodeLookup = new Dictionary<string, DependencyNodeData>();
         private readonly HashSet<string> edgeKeys = new HashSet<string>();
 
         public IReadOnlyList<DependencyNodeData> Nodes => nodes;
         public IReadOnlyList<DependencyEdgeData> Edges => edges;
+        public IReadOnlyList<DependencyScanIssueData> Issues => issues;
 
         public DependencyNodeData AddOrUpdateNode(DependencyNodeData node)
         {
@@ -64,6 +66,14 @@ namespace DependencyAnalyzer.Editor.Core
             return true;
         }
 
+        public void AddIssue(DependencyScanIssueData issue)
+        {
+            if (issue != null)
+            {
+                issues.Add(issue);
+            }
+        }
+
         public IEnumerable<DependencyEdgeData> GetOutgoingEdges(string nodeId)
         {
             return edges.Where(edge => edge.SourceNodeId == nodeId);
@@ -89,6 +99,11 @@ namespace DependencyAnalyzer.Editor.Core
             foreach (var edge in other.Edges)
             {
                 AddEdge(edge);
+            }
+
+            foreach (var issue in other.Issues)
+            {
+                AddIssue(issue);
             }
         }
 

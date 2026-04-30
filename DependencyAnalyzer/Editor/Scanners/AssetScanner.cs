@@ -16,11 +16,13 @@ namespace DependencyAnalyzer.Editor.Scanners
 {
     public sealed class AssetScanner : IDependencyScanner
     {
+        private const string ScannerName = "Static Asset Scanner";
+
         private static readonly Regex ResourcesLoadPattern = new Regex(
             @"Resources\.(?:Load|LoadAsync)(?:<[^>\r\n]+>)?\s*\(\s*@?""([^""]+)""",
             RegexOptions.Compiled);
 
-        public string Name => "Static Asset Scanner";
+        public string Name => ScannerName;
 
         public async Task<DependencyGraphData> ScanAsync(
             AnalyzerSettings settings,
@@ -137,8 +139,13 @@ namespace DependencyAnalyzer.Editor.Scanners
                 {
                     serializedObject = new SerializedObject(serializedAsset);
                 }
-                catch (Exception)
+                catch (Exception exception)
                 {
+                    graph.AddIssue(new DependencyScanIssueData(
+                        ScannerName,
+                        assetPath,
+                        "Failed to inspect serialized asset " + serializedAsset.name + ": " + exception.Message,
+                        DependencyScanIssueSeverity.Warning));
                     continue;
                 }
 
@@ -425,7 +432,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             DependencyCache cache,
             AnalyzerSettings settings)
         {
-            var settingsObject = GetAddressableSettingsObject();
+            var settingsObject = GetAddressableSettingsObject(graph);
             if (settingsObject == null)
             {
                 return;
@@ -499,7 +506,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
         }
 
-        private static object GetAddressableSettingsObject()
+        private static object GetAddressableSettingsObject(DependencyGraphData graph)
         {
             var defaultObjectType = FindType("UnityEditor.AddressableAssets.Settings.AddressableAssetSettingsDefaultObject");
             if (defaultObjectType == null)
@@ -507,8 +514,20 @@ namespace DependencyAnalyzer.Editor.Scanners
                 return null;
             }
 
-            var settingsProperty = defaultObjectType.GetProperty("Settings", BindingFlags.Static | BindingFlags.Public);
-            return settingsProperty?.GetValue(null);
+            try
+            {
+                var settingsProperty = defaultObjectType.GetProperty("Settings", BindingFlags.Static | BindingFlags.Public);
+                return settingsProperty?.GetValue(null);
+            }
+            catch (Exception exception)
+            {
+                graph.AddIssue(new DependencyScanIssueData(
+                    "Addressables",
+                    "Addressables",
+                    "Failed to read Addressables settings: " + exception.Message,
+                    DependencyScanIssueSeverity.Warning));
+                return null;
+            }
         }
 
         private static Type FindType(string fullName)

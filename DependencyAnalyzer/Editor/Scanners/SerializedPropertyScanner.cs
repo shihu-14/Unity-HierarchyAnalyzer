@@ -13,7 +13,9 @@ namespace DependencyAnalyzer.Editor.Scanners
 {
     public sealed class SerializedPropertyScanner : IDependencyScanner
     {
-        public string Name => "Serialized Property Scanner";
+        private const string ScannerName = "Serialized Property Scanner";
+
+        public string Name => ScannerName;
 
         public async Task<DependencyGraphData> ScanAsync(
             AnalyzerSettings settings,
@@ -114,8 +116,13 @@ namespace DependencyAnalyzer.Editor.Scanners
             {
                 serializedObject = new SerializedObject(component);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                graph.AddIssue(new DependencyScanIssueData(
+                    ScannerName,
+                    sourceNode.Path,
+                    "Failed to inspect component " + component.GetType().FullName + ": " + exception.Message,
+                    DependencyScanIssueSeverity.Warning));
                 return;
             }
 
@@ -172,9 +179,9 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             var type = unityObject.GetType();
-            var globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(unityObject);
+            var globalObjectId = GetGlobalObjectId(unityObject);
             var node = new DependencyNodeData(
-                globalObjectId.ToString(),
+                BuildObjectId("object", unityObject, globalObjectId),
                 globalObjectId,
                 unityObject.name,
                 unityObject.name,
@@ -191,10 +198,10 @@ namespace DependencyAnalyzer.Editor.Scanners
         private static DependencyNodeData CreateSceneObjectNode(UnityEngine.Object unityObject, DependencyCache cache)
         {
             var type = unityObject.GetType();
-            var globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(unityObject);
+            var globalObjectId = GetGlobalObjectId(unityObject);
             var path = GetObjectPath(unityObject);
             var node = new DependencyNodeData(
-                globalObjectId.ToString(),
+                BuildObjectId("scene", unityObject, globalObjectId),
                 globalObjectId,
                 path,
                 unityObject.name,
@@ -206,6 +213,29 @@ namespace DependencyAnalyzer.Editor.Scanners
                 unityObject is Component ? DependencyNodeKind.Component : DependencyNodeKind.SceneObject,
                 unityObject.GetInstanceID());
             return cache.Store(node);
+        }
+
+        private static GlobalObjectId GetGlobalObjectId(UnityEngine.Object unityObject)
+        {
+            try
+            {
+                return GlobalObjectId.GetGlobalObjectIdSlow(unityObject);
+            }
+            catch (Exception)
+            {
+                return default;
+            }
+        }
+
+        private static string BuildObjectId(string prefix, UnityEngine.Object unityObject, GlobalObjectId globalObjectId)
+        {
+            var globalObjectIdText = globalObjectId.ToString();
+            if (!string.IsNullOrEmpty(globalObjectIdText))
+            {
+                return prefix + ":" + globalObjectIdText + ":" + unityObject.GetInstanceID();
+            }
+
+            return prefix + ":instance:" + unityObject.GetInstanceID();
         }
 
         private static string GetObjectPath(UnityEngine.Object unityObject)

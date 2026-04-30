@@ -101,7 +101,10 @@ namespace DependencyAnalyzer.Editor.Controller
                 var progress = new Progress<ScanProgress>(HandleScanProgress);
                 currentGraph = await scannerOrchestrator.ScanAsync(settings, cache, progress, token);
                 graphView.Populate(currentGraph, GetInitialDepth(settings));
-                SetStatus("Completed: " + currentGraph.Nodes.Count + " nodes, " + currentGraph.Edges.Count + " edges");
+                ReportIssues(currentGraph);
+                SetStatus("Completed: " + currentGraph.Nodes.Count + " nodes, "
+                    + currentGraph.Edges.Count + " edges, "
+                    + currentGraph.Issues.Count + " issues");
             }
             catch (OperationCanceledException)
             {
@@ -188,6 +191,31 @@ namespace DependencyAnalyzer.Editor.Controller
             if (statusLabel != null)
             {
                 statusLabel.text = message;
+            }
+        }
+
+        private static void ReportIssues(DependencyGraphData graphData)
+        {
+            if (graphData == null || graphData.Issues.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var issue in graphData.Issues)
+            {
+                var message = "[" + issue.ScannerName + "] " + issue.SubjectPath + ": " + issue.Message;
+                if (issue.Severity == DependencyScanIssueSeverity.Error)
+                {
+                    Debug.LogError(message);
+                }
+                else if (issue.Severity == DependencyScanIssueSeverity.Warning)
+                {
+                    Debug.LogWarning(message);
+                }
+                else
+                {
+                    Debug.Log(message);
+                }
             }
         }
     }
