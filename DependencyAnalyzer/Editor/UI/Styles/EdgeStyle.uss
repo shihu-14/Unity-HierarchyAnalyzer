@@ -10,6 +10,10 @@
     --edge-color: #7fb4dc;
 }
 
+.dependency-edge--component {
+    --edge-color: #9ed384;
+}
+
 .dependency-edge--prefabinstance {
     --edge-color: #d6a87b;
 }

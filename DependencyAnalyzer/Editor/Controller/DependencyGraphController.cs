@@ -20,10 +20,16 @@ namespace DependencyAnalyzer.Editor.Controller
         private readonly Button scanButton;
         private readonly Button cancelButton;
         private readonly IntegerField depthField;
+        private readonly Slider zoomStepSlider;
+        private readonly Label zoomStepValueLabel;
         private readonly Label statusLabel;
 
         private CancellationTokenSource scanCancellation;
         private DependencyGraphData currentGraph;
+        private bool disposed;
+        private bool hierarchyRefreshQueued;
+        private bool suppressNextSelectionFocus;
+        private int suppressedSelectionInstanceId;
 
         public DependencyGraphController(VisualElement root, DependencyGraphView graphView)
         {
@@ -35,6 +41,8 @@ namespace DependencyAnalyzer.Editor.Controller
             scanButton = root.Q<Button>("scan-button");
             cancelButton = root.Q<Button>("cancel-button");
             depthField = root.Q<IntegerField>("depth-field");
+            zoomStepSlider = root.Q<Slider>("zoom-step-slider");
+            zoomStepValueLabel = root.Q<Label>("zoom-step-value-label");
             statusLabel = root.Q<Label>("status-label");
 
             if (scanButton != null)
@@ -54,12 +62,23 @@ namespace DependencyAnalyzer.Editor.Controller
                 depthField.RegisterValueChangedCallback(HandleDepthChanged);
             }
 
+            var settings = AnalyzerSettings.LoadOrCreateRuntimeSettings();
+            InitializeZoomFields(settings);
+            ApplyGraphSettings(settings);
             graphView.NodeSelected += HandleNodeSelected;
+            Selection.selectionChanged += HandleEditorSelectionChanged;
+            EditorApplication.delayCall += RequestInitialScan;
+            EditorApplication.hierarchyChanged += HandleHierarchyChanged;
             SetStatus("Ready");
         }
 
         public void Dispose()
         {
+            disposed = true;
+            EditorApplication.delayCall -= RequestInitialScan;
+            EditorApplication.delayCall -= RunQueuedHierarchyScan;
+            EditorApplication.hierarchyChanged -= HandleHierarchyChanged;
+            Selection.selectionChanged -= HandleEditorSelectionChanged;
             graphView.NodeSelected -= HandleNodeSelected;
 
             if (scanButton != null)
@@ -72,11 +91,49 @@ namespace DependencyAnalyzer.Editor.Controller
                 cancelButton.clicked -= CancelActiveScan;
             }
 
+            if (zoomStepSlider != null)
+            {
+                zoomStepSlider.UnregisterValueChangedCallback(HandleZoomChanged);
+            }
+
             CancelActiveScan();
+        }
+
+        private void RequestInitialScan()
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            _ = ScanAsync();
         }
 
         private void HandleScanClicked()
         {
+            _ = ScanAsync();
+        }
+
+        private void HandleHierarchyChanged()
+        {
+            if (disposed || currentGraph == null || hierarchyRefreshQueued)
+            {
+                return;
+            }
+
+            hierarchyRefreshQueued = true;
+            EditorApplication.delayCall += RunQueuedHierarchyScan;
+        }
+
+        private void RunQueuedHierarchyScan()
+        {
+            EditorApplication.delayCall -= RunQueuedHierarchyScan;
+            hierarchyRefreshQueued = false;
+            if (disposed)
+            {
+                return;
+            }
+
             _ = ScanAsync();
         }
 
@@ -98,6 +155,7 @@ namespace DependencyAnalyzer.Editor.Controller
             try
             {
                 var settings = AnalyzerSettings.LoadOrCreateRuntimeSettings();
+                ApplyGraphSettings(settings);
                 var progress = new Progress<ScanProgress>(HandleScanProgress);
                 currentGraph = await scannerOrchestrator.ScanAsync(settings, cache, progress, token);
                 graphView.Populate(currentGraph, GetInitialDepth(settings));
@@ -143,6 +201,16 @@ namespace DependencyAnalyzer.Editor.Controller
             return depth;
         }
 
+        private void ApplyGraphSettings(AnalyzerSettings settings)
+        {
+            var step = zoomStepSlider == null ? settings.ZoomStep : zoomStepSlider.value;
+
+            step = Mathf.Clamp(step, 0.001f, 0.03f);
+            SetZoomSliderValue(step);
+            UpdateZoomStepValueLabel(step);
+            graphView.ConfigureZoom(AnalyzerSettings.DefaultZoomMin, AnalyzerSettings.DefaultZoomMax, step);
+        }
+
         private void HandleScanProgress(ScanProgress progress)
         {
             var percentage = progress.Total <= 0 ? 0f : progress.Ratio * 100f;
@@ -164,10 +232,82 @@ namespace DependencyAnalyzer.Editor.Controller
             }
         }
 
+        private void InitializeZoomFields(AnalyzerSettings settings)
+        {
+            SetZoomSliderValue(settings.ZoomStep);
+            UpdateZoomStepValueLabel(settings.ZoomStep);
+            if (zoomStepSlider != null)
+            {
+                zoomStepSlider.RegisterValueChangedCallback(HandleZoomChanged);
+            }
+        }
+
+        private void HandleZoomChanged(ChangeEvent<float> evt)
+        {
+            ApplyGraphSettings(AnalyzerSettings.LoadOrCreateRuntimeSettings());
+        }
+
+        private void SetZoomSliderValue(float value)
+        {
+            if (zoomStepSlider == null)
+            {
+                return;
+            }
+
+            zoomStepSlider.SetValueWithoutNotify(value);
+        }
+
+        private void UpdateZoomStepValueLabel(float value)
+        {
+            if (zoomStepValueLabel != null)
+            {
+                zoomStepValueLabel.text = value.ToString("0.000");
+            }
+        }
+
         private void HandleNodeSelected(DependencyNodeData node)
         {
             graphView.ExpandNode(node.Id);
-            selectionSync.PingAndSelect(node);
+            var target = selectionSync.ResolveObject(node);
+            if (target == null)
+            {
+                suppressNextSelectionFocus = false;
+                suppressedSelectionInstanceId = 0;
+                return;
+            }
+
+            suppressNextSelectionFocus = true;
+            suppressedSelectionInstanceId = target.GetInstanceID();
+            selectionSync.PingAndSelect(target);
+        }
+
+        private void HandleEditorSelectionChanged()
+        {
+            if (disposed || currentGraph == null)
+            {
+                return;
+            }
+
+            var selectedObject = Selection.activeObject;
+            if (selectedObject == null)
+            {
+                return;
+            }
+
+            if (suppressNextSelectionFocus)
+            {
+                if (selectedObject.GetInstanceID() == suppressedSelectionInstanceId)
+                {
+                    suppressNextSelectionFocus = false;
+                    suppressedSelectionInstanceId = 0;
+                    return;
+                }
+
+                suppressNextSelectionFocus = false;
+                suppressedSelectionInstanceId = 0;
+            }
+
+            graphView.FocusNodeByInstanceId(selectedObject.GetInstanceID());
         }
 
         private void CancelActiveScan()

@@ -8,12 +8,11 @@ namespace DependencyAnalyzer.Editor.Controller
     {
         public bool PingAndSelect(DependencyNodeData node)
         {
-            if (node == null || node.Kind == DependencyNodeKind.MissingReference)
-            {
-                return false;
-            }
+            return PingAndSelect(ResolveObject(node));
+        }
 
-            var target = ResolveObject(node);
+        public bool PingAndSelect(Object target)
+        {
             if (target == null)
             {
                 return false;
@@ -24,8 +23,13 @@ namespace DependencyAnalyzer.Editor.Controller
             return true;
         }
 
-        private static Object ResolveObject(DependencyNodeData node)
+        public Object ResolveObject(DependencyNodeData node)
         {
+            if (node == null || node.Kind == DependencyNodeKind.MissingReference)
+            {
+                return null;
+            }
+
             var target = GlobalObjectId.GlobalObjectIdentifierToObjectSlow(node.GlobalObjectId);
             if (target != null)
             {

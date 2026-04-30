@@ -5,6 +5,7 @@ namespace DependencyAnalyzer.Editor.Core
     public enum DependencyReferenceKind
     {
         Hierarchy,
+        Component,
         PrefabInstance,
         StaticAsset,
         SerializedProperty

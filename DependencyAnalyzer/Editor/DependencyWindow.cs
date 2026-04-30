@@ -1,6 +1,7 @@
 using System.IO;
 using DependencyAnalyzer.Editor.Controller;
 using DependencyAnalyzer.Editor.UI.GraphView;
+using DependencyAnalyzer.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -23,6 +24,7 @@ namespace DependencyAnalyzer.Editor
 
         public void CreateGUI()
         {
+            UnityTempDirectoryGuard.EnsureProjectTempDirectoryExists();
             rootVisualElement.Clear();
             rootVisualElement.AddToClassList("dependency-window");
             AddStyleSheetToRoot("NodeStyle.uss");
@@ -66,11 +68,19 @@ namespace DependencyAnalyzer.Editor
             var scanButton = new Button { name = "scan-button", text = "Scan" };
             var cancelButton = new Button { name = "cancel-button", text = "Cancel" };
             var depthField = new IntegerField("Depth") { name = "depth-field", value = 3 };
+            var zoomStepControl = new VisualElement { name = "zoom-step-control" };
+            zoomStepControl.AddToClassList("dependency-zoom-step-control");
+            var zoomStepSlider = new Slider("Zoom Step", 0.001f, 0.03f) { name = "zoom-step-slider", value = 0.004f };
+            var zoomStepValueLabel = new Label("0.004") { name = "zoom-step-value-label" };
+            zoomStepValueLabel.AddToClassList("dependency-zoom-step-value");
             var statusLabel = new Label("Ready") { name = "status-label" };
 
+            zoomStepControl.Add(zoomStepSlider);
+            zoomStepControl.Add(zoomStepValueLabel);
             toolbar.Add(scanButton);
             toolbar.Add(cancelButton);
             toolbar.Add(depthField);
+            toolbar.Add(zoomStepControl);
             toolbar.Add(statusLabel);
             root.Add(toolbar);
 

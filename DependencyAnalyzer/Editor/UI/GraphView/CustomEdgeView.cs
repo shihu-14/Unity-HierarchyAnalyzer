@@ -6,10 +6,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 {
     public sealed class CustomEdgeView : VisualElement
     {
-        private readonly Label memberLabel;
         private Rect sourceRect;
         private Rect targetRect;
         private float routeOffset;
+        private int sourceSlotIndex;
+        private int sourceSlotCount = 1;
 
         public CustomEdgeView(DependencyEdgeData edgeData)
         {
@@ -23,12 +24,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             AddToClassList("dependency-edge--" + edgeData.ReferenceKind.ToString().ToLowerInvariant());
             tooltip = BuildTooltip(edgeData);
 
-            memberLabel = new Label(Shorten(edgeData.MemberName));
-            memberLabel.tooltip = BuildTooltip(edgeData);
-            memberLabel.pickingMode = PickingMode.Ignore;
-            memberLabel.AddToClassList("dependency-edge-label");
-            Add(memberLabel);
-
             generateVisualContent += DrawEdge;
         }
 
@@ -40,12 +35,13 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             style.height = Mathf.Max(1f, height);
         }
 
-        public void SetEndpoints(Rect source, Rect target, float offset)
+        public void SetEndpoints(Rect source, Rect target, float offset, int slotIndex, int slotCount)
         {
             sourceRect = source;
             targetRect = target;
             routeOffset = offset;
-            UpdateLabelPosition();
+            sourceSlotIndex = Mathf.Max(0, slotIndex);
+            sourceSlotCount = Mathf.Max(1, slotCount);
             MarkDirtyRepaint();
         }
 
@@ -53,46 +49,60 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         {
             var start = GetSourcePoint();
             var end = GetTargetPoint();
-            var tangent = Mathf.Max(80f, Mathf.Abs(end.x - start.x) * 0.45f);
-            var controlYOffset = routeOffset * 2f;
+            var direction = sourceRect.xMin <= targetRect.xMin ? 1f : -1f;
+            var laneOffset = routeOffset * 1.35f;
+            var midX = (start.x + end.x) * 0.5f + laneOffset * direction;
+            var firstTurn = new Vector2(midX, start.y);
+            var secondTurn = new Vector2(midX, end.y);
 
             var painter = context.painter2D;
             painter.strokeColor = GetColor(EdgeData.ReferenceKind);
             painter.lineWidth = EdgeData.PointsToMissingReference ? 3f : 2f;
             painter.BeginPath();
             painter.MoveTo(start);
-            painter.BezierCurveTo(
-                new Vector2(start.x + tangent, start.y + controlYOffset),
-                new Vector2(end.x - tangent, end.y + controlYOffset),
-                end);
+            painter.LineTo(firstTurn);
+            painter.LineTo(secondTurn);
+            painter.LineTo(end);
             painter.Stroke();
         }
 
         private Vector2 GetSourcePoint()
         {
+            var y = GetDistributedPortY(sourceRect, sourceSlotIndex, sourceSlotCount);
             if (sourceRect.xMin <= targetRect.xMin)
             {
-                return new Vector2(sourceRect.xMax, sourceRect.center.y + routeOffset);
+                return new Vector2(sourceRect.xMax, y);
             }
 
-            return new Vector2(sourceRect.xMin, sourceRect.center.y + routeOffset);
+            return new Vector2(sourceRect.xMin, y);
         }
 
         private Vector2 GetTargetPoint()
         {
             if (sourceRect.xMin <= targetRect.xMin)
             {
-                return new Vector2(targetRect.xMin, targetRect.center.y + routeOffset * 0.35f);
+                return new Vector2(targetRect.xMin, ClampPortY(targetRect, targetRect.center.y - routeOffset * 0.35f));
             }
 
-            return new Vector2(targetRect.xMax, targetRect.center.y + routeOffset * 0.35f);
+            return new Vector2(targetRect.xMax, ClampPortY(targetRect, targetRect.center.y - routeOffset * 0.35f));
         }
 
-        private void UpdateLabelPosition()
+        private static float GetDistributedPortY(Rect rect, int index, int count)
         {
-            var center = Vector2.Lerp(GetSourcePoint(), GetTargetPoint(), 0.5f);
-            memberLabel.style.left = Mathf.Max(0f, center.x - 84f);
-            memberLabel.style.top = Mathf.Max(0f, center.y + routeOffset - 10f);
+            if (count <= 1)
+            {
+                return rect.center.y;
+            }
+
+            var usableTop = rect.yMin + 18f;
+            var usableBottom = rect.yMax - 18f;
+            var t = (index + 1f) / (count + 1f);
+            return Mathf.Lerp(usableTop, usableBottom, t);
+        }
+
+        private static float ClampPortY(Rect rect, float y)
+        {
+            return Mathf.Clamp(y, rect.yMin + 14f, rect.yMax - 14f);
         }
 
         private static Color GetColor(DependencyReferenceKind kind)
@@ -101,6 +111,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             {
                 case DependencyReferenceKind.Hierarchy:
                     return new Color(0.49f, 0.71f, 0.86f, 0.85f);
+                case DependencyReferenceKind.Component:
+                    return new Color(0.62f, 0.83f, 0.52f, 0.9f);
                 case DependencyReferenceKind.PrefabInstance:
                     return new Color(0.84f, 0.66f, 0.48f, 0.9f);
                 case DependencyReferenceKind.SerializedProperty:
@@ -118,14 +130,5 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 + "\nTarget: " + edgeData.TargetNodeId;
         }
 
-        private static string Shorten(string value)
-        {
-            if (string.IsNullOrEmpty(value))
-            {
-                return string.Empty;
-            }
-
-            return value.Length <= 34 ? value : value.Substring(0, 31) + "...";
-        }
     }
 }

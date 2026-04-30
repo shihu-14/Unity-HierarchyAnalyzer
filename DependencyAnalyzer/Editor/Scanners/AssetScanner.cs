@@ -110,6 +110,11 @@ namespace DependencyAnalyzer.Editor.Scanners
 
         private static string GetIconContentName(string assetPath, Type type)
         {
+            if (assetPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Prefab Icon";
+            }
+
             return IsModelMeshPath(assetPath) ? "Mesh Icon" : IconUtility.GetIconContentName(type);
         }
     }

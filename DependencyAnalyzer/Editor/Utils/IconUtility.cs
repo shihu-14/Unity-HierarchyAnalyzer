@@ -19,9 +19,24 @@ namespace DependencyAnalyzer.Editor.Utils
                 return "GameObject Icon";
             }
 
+            if (typeof(Camera).IsAssignableFrom(type))
+            {
+                return "Camera Icon";
+            }
+
+            if (typeof(Light).IsAssignableFrom(type))
+            {
+                return "Light Icon";
+            }
+
+            if (typeof(AudioSource).IsAssignableFrom(type))
+            {
+                return "AudioSource Icon";
+            }
+
             if (typeof(Component).IsAssignableFrom(type))
             {
-                return "cs Script Icon";
+                return typeof(MonoBehaviour).IsAssignableFrom(type) ? "cs Script Icon" : type.Name + " Icon";
             }
 
             if (typeof(Material).IsAssignableFrom(type))
@@ -99,6 +114,36 @@ namespace DependencyAnalyzer.Editor.Utils
             }
 
             var typeName = node.TypeName;
+            if (typeName.Contains("Directional Light") || typeName == "Light")
+            {
+                return "dependency-node--light";
+            }
+
+            if (typeName.Contains("Camera"))
+            {
+                return "dependency-node--camera";
+            }
+
+            if (string.Equals(node.IconContentName, "cs Script Icon", StringComparison.Ordinal))
+            {
+                return "dependency-node--csharp";
+            }
+
+            if (typeName.Contains("AudioSource"))
+            {
+                return "dependency-node--audio";
+            }
+
+            if (typeName.Contains("MonoScript") || node.Path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+            {
+                return "dependency-node--csharp";
+            }
+
+            if (node.Kind == DependencyNodeKind.Component)
+            {
+                return "dependency-node--component";
+            }
+
             if (typeName.Contains("Prefab") || node.Path.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
             {
                 return "dependency-node--prefab";
@@ -129,9 +174,9 @@ namespace DependencyAnalyzer.Editor.Utils
                 return "dependency-node--scriptable-object";
             }
 
-            if (node.Kind == DependencyNodeKind.SceneObject || node.Kind == DependencyNodeKind.Component)
+            if (node.Kind == DependencyNodeKind.SceneObject)
             {
-                return "dependency-node--scene";
+                return "dependency-node--object";
             }
 
             return "dependency-node--default";

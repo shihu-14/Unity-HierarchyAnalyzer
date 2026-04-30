@@ -37,7 +37,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                     continue;
                 }
 
-                progress?.Report(new ScanProgress(Name, component.name, i + 1, components.Count));
+                progress?.Report(new ScanProgress(Name, component.GetType().Name, i + 1, components.Count));
                 ScanComponent(component, graph, cache, settings);
 
                 if (i % batchSize == 0)
@@ -95,14 +95,19 @@ namespace DependencyAnalyzer.Editor.Scanners
                                 continue;
                             }
 
+                            if (!ShouldVisualizeComponent(component))
+                            {
+                                continue;
+                            }
+
                             components.Add(component);
                             var componentNode = CreateSceneObjectNode(component, cache);
                             graph.AddOrUpdateNode(componentNode);
                             graph.AddEdge(new DependencyEdgeData(
                                 gameObjectNode.Id,
                                 componentNode.Id,
-                                "Component",
-                                DependencyReferenceKind.Hierarchy));
+                                string.Empty,
+                                DependencyReferenceKind.Component));
                         }
                     }
                 }
@@ -146,6 +151,11 @@ namespace DependencyAnalyzer.Editor.Scanners
                 var referencedObject = property.objectReferenceValue;
                 if (referencedObject != null)
                 {
+                    if (referencedObject is MonoScript)
+                    {
+                        continue;
+                    }
+
                     var targetNode = CreateObjectReferenceNode(referencedObject, cache, settings);
                     if (targetNode == null)
                     {
@@ -195,12 +205,113 @@ namespace DependencyAnalyzer.Editor.Scanners
                 case "m_PrefabParentObject":
                 case "m_PrefabInternal":
                 case "m_Father":
-                    return false;
                 case "m_Script":
-                    return component is MonoBehaviour;
+                    return false;
                 default:
                     return true;
             }
+        }
+
+        private static bool ShouldVisualizeComponent(Component component)
+        {
+            if (component == null)
+            {
+                return false;
+            }
+
+            if (IsDefaultTemplateComponent(component))
+            {
+                return false;
+            }
+
+            var monoBehaviour = component as MonoBehaviour;
+            if (monoBehaviour != null)
+            {
+                var monoScript = MonoScript.FromMonoBehaviour(monoBehaviour);
+                if (monoScript == null)
+                {
+                    return false;
+                }
+
+                var scriptPath = AssetDatabase.GetAssetPath(monoScript);
+                return !string.IsNullOrEmpty(scriptPath)
+                    && scriptPath.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase);
+            }
+
+            return true;
+        }
+
+        private static bool IsDefaultTemplateComponent(Component component)
+        {
+            if (component is Transform || component is RectTransform)
+            {
+                return true;
+            }
+
+            if (component is MeshFilter || component is Renderer || component is Collider)
+            {
+                return true;
+            }
+
+            var gameObject = component.gameObject;
+            var type = component.GetType();
+            if (gameObject.GetComponent<Camera>() != null)
+            {
+                return type == typeof(Camera)
+                    || type == typeof(AudioListener);
+            }
+
+            if (gameObject.GetComponent<Light>() != null)
+            {
+                return type == typeof(Light);
+            }
+
+            if (IsPrimitiveTemplateObject(gameObject))
+            {
+                return type == typeof(MeshFilter)
+                    || type == typeof(MeshRenderer)
+                    || type == typeof(BoxCollider)
+                    || type == typeof(SphereCollider)
+                    || type == typeof(CapsuleCollider)
+                    || type == typeof(MeshCollider);
+            }
+
+            if (IsAudioSourceTemplateObject(gameObject))
+            {
+                return type == typeof(AudioSource);
+            }
+
+            return false;
+        }
+
+        private static bool IsPrimitiveTemplateObject(GameObject gameObject)
+        {
+            var meshFilter = gameObject.GetComponent<MeshFilter>();
+            if (meshFilter == null || gameObject.GetComponent<MeshRenderer>() == null)
+            {
+                return false;
+            }
+
+            var mesh = meshFilter.sharedMesh;
+            if (mesh == null)
+            {
+                return false;
+            }
+
+            var meshName = mesh.name;
+            return string.Equals(meshName, "Cube", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(meshName, "Sphere", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(meshName, "Capsule", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(meshName, "Cylinder", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(meshName, "Plane", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(meshName, "Quad", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsAudioSourceTemplateObject(GameObject gameObject)
+        {
+            return gameObject.GetComponent<AudioSource>() != null
+                && gameObject.GetComponents<Component>().Length == 2
+                && gameObject.name.StartsWith("Audio Source", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void AddHierarchyEdge(
@@ -259,6 +370,11 @@ namespace DependencyAnalyzer.Editor.Scanners
             AnalyzerSettings settings)
         {
             var assetPath = AssetDatabase.GetAssetPath(unityObject);
+            if (unityObject is MonoScript)
+            {
+                return null;
+            }
+
             if (!string.IsNullOrEmpty(assetPath))
             {
                 if (AssetDatabase.IsValidFolder(assetPath) || settings.IsPathExcluded(assetPath))
@@ -271,6 +387,12 @@ namespace DependencyAnalyzer.Editor.Scanners
 
             if (unityObject is GameObject || unityObject is Component)
             {
+                var component = unityObject as Component;
+                if (component != null && !ShouldVisualizeComponent(component))
+                {
+                    return CreateSceneObjectNode(component.gameObject, cache);
+                }
+
                 return CreateSceneObjectNode(unityObject, cache);
             }
 
@@ -301,11 +423,11 @@ namespace DependencyAnalyzer.Editor.Scanners
                 globalObjectId,
                 path,
                 GetDisplayName(unityObject),
-                type.Name,
+                GetDisplayTypeName(unityObject, type),
                 type.FullName,
                 0L,
                 Array.Empty<string>(),
-                IconUtility.GetIconContentName(type),
+                GetIconContentName(unityObject, type),
                 unityObject is Component ? DependencyNodeKind.Component : DependencyNodeKind.SceneObject,
                 unityObject.GetInstanceID());
             return cache.Store(node);
@@ -324,6 +446,57 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             return unityObject.name;
+        }
+
+        private static string GetDisplayTypeName(UnityEngine.Object unityObject, Type type)
+        {
+            if (unityObject is GameObject gameObject)
+            {
+                if (PrefabUtility.IsPartOfPrefabInstance(gameObject))
+                {
+                    return PrefabUtility.GetNearestPrefabInstanceRoot(gameObject) == gameObject
+                        ? "Prefab Instance"
+                        : "Prefab Child";
+                }
+
+                if (gameObject.GetComponent<Camera>() != null)
+                {
+                    return "Camera";
+                }
+
+                var light = gameObject.GetComponent<Light>();
+                if (light != null)
+                {
+                    return light.type == LightType.Directional ? "Directional Light" : "Light";
+                }
+
+                return "Object";
+            }
+
+            return type.Name;
+        }
+
+        private static string GetIconContentName(UnityEngine.Object unityObject, Type type)
+        {
+            if (unityObject is GameObject gameObject)
+            {
+                if (PrefabUtility.IsPartOfPrefabInstance(gameObject))
+                {
+                    return "Prefab Icon";
+                }
+
+                if (gameObject.GetComponent<Camera>() != null)
+                {
+                    return "Camera Icon";
+                }
+
+                if (gameObject.GetComponent<Light>() != null)
+                {
+                    return "Light Icon";
+                }
+            }
+
+            return IconUtility.GetIconContentName(type);
         }
 
         private static GlobalObjectId GetGlobalObjectId(UnityEngine.Object unityObject)
