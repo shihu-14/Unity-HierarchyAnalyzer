@@ -1,0 +1,144 @@
+.dependency-window {
+    flex-grow: 1;
+    background-color: #202124;
+}
+
+.dependency-toolbar {
+    height: 32px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: #34363a;
+    background-color: #27292d;
+}
+
+.dependency-toolbar Button {
+    min-width: 72px;
+    height: 22px;
+    margin-right: 6px;
+}
+
+.dependency-toolbar IntegerField {
+    width: 118px;
+    margin-left: 8px;
+    margin-right: 12px;
+}
+
+.dependency-status-label {
+    color: #d7dae0;
+    unity-text-align: middle-left;
+    flex-grow: 1;
+}
+
+.dependency-graph-container {
+    flex-grow: 1;
+    position: relative;
+}
+
+.dependency-graph-view {
+    flex-grow: 1;
+}
+
+.dependency-node {
+    width: 230px;
+    min-height: 82px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.dependency-node .title {
+    height: 56px;
+}
+
+.dependency-node-body {
+    flex-grow: 1;
+    min-height: 52px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.dependency-node-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 7px;
+}
+
+.dependency-node-name {
+    flex-grow: 1;
+    color: #f0f1f4;
+    font-size: 12px;
+    unity-font-style: bold;
+    overflow: hidden;
+    white-space: normal;
+}
+
+.dependency-node-badges {
+    position: absolute;
+    right: 5px;
+    top: 4px;
+    flex-direction: row;
+}
+
+.dependency-node-badge {
+    min-width: 18px;
+    height: 16px;
+    margin-left: 3px;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.42);
+    color: #ffffff;
+    font-size: 10px;
+    unity-text-align: middle-center;
+}
+
+.dependency-node-warning {
+    width: 16px;
+    height: 16px;
+    margin-left: 3px;
+}
+
+.dependency-node--prefab {
+    background-color: #335f86;
+}
+
+.dependency-node--material {
+    background-color: #6b5a2f;
+}
+
+.dependency-node--texture {
+    background-color: #47705c;
+}
+
+.dependency-node--audio {
+    background-color: #6f4a7d;
+}
+
+.dependency-node--mesh {
+    background-color: #6a6258;
+}
+
+.dependency-node--scriptable-object {
+    background-color: #6d4f45;
+}
+
+.dependency-node--scene {
+    background-color: #4e6572;
+}
+
+.dependency-node--missing {
+    background-color: #8a3d3d;
+}
+
+.dependency-node--default {
+    background-color: #51565f;
+}

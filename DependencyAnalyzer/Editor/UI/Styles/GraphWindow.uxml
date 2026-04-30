@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="True">
+    <ui:VisualElement name="dependency-window-root" class="dependency-window">
+        <ui:VisualElement name="dependency-toolbar" class="dependency-toolbar">
+            <ui:Button name="scan-button" text="Scan" />
+            <ui:Button name="cancel-button" text="Cancel" />
+            <ui:IntegerField name="depth-field" label="Depth" value="3" />
+            <ui:Label name="status-label" text="Ready" class="dependency-status-label" />
+        </ui:VisualElement>
+        <ui:VisualElement name="graph-container" class="dependency-graph-container" />
+    </ui:VisualElement>
+</ui:UXML>
