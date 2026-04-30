@@ -1,17 +1,17 @@
 .dependency-window {
     flex-grow: 1;
-    background-color: #202124;
+    background-color: #1d2024;
 }
 
 .dependency-toolbar {
-    height: 32px;
+    height: 34px;
     flex-direction: row;
     align-items: center;
     padding-left: 8px;
     padding-right: 8px;
     border-bottom-width: 1px;
-    border-bottom-color: #34363a;
-    background-color: #27292d;
+    border-bottom-color: #343941;
+    background-color: #252a30;
 }
 
 .dependency-toolbar Button {
@@ -39,63 +39,135 @@
 
 .dependency-graph-view {
     flex-grow: 1;
+    background-color: #191c20;
+}
+
+.dependency-graph-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.dependency-edge-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.dependency-node-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.dependency-empty-state {
+    position: absolute;
+    left: 18px;
+    top: 18px;
+    color: #9ca6b3;
+    font-size: 12px;
 }
 
 .dependency-node {
-    width: 230px;
-    min-height: 82px;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
+    width: 260px;
+    height: 92px;
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-color: #4a515b;
+    border-right-color: #313740;
+    border-bottom-color: #252a31;
+    border-left-color: #4a515b;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    background-color: #2c3239;
+    overflow: hidden;
 }
 
-.dependency-node .title {
-    height: 56px;
+.dependency-node:hover {
+    border-top-color: #7fa6cf;
+    border-right-color: #7fa6cf;
+    border-bottom-color: #7fa6cf;
+    border-left-color: #7fa6cf;
 }
 
-.dependency-node-body {
-    flex-grow: 1;
-    min-height: 52px;
+.dependency-node-accent {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background-color: #8fa1b3;
+}
+
+.dependency-node-header {
+    height: 52px;
     flex-direction: row;
     align-items: center;
-    padding-left: 8px;
+    padding-left: 14px;
     padding-right: 8px;
+    padding-top: 7px;
 }
 
 .dependency-node-icon {
     width: 24px;
     height: 24px;
-    margin-right: 7px;
+    margin-right: 8px;
+}
+
+.dependency-node-title-stack {
+    flex-grow: 1;
+    min-width: 0;
 }
 
 .dependency-node-name {
-    flex-grow: 1;
-    color: #f0f1f4;
+    color: #f2f4f7;
     font-size: 12px;
     -unity-font-style: bold;
     overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.dependency-node-type {
+    color: #aeb8c4;
+    font-size: 10px;
+    margin-top: 2px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.dependency-node-path {
+    height: 32px;
+    margin-left: 14px;
+    margin-right: 8px;
+    color: #87929f;
+    font-size: 10px;
     white-space: normal;
+    overflow: hidden;
 }
 
 .dependency-node-badges {
-    position: absolute;
-    right: 5px;
-    top: 4px;
     flex-direction: row;
+    align-items: center;
+    margin-left: 6px;
 }
 
 .dependency-node-badge {
-    min-width: 18px;
-    height: 16px;
-    margin-left: 3px;
-    padding-left: 4px;
-    padding-right: 4px;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
-    background-color: rgba(0, 0, 0, 0.42);
+    min-width: 20px;
+    height: 17px;
+    margin-left: 4px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-top-left-radius: 9px;
+    border-top-right-radius: 9px;
+    border-bottom-left-radius: 9px;
+    border-bottom-right-radius: 9px;
+    background-color: rgba(10, 13, 17, 0.62);
     color: #ffffff;
     font-size: 10px;
     -unity-text-align: middle-center;
@@ -104,41 +176,45 @@
 .dependency-node-warning {
     width: 16px;
     height: 16px;
-    margin-left: 3px;
+    margin-left: 4px;
 }
 
-.dependency-node--prefab {
-    background-color: #335f86;
+.dependency-node--prefab .dependency-node-accent {
+    background-color: #4f9bd5;
 }
 
-.dependency-node--material {
-    background-color: #6b5a2f;
+.dependency-node--material .dependency-node-accent {
+    background-color: #d0aa55;
 }
 
-.dependency-node--texture {
-    background-color: #47705c;
+.dependency-node--texture .dependency-node-accent {
+    background-color: #5eb684;
 }
 
-.dependency-node--audio {
-    background-color: #6f4a7d;
+.dependency-node--audio .dependency-node-accent {
+    background-color: #b178c6;
 }
 
-.dependency-node--mesh {
-    background-color: #6a6258;
+.dependency-node--mesh .dependency-node-accent {
+    background-color: #a69b8e;
 }
 
-.dependency-node--scriptable-object {
-    background-color: #6d4f45;
+.dependency-node--scriptable-object .dependency-node-accent {
+    background-color: #c48267;
 }
 
-.dependency-node--scene {
-    background-color: #4e6572;
+.dependency-node--scene .dependency-node-accent {
+    background-color: #72a8c0;
+}
+
+.dependency-node--missing .dependency-node-accent {
+    background-color: #df6464;
 }
 
 .dependency-node--missing {
-    background-color: #8a3d3d;
+    background-color: #3a282b;
 }
 
-.dependency-node--default {
-    background-color: #51565f;
+.dependency-node--default .dependency-node-accent {
+    background-color: #8fa1b3;
 }

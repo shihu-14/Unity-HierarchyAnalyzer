@@ -6,16 +6,16 @@
     --edge-color: #b8c7d9;
 }
 
+.dependency-edge--hierarchy {
+    --edge-color: #7fb4dc;
+}
+
+.dependency-edge--prefabinstance {
+    --edge-color: #d6a87b;
+}
+
 .dependency-edge--serializedproperty {
     --edge-color: #8ec7a2;
-}
-
-.dependency-edge--resourcesload {
-    --edge-color: #d5b36c;
-}
-
-.dependency-edge--addressablesgroup {
-    --edge-color: #ce8d9d;
 }
 
 .dependency-edge-label {

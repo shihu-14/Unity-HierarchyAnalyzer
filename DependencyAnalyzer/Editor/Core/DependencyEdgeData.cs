@@ -4,10 +4,10 @@ namespace DependencyAnalyzer.Editor.Core
 {
     public enum DependencyReferenceKind
     {
+        Hierarchy,
+        PrefabInstance,
         StaticAsset,
-        SerializedProperty,
-        ResourcesLoad,
-        AddressablesGroup
+        SerializedProperty
     }
 
     [Serializable]

@@ -9,8 +9,7 @@ namespace DependencyAnalyzer.Editor.Core
         Asset,
         SceneObject,
         Component,
-        MissingReference,
-        AddressablesGroup
+        MissingReference
     }
 
     [Serializable]

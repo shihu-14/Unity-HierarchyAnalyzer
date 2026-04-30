@@ -97,7 +97,7 @@ namespace DependencyAnalyzer.Editor.Controller
 
             try
             {
-                var settings = AnalyzerSettings.GetOrCreateSettings();
+                var settings = AnalyzerSettings.LoadOrCreateRuntimeSettings();
                 var progress = new Progress<ScanProgress>(HandleScanProgress);
                 currentGraph = await scannerOrchestrator.ScanAsync(settings, cache, progress, token);
                 graphView.Populate(currentGraph, GetInitialDepth(settings));

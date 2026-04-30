@@ -1,58 +1,77 @@
 using System;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Utils;
-using UnityEditor.Experimental.GraphView;
+using UnityEngine;
 using UnityEngine.UIElements;
-using GraphNode = UnityEditor.Experimental.GraphView.Node;
 
 namespace DependencyAnalyzer.Editor.UI.GraphView
 {
-    public sealed class CustomNodeView : GraphNode
+    public sealed class CustomNodeView : VisualElement
     {
-        public CustomNodeView(DependencyNodeData data)
+        public const float NodeWidth = 260f;
+        public const float NodeHeight = 92f;
+
+        private Vector2 graphPosition;
+
+        public CustomNodeView(DependencyNodeData data, bool hasHiddenChildren)
         {
             Data = data;
-            viewDataKey = data.Id;
-            title = data.DisplayName;
-            capabilities &= ~Capabilities.Deletable;
+            HasHiddenChildren = hasHiddenChildren;
+            pickingMode = PickingMode.Position;
+            style.position = Position.Absolute;
+            style.width = NodeWidth;
+            style.height = NodeHeight;
 
             AddToClassList("dependency-node");
             AddToClassList(IconUtility.GetNodeTypeClass(data));
 
-            InputPort = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(bool));
-            OutputPort = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(bool));
-            InputPort.portName = string.Empty;
-            OutputPort.portName = string.Empty;
-            inputContainer.Add(InputPort);
-            outputContainer.Add(OutputPort);
-
-            BuildTitleContent();
+            BuildContent();
             tooltip = BuildTooltip(data);
 
             RegisterCallback<MouseDownEvent>(HandleMouseDown);
-            RefreshExpandedState();
-            RefreshPorts();
         }
 
         public DependencyNodeData Data { get; }
-        public Port InputPort { get; }
-        public Port OutputPort { get; }
+        public bool HasHiddenChildren { get; }
         public event Action<DependencyNodeData> NodeSelected;
 
-        private void BuildTitleContent()
+        public void SetGraphPosition(Vector2 position)
         {
-            titleContainer.Clear();
+            graphPosition = position;
+            style.left = position.x;
+            style.top = position.y;
+        }
 
-            var body = new VisualElement();
-            body.AddToClassList("dependency-node-body");
+        public Rect GetGraphRect()
+        {
+            return new Rect(graphPosition.x, graphPosition.y, NodeWidth, NodeHeight);
+        }
+
+        private void BuildContent()
+        {
+            var accent = new VisualElement();
+            accent.AddToClassList("dependency-node-accent");
+            Add(accent);
+
+            var header = new VisualElement();
+            header.AddToClassList("dependency-node-header");
 
             var icon = new Image { image = IconUtility.GetIcon(Data) };
             icon.AddToClassList("dependency-node-icon");
-            body.Add(icon);
+            header.Add(icon);
+
+            var titleStack = new VisualElement();
+            titleStack.AddToClassList("dependency-node-title-stack");
 
             var nameLabel = new Label(Data.DisplayName);
             nameLabel.AddToClassList("dependency-node-name");
-            body.Add(nameLabel);
+            titleStack.Add(nameLabel);
+
+            var typeLabel = new Label(Data.TypeName);
+            typeLabel.AddToClassList("dependency-node-type");
+            titleStack.Add(typeLabel);
+
+            header.Add(titleStack);
 
             var badgeContainer = new VisualElement();
             badgeContainer.AddToClassList("dependency-node-badges");
@@ -64,18 +83,28 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 badgeContainer.Add(warningIcon);
             }
 
-            var dependencyBadge = new Label(Data.DependencyCount.ToString());
-            dependencyBadge.tooltip = "Dependencies";
-            dependencyBadge.AddToClassList("dependency-node-badge");
-            badgeContainer.Add(dependencyBadge);
+            badgeContainer.Add(CreateBadge(Data.DependencyCount.ToString(), "Dependencies"));
+            badgeContainer.Add(CreateBadge(Data.UsedByCount.ToString(), "Used By"));
+            if (HasHiddenChildren)
+            {
+                badgeContainer.Add(CreateBadge("+", "Click to expand children"));
+            }
 
-            var usedByBadge = new Label(Data.UsedByCount.ToString());
-            usedByBadge.tooltip = "Used By";
-            usedByBadge.AddToClassList("dependency-node-badge");
-            badgeContainer.Add(usedByBadge);
+            header.Add(badgeContainer);
 
-            body.Add(badgeContainer);
-            titleContainer.Add(body);
+            Add(header);
+
+            var pathLabel = new Label(Data.Path);
+            pathLabel.AddToClassList("dependency-node-path");
+            Add(pathLabel);
+        }
+
+        private static Label CreateBadge(string text, string tooltipText)
+        {
+            var badge = new Label(text);
+            badge.tooltip = tooltipText;
+            badge.AddToClassList("dependency-node-badge");
+            return badge;
         }
 
         private static string BuildTooltip(DependencyNodeData data)
@@ -111,6 +140,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
 
             NodeSelected?.Invoke(Data);
+            evt.StopPropagation();
         }
     }
 }

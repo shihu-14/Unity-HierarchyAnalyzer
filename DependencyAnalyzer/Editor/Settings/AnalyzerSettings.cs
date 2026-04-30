@@ -9,6 +9,8 @@ namespace DependencyAnalyzer.Editor.Settings
     {
         public const string AssetPath = "Assets/DependencyAnalyzer/Editor/Settings/AnalyzerSettings.asset";
 
+        private static AnalyzerSettings runtimeDefaultSettings;
+
         [SerializeField]
         private List<string> excludedFolderPaths = new List<string>
         {
@@ -38,9 +40,26 @@ namespace DependencyAnalyzer.Editor.Settings
         public int ScanYieldBatchSize => Mathf.Max(1, scanYieldBatchSize);
         public int InitialExpansionDepth => Mathf.Clamp(initialExpansionDepth, 3, 4);
 
-        public static AnalyzerSettings GetOrCreateSettings()
+        public static AnalyzerSettings LoadOrCreateRuntimeSettings()
         {
-            var settings = AssetDatabase.LoadAssetAtPath<AnalyzerSettings>(AssetPath);
+            var settings = LoadSettingsAsset();
+            if (settings != null)
+            {
+                return settings;
+            }
+
+            if (runtimeDefaultSettings == null)
+            {
+                runtimeDefaultSettings = CreateInstance<AnalyzerSettings>();
+                runtimeDefaultSettings.hideFlags = HideFlags.HideAndDontSave;
+            }
+
+            return runtimeDefaultSettings;
+        }
+
+        public static AnalyzerSettings GetOrCreateSettingsAsset()
+        {
+            var settings = LoadSettingsAsset();
             if (settings != null)
             {
                 return settings;
@@ -51,6 +70,11 @@ namespace DependencyAnalyzer.Editor.Settings
             AssetDatabase.CreateAsset(settings, AssetPath);
             AssetDatabase.SaveAssets();
             return settings;
+        }
+
+        public static AnalyzerSettings GetOrCreateSettings()
+        {
+            return LoadOrCreateRuntimeSettings();
         }
 
         public bool IsPathExcluded(string assetPath)
@@ -86,6 +110,11 @@ namespace DependencyAnalyzer.Editor.Settings
         private static string NormalizeAssetPath(string assetPath)
         {
             return (assetPath ?? string.Empty).Replace("\\", "/").Trim();
+        }
+
+        public static AnalyzerSettings LoadSettingsAsset()
+        {
+            return AssetDatabase.LoadAssetAtPath<AnalyzerSettings>(AssetPath);
         }
 
         private static void EnsureParentFolderExists(string assetPath)

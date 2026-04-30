@@ -22,16 +22,33 @@ namespace DependencyAnalyzer.Editor.Settings
                 label = "Dependency Analyzer",
                 activateHandler = (_, rootElement) =>
                 {
-                    var settings = AnalyzerSettings.GetOrCreateSettings();
-                    var serializedSettings = new SerializedObject(settings);
-
-                    rootElement.Add(new PropertyField(serializedSettings.FindProperty("excludedFolderPaths"), "Excluded Folders"));
-                    rootElement.Add(new PropertyField(serializedSettings.FindProperty("excludedExtensions"), "Excluded Extensions"));
-                    rootElement.Add(new PropertyField(serializedSettings.FindProperty("scanYieldBatchSize"), "Scan Yield Batch Size"));
-                    rootElement.Add(new PropertyField(serializedSettings.FindProperty("initialExpansionDepth"), "Initial Expansion Depth"));
-                    rootElement.Bind(serializedSettings);
+                    BuildSettingsUI(rootElement, AnalyzerSettings.LoadOrCreateRuntimeSettings());
                 }
             };
+        }
+
+        private static void BuildSettingsUI(VisualElement rootElement, AnalyzerSettings settings)
+        {
+            rootElement.Clear();
+
+            if (AnalyzerSettings.LoadSettingsAsset() == null)
+            {
+                var createAssetButton = new Button(() =>
+                {
+                    BuildSettingsUI(rootElement, AnalyzerSettings.GetOrCreateSettingsAsset());
+                })
+                {
+                    text = "Create Shared Settings Asset"
+                };
+                rootElement.Add(createAssetButton);
+            }
+
+            var serializedSettings = new SerializedObject(settings);
+            rootElement.Add(new PropertyField(serializedSettings.FindProperty("excludedFolderPaths"), "Excluded Folders"));
+            rootElement.Add(new PropertyField(serializedSettings.FindProperty("excludedExtensions"), "Excluded Extensions"));
+            rootElement.Add(new PropertyField(serializedSettings.FindProperty("scanYieldBatchSize"), "Scan Yield Batch Size"));
+            rootElement.Add(new PropertyField(serializedSettings.FindProperty("initialExpansionDepth"), "Initial Expansion Depth"));
+            rootElement.Bind(serializedSettings);
         }
     }
 }

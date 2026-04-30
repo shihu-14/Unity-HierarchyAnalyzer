@@ -24,7 +24,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             CancellationToken cancellationToken)
         {
             var graph = new DependencyGraphData();
-            var components = CollectOpenSceneComponents(graph, cache);
+            var components = CollectOpenSceneComponents(graph, cache, settings);
             var batchSize = settings.ScanYieldBatchSize;
 
             for (var i = 0; i < components.Count; i++)
@@ -38,7 +38,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 }
 
                 progress?.Report(new ScanProgress(Name, component.name, i + 1, components.Count));
-                ScanComponent(component, graph, cache);
+                ScanComponent(component, graph, cache, settings);
 
                 if (i % batchSize == 0)
                 {
@@ -50,7 +50,10 @@ namespace DependencyAnalyzer.Editor.Scanners
             return graph;
         }
 
-        private static List<Component> CollectOpenSceneComponents(DependencyGraphData graph, DependencyCache cache)
+        private static List<Component> CollectOpenSceneComponents(
+            DependencyGraphData graph,
+            DependencyCache cache,
+            AnalyzerSettings settings)
         {
             var components = new List<Component>();
             for (var sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
@@ -68,6 +71,8 @@ namespace DependencyAnalyzer.Editor.Scanners
                     {
                         var gameObjectNode = CreateSceneObjectNode(gameObject, cache);
                         graph.AddOrUpdateNode(gameObjectNode);
+                        AddHierarchyEdge(gameObject, gameObjectNode, graph, cache);
+                        AddPrefabSourceDependency(gameObject, gameObjectNode, graph, cache, settings);
 
                         var attachedComponents = gameObject.GetComponents<Component>();
                         for (var componentIndex = 0; componentIndex < attachedComponents.Length; componentIndex++)
@@ -85,7 +90,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                                     gameObjectNode.Id,
                                     missingNode.Id,
                                     "Missing Component",
-                                    DependencyReferenceKind.SerializedProperty,
+                                    DependencyReferenceKind.Hierarchy,
                                     true));
                                 continue;
                             }
@@ -97,7 +102,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                                 gameObjectNode.Id,
                                 componentNode.Id,
                                 "Component",
-                                DependencyReferenceKind.SerializedProperty));
+                                DependencyReferenceKind.Hierarchy));
                         }
                     }
                 }
@@ -106,7 +111,11 @@ namespace DependencyAnalyzer.Editor.Scanners
             return components;
         }
 
-        private static void ScanComponent(Component component, DependencyGraphData graph, DependencyCache cache)
+        private static void ScanComponent(
+            Component component,
+            DependencyGraphData graph,
+            DependencyCache cache,
+            AnalyzerSettings settings)
         {
             var sourceNode = CreateSceneObjectNode(component, cache);
             graph.AddOrUpdateNode(sourceNode);
@@ -129,7 +138,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             var property = serializedObject.GetIterator();
             while (property.NextVisible(true))
             {
-                if (property.propertyType != SerializedPropertyType.ObjectReference || property.propertyPath == "m_Script")
+                if (!ShouldScanInspectorObjectReference(component, property))
                 {
                     continue;
                 }
@@ -137,7 +146,12 @@ namespace DependencyAnalyzer.Editor.Scanners
                 var referencedObject = property.objectReferenceValue;
                 if (referencedObject != null)
                 {
-                    var targetNode = CreateObjectReferenceNode(referencedObject, cache);
+                    var targetNode = CreateObjectReferenceNode(referencedObject, cache, settings);
+                    if (targetNode == null)
+                    {
+                        continue;
+                    }
+
                     graph.AddOrUpdateNode(targetNode);
                     graph.AddEdge(new DependencyEdgeData(
                         sourceNode.Id,
@@ -165,11 +179,93 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
         }
 
-        private static DependencyNodeData CreateObjectReferenceNode(UnityEngine.Object unityObject, DependencyCache cache)
+        private static bool ShouldScanInspectorObjectReference(Component component, SerializedProperty property)
+        {
+            if (property.propertyType != SerializedPropertyType.ObjectReference)
+            {
+                return false;
+            }
+
+            switch (property.propertyPath)
+            {
+                case "m_GameObject":
+                case "m_CorrespondingSourceObject":
+                case "m_PrefabInstance":
+                case "m_PrefabAsset":
+                case "m_PrefabParentObject":
+                case "m_PrefabInternal":
+                case "m_Father":
+                    return false;
+                case "m_Script":
+                    return component is MonoBehaviour;
+                default:
+                    return true;
+            }
+        }
+
+        private static void AddHierarchyEdge(
+            GameObject gameObject,
+            DependencyNodeData gameObjectNode,
+            DependencyGraphData graph,
+            DependencyCache cache)
+        {
+            var parent = gameObject.transform.parent;
+            if (parent == null)
+            {
+                return;
+            }
+
+            var parentNode = CreateSceneObjectNode(parent.gameObject, cache);
+            graph.AddOrUpdateNode(parentNode);
+            graph.AddEdge(new DependencyEdgeData(
+                parentNode.Id,
+                gameObjectNode.Id,
+                "Child",
+                DependencyReferenceKind.Hierarchy));
+        }
+
+        private static void AddPrefabSourceDependency(
+            GameObject gameObject,
+            DependencyNodeData gameObjectNode,
+            DependencyGraphData graph,
+            DependencyCache cache,
+            AnalyzerSettings settings)
+        {
+            if (PrefabUtility.GetNearestPrefabInstanceRoot(gameObject) != gameObject)
+            {
+                return;
+            }
+
+            var prefabAssetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(gameObject);
+            if (string.IsNullOrEmpty(prefabAssetPath)
+                || AssetDatabase.IsValidFolder(prefabAssetPath)
+                || settings.IsPathExcluded(prefabAssetPath))
+            {
+                return;
+            }
+
+            var prefabNode = AssetScanner.CreateAssetNode(prefabAssetPath, cache);
+            graph.AddOrUpdateNode(prefabNode);
+            graph.AddEdge(new DependencyEdgeData(
+                gameObjectNode.Id,
+                prefabNode.Id,
+                "Prefab Source",
+                DependencyReferenceKind.PrefabInstance));
+        }
+
+        private static DependencyNodeData CreateObjectReferenceNode(
+            UnityEngine.Object unityObject,
+            DependencyCache cache,
+            AnalyzerSettings settings)
         {
             var assetPath = AssetDatabase.GetAssetPath(unityObject);
             if (!string.IsNullOrEmpty(assetPath))
             {
+                if (AssetDatabase.IsValidFolder(assetPath) || settings.IsPathExcluded(assetPath))
+                {
+                    return null;
+                }
+
                 return AssetScanner.CreateAssetNode(assetPath, cache);
             }
 
@@ -204,7 +300,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 BuildObjectId("scene", unityObject, globalObjectId),
                 globalObjectId,
                 path,
-                unityObject.name,
+                GetDisplayName(unityObject),
                 type.Name,
                 type.FullName,
                 0L,
@@ -213,6 +309,21 @@ namespace DependencyAnalyzer.Editor.Scanners
                 unityObject is Component ? DependencyNodeKind.Component : DependencyNodeKind.SceneObject,
                 unityObject.GetInstanceID());
             return cache.Store(node);
+        }
+
+        private static string GetDisplayName(UnityEngine.Object unityObject)
+        {
+            if (unityObject is MonoBehaviour monoBehaviour)
+            {
+                return monoBehaviour.GetType().Name + " (Script)";
+            }
+
+            if (unityObject is Component component)
+            {
+                return component.GetType().Name;
+            }
+
+            return unityObject.name;
         }
 
         private static GlobalObjectId GetGlobalObjectId(UnityEngine.Object unityObject)

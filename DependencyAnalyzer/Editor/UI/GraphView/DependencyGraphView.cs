@@ -2,32 +2,64 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
-using UnityGraphView = UnityEditor.Experimental.GraphView.GraphView;
 
 namespace DependencyAnalyzer.Editor.UI.GraphView
 {
-    public sealed class DependencyGraphView : UnityGraphView
+    public sealed class DependencyGraphView : VisualElement
     {
+        private const float ColumnSpacing = 380f;
+        private const float RowSpacing = 134f;
+        private const float CanvasPadding = 40f;
+        private const float MinZoom = 0.35f;
+        private const float MaxZoom = 1.8f;
+
+        private readonly VisualElement contentLayer;
+        private readonly VisualElement edgeLayer;
+        private readonly VisualElement nodeLayer;
+        private readonly Label emptyStateLabel;
         private readonly Dictionary<string, CustomNodeView> nodeViews = new Dictionary<string, CustomNodeView>();
+        private readonly Dictionary<string, Rect> nodeRects = new Dictionary<string, Rect>();
         private readonly HashSet<string> expandedNodeIds = new HashSet<string>();
+
         private DependencyGraphData graph;
+        private Vector2 pan = new Vector2(24f, 24f);
+        private Vector2 lastMousePosition;
+        private bool isPanning;
+        private float zoom = 1f;
         private int initialDepth = 3;
 
         public DependencyGraphView()
         {
             AddToClassList("dependency-graph-view");
+            focusable = true;
             style.flexGrow = 1f;
-            SetupZoom(0.05f, 2.0f);
-            this.AddManipulator(new ContentDragger());
-            this.AddManipulator(new SelectionDragger());
-            this.AddManipulator(new RectangleSelector());
+            style.overflow = Overflow.Hidden;
 
-            var grid = new GridBackground();
-            Insert(0, grid);
-            grid.StretchToParentSize();
+            contentLayer = new VisualElement { name = "dependency-graph-content" };
+            contentLayer.AddToClassList("dependency-graph-content");
+            contentLayer.pickingMode = PickingMode.Position;
+            Add(contentLayer);
+
+            edgeLayer = new VisualElement { name = "dependency-edge-layer" };
+            edgeLayer.AddToClassList("dependency-edge-layer");
+            edgeLayer.pickingMode = PickingMode.Ignore;
+            contentLayer.Add(edgeLayer);
+
+            nodeLayer = new VisualElement { name = "dependency-node-layer" };
+            nodeLayer.AddToClassList("dependency-node-layer");
+            contentLayer.Add(nodeLayer);
+
+            emptyStateLabel = new Label("No scene dependencies to display");
+            emptyStateLabel.AddToClassList("dependency-empty-state");
+            Add(emptyStateLabel);
+
+            RegisterCallback<WheelEvent>(HandleWheel);
+            RegisterCallback<MouseDownEvent>(HandleMouseDown);
+            RegisterCallback<MouseMoveEvent>(HandleMouseMove);
+            RegisterCallback<MouseUpEvent>(HandleMouseUp);
+            RegisterCallback<MouseLeaveEvent>(_ => StopPanning());
         }
 
         public event Action<DependencyNodeData> NodeSelected;
@@ -37,6 +69,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             if (!ReferenceEquals(graph, graphData))
             {
                 expandedNodeIds.Clear();
+                ResetViewTransform();
             }
 
             graph = graphData;
@@ -59,13 +92,20 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private void Render()
         {
-            ClearGraphElements();
+            nodeLayer.Clear();
+            edgeLayer.Clear();
             nodeViews.Clear();
+            nodeRects.Clear();
 
             if (graph == null || graph.Nodes.Count == 0)
             {
+                emptyStateLabel.style.display = DisplayStyle.Flex;
+                SetCanvasSize(1f, 1f);
+                ApplyTransform();
                 return;
             }
+
+            emptyStateLabel.style.display = DisplayStyle.None;
 
             var depthByNodeId = new Dictionary<string, int>();
             var visibleNodeIds = BuildVisibleNodeSet(depthByNodeId);
@@ -75,18 +115,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 .ThenBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            LayoutNodes(visibleNodes, depthByNodeId);
-            LayoutEdges(visibleNodeIds);
-
-            schedule.Execute(() => FrameAll()).ExecuteLater(100);
-        }
-
-        private void ClearGraphElements()
-        {
-            foreach (var element in graphElements.ToList())
-            {
-                RemoveElement(element);
-            }
+            var canvasSize = LayoutNodes(visibleNodes, visibleNodeIds, depthByNodeId);
+            SetCanvasSize(canvasSize.x, canvasSize.y);
+            LayoutEdges(visibleNodeIds, canvasSize);
+            ApplyTransform();
         }
 
         private HashSet<string> BuildVisibleNodeSet(Dictionary<string, int> depthByNodeId)
@@ -141,54 +173,269 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private bool HasIncomingTraversalEdge(string nodeId)
         {
-            return graph.GetIncomingEdges(nodeId)
-                .Any(edge => edge.ReferenceKind != DependencyReferenceKind.AddressablesGroup);
+            return graph.GetIncomingEdges(nodeId).Any();
         }
 
-        private void LayoutNodes(IReadOnlyList<DependencyNodeData> visibleNodes, Dictionary<string, int> depthByNodeId)
+        private Vector2 LayoutNodes(
+            IReadOnlyList<DependencyNodeData> visibleNodes,
+            HashSet<string> visibleNodeIds,
+            Dictionary<string, int> depthByNodeId)
         {
-            var rowByDepth = new Dictionary<int, int>();
+            var rowByNodeId = new Dictionary<string, float>();
+            var visiting = new HashSet<string>();
+            var nextRow = 0f;
+            var maxDepth = 0;
+            var maxRow = 0f;
+            var roots = visibleNodes
+                .Where(node => !graph.GetIncomingEdges(node.Id).Any(edge => visibleNodeIds.Contains(edge.SourceNodeId)))
+                .OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (roots.Count == 0)
+            {
+                roots.AddRange(visibleNodes.OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase));
+            }
+
+            for (var i = 0; i < roots.Count; i++)
+            {
+                PlaceNode(roots[i].Id, visibleNodeIds, rowByNodeId, visiting, ref nextRow);
+            }
+
+            for (var i = 0; i < visibleNodes.Count; i++)
+            {
+                var node = visibleNodes[i];
+                if (!rowByNodeId.ContainsKey(node.Id))
+                {
+                    PlaceNode(node.Id, visibleNodeIds, rowByNodeId, visiting, ref nextRow);
+                }
+            }
+
             for (var i = 0; i < visibleNodes.Count; i++)
             {
                 var node = visibleNodes[i];
                 var depth = depthByNodeId[node.Id];
-                rowByDepth.TryGetValue(depth, out var row);
-                rowByDepth[depth] = row + 1;
+                var row = rowByNodeId[node.Id];
+                maxDepth = Mathf.Max(maxDepth, depth);
+                maxRow = Mathf.Max(maxRow, row);
 
-                var nodeView = new CustomNodeView(node);
+                var position = new Vector2(CanvasPadding + depth * ColumnSpacing, CanvasPadding + row * RowSpacing);
+                var nodeView = new CustomNodeView(node, HasHiddenChildren(node.Id, visibleNodeIds));
+                nodeView.SetGraphPosition(position);
                 nodeView.NodeSelected += HandleNodeSelected;
+
                 nodeViews.Add(node.Id, nodeView);
-                AddElement(nodeView);
-                nodeView.SetPosition(new Rect(40f + depth * 300f, 40f + row * 118f, 230f, 82f));
+                nodeRects.Add(node.Id, nodeView.GetGraphRect());
+                nodeLayer.Add(nodeView);
             }
+
+            return new Vector2(
+                CanvasPadding * 2f + (maxDepth + 1) * ColumnSpacing,
+                CanvasPadding * 2f + (maxRow + 1) * RowSpacing);
         }
 
-        private void LayoutEdges(HashSet<string> visibleNodeIds)
+        private float PlaceNode(
+            string nodeId,
+            HashSet<string> visibleNodeIds,
+            Dictionary<string, float> rowByNodeId,
+            HashSet<string> visiting,
+            ref float nextRow)
         {
-            foreach (var edge in graph.Edges)
+            if (rowByNodeId.TryGetValue(nodeId, out var placedRow))
             {
-                if (!visibleNodeIds.Contains(edge.SourceNodeId)
-                    || !visibleNodeIds.Contains(edge.TargetNodeId)
-                    || !nodeViews.TryGetValue(edge.SourceNodeId, out var source)
-                    || !nodeViews.TryGetValue(edge.TargetNodeId, out var target))
+                return placedRow;
+            }
+
+            if (!visiting.Add(nodeId))
+            {
+                var cycleRow = nextRow;
+                rowByNodeId[nodeId] = cycleRow;
+                nextRow += 1f;
+                return cycleRow;
+            }
+
+            var childRows = new List<float>();
+            var childEdges = GetVisibleOutgoingEdges(nodeId, visibleNodeIds);
+            for (var i = 0; i < childEdges.Count; i++)
+            {
+                var targetId = childEdges[i].TargetNodeId;
+                if (targetId == nodeId)
                 {
                     continue;
                 }
 
-                var edgeView = new CustomEdgeView(edge)
-                {
-                    output = source.OutputPort,
-                    input = target.InputPort
-                };
-                edgeView.output.Connect(edgeView);
-                edgeView.input.Connect(edgeView);
-                AddElement(edgeView);
+                childRows.Add(PlaceNode(targetId, visibleNodeIds, rowByNodeId, visiting, ref nextRow));
             }
+
+            float row;
+            if (childRows.Count == 0)
+            {
+                row = nextRow;
+                nextRow += 1f;
+            }
+            else
+            {
+                row = (childRows[0] + childRows[childRows.Count - 1]) * 0.5f;
+            }
+
+            visiting.Remove(nodeId);
+            rowByNodeId[nodeId] = row;
+            return row;
+        }
+
+        private void LayoutEdges(HashSet<string> visibleNodeIds, Vector2 canvasSize)
+        {
+            var visibleEdges = graph.Edges
+                .Where(edge => visibleNodeIds.Contains(edge.SourceNodeId)
+                    && visibleNodeIds.Contains(edge.TargetNodeId)
+                    && nodeRects.ContainsKey(edge.SourceNodeId)
+                    && nodeRects.ContainsKey(edge.TargetNodeId))
+                .OrderBy(edge => depthSort(edge.ReferenceKind))
+                .ThenBy(edge => edge.MemberName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            var totalBySource = visibleEdges
+                .GroupBy(edge => edge.SourceNodeId)
+                .ToDictionary(group => group.Key, group => group.Count());
+            var indexBySource = new Dictionary<string, int>();
+
+            for (var i = 0; i < visibleEdges.Count; i++)
+            {
+                var edge = visibleEdges[i];
+                if (!nodeRects.TryGetValue(edge.SourceNodeId, out var sourceRect)
+                    || !nodeRects.TryGetValue(edge.TargetNodeId, out var targetRect))
+                {
+                    continue;
+                }
+
+                indexBySource.TryGetValue(edge.SourceNodeId, out var edgeIndex);
+                indexBySource[edge.SourceNodeId] = edgeIndex + 1;
+                var total = totalBySource[edge.SourceNodeId];
+                var routeOffset = (edgeIndex - (total - 1) * 0.5f) * 10f;
+                var edgeView = new CustomEdgeView(edge);
+                edgeView.SetCanvasSize(canvasSize.x, canvasSize.y);
+                edgeView.SetEndpoints(sourceRect, targetRect, routeOffset);
+                edgeLayer.Add(edgeView);
+            }
+
+            int depthSort(DependencyReferenceKind kind)
+            {
+                return GetEdgeSortPriority(kind);
+            }
+        }
+
+        private List<DependencyEdgeData> GetVisibleOutgoingEdges(string nodeId, HashSet<string> visibleNodeIds)
+        {
+            return graph.GetOutgoingEdges(nodeId)
+                .Where(edge => visibleNodeIds.Contains(edge.TargetNodeId))
+                .OrderBy(edge => GetEdgeSortPriority(edge.ReferenceKind))
+                .ThenBy(edge => edge.MemberName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(edge => edge.TargetNodeId, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private bool HasHiddenChildren(string nodeId, HashSet<string> visibleNodeIds)
+        {
+            return graph.GetOutgoingEdges(nodeId).Any(edge => !visibleNodeIds.Contains(edge.TargetNodeId));
+        }
+
+        private static int GetEdgeSortPriority(DependencyReferenceKind kind)
+        {
+            switch (kind)
+            {
+                case DependencyReferenceKind.Hierarchy:
+                    return 0;
+                case DependencyReferenceKind.SerializedProperty:
+                    return 1;
+                case DependencyReferenceKind.PrefabInstance:
+                    return 2;
+                default:
+                    return 3;
+            }
+        }
+
+        private void SetCanvasSize(float width, float height)
+        {
+            contentLayer.style.width = Mathf.Max(1f, width);
+            contentLayer.style.height = Mathf.Max(1f, height);
+            edgeLayer.style.width = Mathf.Max(1f, width);
+            edgeLayer.style.height = Mathf.Max(1f, height);
+            nodeLayer.style.width = Mathf.Max(1f, width);
+            nodeLayer.style.height = Mathf.Max(1f, height);
+        }
+
+        private void ResetViewTransform()
+        {
+            pan = new Vector2(24f, 24f);
+            zoom = 1f;
+        }
+
+        private void ApplyTransform()
+        {
+            contentLayer.transform.position = new Vector3(pan.x, pan.y, 0f);
+            contentLayer.transform.scale = new Vector3(zoom, zoom, 1f);
         }
 
         private void HandleNodeSelected(DependencyNodeData node)
         {
             NodeSelected?.Invoke(node);
+        }
+
+        private void HandleWheel(WheelEvent evt)
+        {
+            var previousZoom = zoom;
+            var delta = evt.delta.y > 0f ? -0.08f : 0.08f;
+            zoom = Mathf.Clamp(zoom + delta, MinZoom, MaxZoom);
+            var pointer = evt.localMousePosition;
+            var graphPoint = (pointer - pan) / previousZoom;
+            pan = pointer - graphPoint * zoom;
+            ApplyTransform();
+            evt.StopPropagation();
+        }
+
+        private void HandleMouseDown(MouseDownEvent evt)
+        {
+            if (evt.button != 0 && evt.button != 2)
+            {
+                return;
+            }
+
+            isPanning = true;
+            lastMousePosition = evt.localMousePosition;
+            evt.StopPropagation();
+        }
+
+        private void HandleMouseMove(MouseMoveEvent evt)
+        {
+            if (!isPanning)
+            {
+                return;
+            }
+
+            var currentPosition = evt.localMousePosition;
+            pan += currentPosition - lastMousePosition;
+            lastMousePosition = currentPosition;
+            ApplyTransform();
+            evt.StopPropagation();
+        }
+
+        private void HandleMouseUp(MouseUpEvent evt)
+        {
+            if (!isPanning)
+            {
+                return;
+            }
+
+            StopPanning();
+            evt.StopPropagation();
+        }
+
+        private void StopPanning()
+        {
+            if (!isPanning)
+            {
+                return;
+            }
+
+            isPanning = false;
         }
 
         private readonly struct QueuedNode
