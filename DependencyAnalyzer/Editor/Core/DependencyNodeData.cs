@@ -28,7 +28,8 @@ namespace DependencyAnalyzer.Editor.Core
             long fileSizeBytes,
             IEnumerable<string> labels,
             string iconContentName,
-            DependencyNodeKind kind)
+            DependencyNodeKind kind,
+            int instanceId = 0)
         {
             Id = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString("N") : id;
             GlobalObjectId = globalObjectId;
@@ -40,6 +41,7 @@ namespace DependencyAnalyzer.Editor.Core
             assetLabels = labels == null ? new List<string>() : new List<string>(labels);
             IconContentName = string.IsNullOrEmpty(iconContentName) ? "DefaultAsset Icon" : iconContentName;
             Kind = kind;
+            InstanceId = instanceId;
         }
 
         public string Id { get; }
@@ -52,6 +54,7 @@ namespace DependencyAnalyzer.Editor.Core
         public IReadOnlyList<string> AssetLabels => assetLabels;
         public string IconContentName { get; }
         public DependencyNodeKind Kind { get; }
+        public int InstanceId { get; }
         public bool HasMissingReferences { get; private set; }
         public int DependencyCount { get; private set; }
         public int UsedByCount { get; private set; }

@@ -64,7 +64,9 @@ namespace DependencyAnalyzer.Editor.Utils
                 return EditorGUIUtility.IconContent("DefaultAsset Icon").image;
             }
 
-            if (!string.IsNullOrEmpty(node.Path) && !node.Path.Contains("::"))
+            if (!string.IsNullOrEmpty(node.Path)
+                && node.Path.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase)
+                && !node.Path.Contains("::"))
             {
                 var cachedIcon = AssetDatabase.GetCachedIcon(node.Path);
                 if (cachedIcon != null)

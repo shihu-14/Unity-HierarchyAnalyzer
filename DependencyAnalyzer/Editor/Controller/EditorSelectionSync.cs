@@ -32,6 +32,15 @@ namespace DependencyAnalyzer.Editor.Controller
                 return target;
             }
 
+            if (node.InstanceId != 0)
+            {
+                target = EditorUtility.InstanceIDToObject(node.InstanceId);
+                if (target != null)
+                {
+                    return target;
+                }
+            }
+
             if (!string.IsNullOrEmpty(node.Path) && !node.Path.Contains("::"))
             {
                 return AssetDatabase.LoadMainAssetAtPath(node.Path);

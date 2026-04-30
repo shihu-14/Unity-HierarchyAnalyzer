@@ -34,6 +34,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         public void Populate(DependencyGraphData graphData, int depth)
         {
+            if (!ReferenceEquals(graph, graphData))
+            {
+                expandedNodeIds.Clear();
+            }
+
             graph = graphData;
             initialDepth = Mathf.Clamp(depth, 3, 4);
             Render();
@@ -89,7 +94,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var visible = new HashSet<string>();
             var queue = new Queue<QueuedNode>();
             var roots = graph.Nodes
-                .Where(node => !graph.GetIncomingEdges(node.Id).Any())
+                .Where(node => !HasIncomingTraversalEdge(node.Id))
                 .OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
@@ -132,6 +137,12 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
 
             return visible;
+        }
+
+        private bool HasIncomingTraversalEdge(string nodeId)
+        {
+            return graph.GetIncomingEdges(nodeId)
+                .Any(edge => edge.ReferenceKind != DependencyReferenceKind.AddressablesGroup);
         }
 
         private void LayoutNodes(IReadOnlyList<DependencyNodeData> visibleNodes, Dictionary<string, int> depthByNodeId)

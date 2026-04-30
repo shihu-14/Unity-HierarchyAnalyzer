@@ -120,10 +120,8 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             var property = serializedObject.GetIterator();
-            var enterChildren = true;
-            while (property.NextVisible(enterChildren))
+            while (property.NextVisible(true))
             {
-                enterChildren = false;
                 if (property.propertyType != SerializedPropertyType.ObjectReference || property.propertyPath == "m_Script")
                 {
                     continue;
@@ -185,7 +183,8 @@ namespace DependencyAnalyzer.Editor.Scanners
                 0L,
                 Array.Empty<string>(),
                 IconUtility.GetIconContentName(type),
-                DependencyNodeKind.SceneObject);
+                DependencyNodeKind.SceneObject,
+                unityObject.GetInstanceID());
             return cache.Store(node);
         }
 
@@ -204,7 +203,8 @@ namespace DependencyAnalyzer.Editor.Scanners
                 0L,
                 Array.Empty<string>(),
                 IconUtility.GetIconContentName(type),
-                unityObject is Component ? DependencyNodeKind.Component : DependencyNodeKind.SceneObject);
+                unityObject is Component ? DependencyNodeKind.Component : DependencyNodeKind.SceneObject,
+                unityObject.GetInstanceID());
             return cache.Store(node);
         }
 

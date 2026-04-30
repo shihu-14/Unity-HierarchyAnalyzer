@@ -43,6 +43,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 if (IsSupportedStaticAsset(assetPath))
                 {
                     ScanStaticAsset(assetPath, graph, cache, settings);
+                    ScanSerializedAssetReferences(assetPath, graph, cache, settings);
                 }
 
                 if (assetPath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
@@ -110,6 +111,83 @@ namespace DependencyAnalyzer.Editor.Scanners
                     targetNode.Id,
                     "AssetDatabase.GetDependencies",
                     DependencyReferenceKind.StaticAsset));
+            }
+        }
+
+        private static void ScanSerializedAssetReferences(
+            string assetPath,
+            DependencyGraphData graph,
+            DependencyCache cache,
+            AnalyzerSettings settings)
+        {
+            var sourceNode = CreateAssetNode(assetPath, cache);
+            graph.AddOrUpdateNode(sourceNode);
+
+            var serializedAssets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+            for (var assetIndex = 0; assetIndex < serializedAssets.Length; assetIndex++)
+            {
+                var serializedAsset = serializedAssets[assetIndex];
+                if (!CanScanSerializedAsset(serializedAsset))
+                {
+                    continue;
+                }
+
+                SerializedObject serializedObject;
+                try
+                {
+                    serializedObject = new SerializedObject(serializedAsset);
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+
+                var property = serializedObject.GetIterator();
+                while (property.NextVisible(true))
+                {
+                    if (property.propertyType != SerializedPropertyType.ObjectReference || property.propertyPath == "m_Script")
+                    {
+                        continue;
+                    }
+
+                    var referencedObject = property.objectReferenceValue;
+                    if (referencedObject != null)
+                    {
+                        var targetPath = AssetDatabase.GetAssetPath(referencedObject);
+                        if (string.IsNullOrEmpty(targetPath)
+                            || string.Equals(targetPath, assetPath, StringComparison.OrdinalIgnoreCase)
+                            || AssetDatabase.IsValidFolder(targetPath)
+                            || settings.IsPathExcluded(targetPath))
+                        {
+                            continue;
+                        }
+
+                        var targetNode = CreateAssetNode(targetPath, cache);
+                        graph.AddOrUpdateNode(targetNode);
+                        graph.AddEdge(new DependencyEdgeData(
+                            sourceNode.Id,
+                            targetNode.Id,
+                            serializedAsset.GetType().Name + "." + property.propertyPath,
+                            DependencyReferenceKind.SerializedProperty));
+                        continue;
+                    }
+
+                    if (property.objectReferenceInstanceIDValue != 0)
+                    {
+                        var missingNode = CreateMissingNode(
+                            "missing:asset-property:" + sourceNode.Id + ":" + property.propertyPath + ":" + property.objectReferenceInstanceIDValue,
+                            assetPath,
+                            property.propertyPath);
+                        sourceNode.MarkMissingReferences();
+                        graph.AddOrUpdateNode(missingNode);
+                        graph.AddEdge(new DependencyEdgeData(
+                            sourceNode.Id,
+                            missingNode.Id,
+                            serializedAsset.GetType().Name + "." + property.propertyPath,
+                            DependencyReferenceKind.SerializedProperty,
+                            true));
+                    }
+                }
             }
         }
 
@@ -247,7 +325,8 @@ namespace DependencyAnalyzer.Editor.Scanners
                 GetFileSize(assetPath),
                 labels,
                 GetIconContentName(assetPath, type),
-                DependencyNodeKind.Asset);
+                DependencyNodeKind.Asset,
+                mainAsset != null ? mainAsset.GetInstanceID() : 0);
 
             return cache.Store(node);
         }
@@ -291,6 +370,17 @@ namespace DependencyAnalyzer.Editor.Scanners
                 .Replace("\\", "/")
                 .Trim()
                 .TrimStart('/');
+        }
+
+        private static bool CanScanSerializedAsset(UnityEngine.Object serializedAsset)
+        {
+            if (serializedAsset == null || serializedAsset is DefaultAsset)
+            {
+                return false;
+            }
+
+            var type = serializedAsset.GetType();
+            return type.Name != "MonoScript";
         }
 
         private static bool IsModelMeshPath(string assetPath)
