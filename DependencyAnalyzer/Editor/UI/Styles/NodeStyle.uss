@@ -20,12 +20,6 @@
     margin-right: 6px;
 }
 
-.dependency-toolbar IntegerField {
-    width: 118px;
-    margin-left: 8px;
-    margin-right: 12px;
-}
-
 .dependency-status-label {
     color: #d7dae0;
     -unity-text-align: middle-left;
@@ -69,6 +63,12 @@
 }
 
 .dependency-edge-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.dependency-animation-layer {
     position: absolute;
     left: 0;
     top: 0;
@@ -129,21 +129,45 @@
 }
 
 .dependency-node:hover {
-    border-top-color: #7fa6cf;
-    border-right-color: #7fa6cf;
-    border-bottom-color: #7fa6cf;
-    border-left-color: #7fa6cf;
+    border-top-color: #8fa1b3;
+    border-right-color: #8fa1b3;
+    border-bottom-color: #8fa1b3;
+    border-left-color: #8fa1b3;
 }
 
-.dependency-node--focused {
-    border-top-width: 3px;
-    border-right-width: 3px;
-    border-bottom-width: 3px;
-    border-left-width: 3px;
-    border-top-color: #ffffff;
-    border-right-color: #a9d4ff;
-    border-bottom-color: #7fb7ef;
-    border-left-color: #ffffff;
+.dependency-node-flash-ring {
+    position: absolute;
+    left: -5px;
+    top: -5px;
+    border-top-width: 4px;
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    border-left-width: 4px;
+    border-top-color: #fff6a8;
+    border-right-color: #ffe36a;
+    border-bottom-color: #ffb84f;
+    border-left-color: #fff6a8;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    background-color: rgba(255, 240, 106, 0);
+}
+
+.dependency-node-ghost {
+    border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+    border-top-color: rgba(255, 240, 106, 0.72);
+    border-right-color: rgba(255, 184, 79, 0.5);
+    border-bottom-color: rgba(255, 184, 79, 0.36);
+    border-left-color: rgba(255, 240, 106, 0.72);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    background-color: rgba(80, 86, 94, 0.5);
 }
 
 .dependency-node-accent {
@@ -184,9 +208,117 @@
     top: 6px;
 }
 
-.dependency-node--expandable {
-    border-top-color: #87add2;
-    border-left-color: #87add2;
+.dependency-node--prefab .dependency-node-stack-shadow {
+    border-top-color: rgba(82, 167, 255, 0.52);
+    border-right-color: rgba(82, 167, 255, 0.26);
+    border-bottom-color: rgba(82, 167, 255, 0.2);
+    border-left-color: rgba(82, 167, 255, 0.52);
+    background-color: rgba(19, 43, 74, 0.5);
+}
+
+.dependency-node--material .dependency-node-stack-shadow {
+    border-top-color: rgba(208, 170, 85, 0.52);
+    border-right-color: rgba(208, 170, 85, 0.26);
+    border-bottom-color: rgba(208, 170, 85, 0.2);
+    border-left-color: rgba(208, 170, 85, 0.52);
+    background-color: rgba(63, 52, 33, 0.5);
+}
+
+.dependency-node--texture .dependency-node-stack-shadow {
+    border-top-color: rgba(94, 182, 132, 0.52);
+    border-right-color: rgba(94, 182, 132, 0.26);
+    border-bottom-color: rgba(94, 182, 132, 0.2);
+    border-left-color: rgba(94, 182, 132, 0.52);
+    background-color: rgba(36, 59, 49, 0.5);
+}
+
+.dependency-node--audio .dependency-node-stack-shadow {
+    border-top-color: rgba(177, 120, 198, 0.52);
+    border-right-color: rgba(177, 120, 198, 0.26);
+    border-bottom-color: rgba(177, 120, 198, 0.2);
+    border-left-color: rgba(177, 120, 198, 0.52);
+    background-color: rgba(56, 43, 68, 0.5);
+}
+
+.dependency-node--mesh .dependency-node-stack-shadow {
+    border-top-color: rgba(166, 155, 142, 0.52);
+    border-right-color: rgba(166, 155, 142, 0.26);
+    border-bottom-color: rgba(166, 155, 142, 0.2);
+    border-left-color: rgba(166, 155, 142, 0.52);
+    background-color: rgba(54, 50, 47, 0.5);
+}
+
+.dependency-node--scriptable-object .dependency-node-stack-shadow {
+    border-top-color: rgba(196, 130, 103, 0.52);
+    border-right-color: rgba(196, 130, 103, 0.26);
+    border-bottom-color: rgba(196, 130, 103, 0.2);
+    border-left-color: rgba(196, 130, 103, 0.52);
+    background-color: rgba(61, 45, 41, 0.5);
+}
+
+.dependency-node--scene .dependency-node-stack-shadow,
+.dependency-node--object .dependency-node-stack-shadow {
+    border-top-color: rgba(118, 168, 197, 0.52);
+    border-right-color: rgba(118, 168, 197, 0.26);
+    border-bottom-color: rgba(118, 168, 197, 0.2);
+    border-left-color: rgba(118, 168, 197, 0.52);
+    background-color: rgba(38, 52, 61, 0.5);
+}
+
+.dependency-node--component .dependency-node-stack-shadow {
+    border-top-color: rgba(158, 211, 132, 0.52);
+    border-right-color: rgba(158, 211, 132, 0.26);
+    border-bottom-color: rgba(158, 211, 132, 0.2);
+    border-left-color: rgba(158, 211, 132, 0.52);
+    background-color: rgba(41, 58, 39, 0.5);
+}
+
+.dependency-node--csharp .dependency-node-stack-shadow {
+    border-top-color: rgba(105, 183, 121, 0.52);
+    border-right-color: rgba(105, 183, 121, 0.26);
+    border-bottom-color: rgba(105, 183, 121, 0.2);
+    border-left-color: rgba(105, 183, 121, 0.52);
+    background-color: rgba(36, 58, 42, 0.5);
+}
+
+.dependency-node--camera .dependency-node-stack-shadow {
+    border-top-color: rgba(107, 184, 214, 0.52);
+    border-right-color: rgba(107, 184, 214, 0.26);
+    border-bottom-color: rgba(107, 184, 214, 0.2);
+    border-left-color: rgba(107, 184, 214, 0.52);
+    background-color: rgba(35, 57, 68, 0.5);
+}
+
+.dependency-node--canvas .dependency-node-stack-shadow {
+    border-top-color: rgba(226, 104, 173, 0.52);
+    border-right-color: rgba(226, 104, 173, 0.26);
+    border-bottom-color: rgba(226, 104, 173, 0.2);
+    border-left-color: rgba(226, 104, 173, 0.52);
+    background-color: rgba(64, 33, 56, 0.5);
+}
+
+.dependency-node--light .dependency-node-stack-shadow {
+    border-top-color: rgba(217, 199, 102, 0.52);
+    border-right-color: rgba(217, 199, 102, 0.26);
+    border-bottom-color: rgba(217, 199, 102, 0.2);
+    border-left-color: rgba(217, 199, 102, 0.52);
+    background-color: rgba(66, 59, 35, 0.5);
+}
+
+.dependency-node--missing .dependency-node-stack-shadow {
+    border-top-color: rgba(223, 100, 100, 0.52);
+    border-right-color: rgba(223, 100, 100, 0.26);
+    border-bottom-color: rgba(223, 100, 100, 0.2);
+    border-left-color: rgba(223, 100, 100, 0.52);
+    background-color: rgba(58, 40, 43, 0.5);
+}
+
+.dependency-node--default .dependency-node-stack-shadow {
+    border-top-color: rgba(143, 161, 179, 0.52);
+    border-right-color: rgba(143, 161, 179, 0.26);
+    border-bottom-color: rgba(143, 161, 179, 0.2);
+    border-left-color: rgba(143, 161, 179, 0.52);
+    background-color: rgba(44, 50, 57, 0.5);
 }
 
 .dependency-node--impact-medium {
@@ -273,6 +405,71 @@
     color: #ffffff;
     font-size: 10px;
     -unity-text-align: middle-center;
+}
+
+.dependency-node-toggle {
+    min-width: 22px;
+    height: 18px;
+    margin-left: 4px;
+    padding-left: 0;
+    padding-right: 0;
+    border-top-left-radius: 9px;
+    border-top-right-radius: 9px;
+    border-bottom-left-radius: 9px;
+    border-bottom-right-radius: 9px;
+    background-color: rgba(230, 238, 247, 0.16);
+    color: #ffffff;
+    font-size: 12px;
+    -unity-text-align: middle-center;
+}
+
+.dependency-node-toggle:hover {
+    background-color: rgba(230, 238, 247, 0.28);
+}
+
+.dependency-node-menu-toggle {
+    min-width: 26px;
+    height: 18px;
+    margin-left: 4px;
+    padding-left: 0;
+    padding-right: 0;
+    border-top-left-radius: 9px;
+    border-top-right-radius: 9px;
+    border-bottom-left-radius: 9px;
+    border-bottom-right-radius: 9px;
+    background-color: rgba(208, 170, 85, 0.22);
+    color: #ffd66f;
+    font-size: 10px;
+    -unity-text-align: middle-center;
+}
+
+.dependency-node-menu-toggle:hover,
+.dependency-node-menu-toggle--expanded {
+    background-color: rgba(208, 170, 85, 0.42);
+    color: #ffffff;
+}
+
+.dependency-node-parent-jump {
+    position: absolute;
+    left: -10px;
+    top: 34px;
+    width: 20px;
+    height: 24px;
+    padding-left: 0;
+    padding-right: 0;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    background-color: rgba(18, 22, 27, 0.9);
+    color: #dce9f7;
+    font-size: 11px;
+    -unity-text-align: middle-center;
+}
+
+.dependency-node-parent-jump:hover {
+    background-color: rgba(114, 168, 192, 0.9);
+    color: #10161b;
 }
 
 .dependency-node-warning {
@@ -371,6 +568,14 @@
     background-color: #233944;
 }
 
+.dependency-node--canvas .dependency-node-accent {
+    background-color: #e268ad;
+}
+
+.dependency-node--canvas {
+    background-color: #402138;
+}
+
 .dependency-node--light .dependency-node-accent {
     background-color: #d9c766;
 }
@@ -389,4 +594,103 @@
 
 .dependency-node--default .dependency-node-accent {
     background-color: #8fa1b3;
+}
+
+.dependency-node--prefab:hover {
+    border-top-color: #52a7ff;
+    border-right-color: #52a7ff;
+    border-bottom-color: #52a7ff;
+    border-left-color: #52a7ff;
+}
+
+.dependency-node--material:hover {
+    border-top-color: #d0aa55;
+    border-right-color: #d0aa55;
+    border-bottom-color: #d0aa55;
+    border-left-color: #d0aa55;
+}
+
+.dependency-node--texture:hover {
+    border-top-color: #5eb684;
+    border-right-color: #5eb684;
+    border-bottom-color: #5eb684;
+    border-left-color: #5eb684;
+}
+
+.dependency-node--audio:hover {
+    border-top-color: #b178c6;
+    border-right-color: #b178c6;
+    border-bottom-color: #b178c6;
+    border-left-color: #b178c6;
+}
+
+.dependency-node--mesh:hover {
+    border-top-color: #a69b8e;
+    border-right-color: #a69b8e;
+    border-bottom-color: #a69b8e;
+    border-left-color: #a69b8e;
+}
+
+.dependency-node--scriptable-object:hover {
+    border-top-color: #c48267;
+    border-right-color: #c48267;
+    border-bottom-color: #c48267;
+    border-left-color: #c48267;
+}
+
+.dependency-node--object:hover,
+.dependency-node--scene:hover {
+    border-top-color: #76a8c5;
+    border-right-color: #76a8c5;
+    border-bottom-color: #76a8c5;
+    border-left-color: #76a8c5;
+}
+
+.dependency-node--component:hover {
+    border-top-color: #9ed384;
+    border-right-color: #9ed384;
+    border-bottom-color: #9ed384;
+    border-left-color: #9ed384;
+}
+
+.dependency-node--csharp:hover {
+    border-top-color: #69b779;
+    border-right-color: #69b779;
+    border-bottom-color: #69b779;
+    border-left-color: #69b779;
+}
+
+.dependency-node--camera:hover {
+    border-top-color: #6bb8d6;
+    border-right-color: #6bb8d6;
+    border-bottom-color: #6bb8d6;
+    border-left-color: #6bb8d6;
+}
+
+.dependency-node--canvas:hover {
+    border-top-color: #e268ad;
+    border-right-color: #e268ad;
+    border-bottom-color: #e268ad;
+    border-left-color: #e268ad;
+}
+
+.dependency-node--light:hover {
+    border-top-color: #d9c766;
+    border-right-color: #d9c766;
+    border-bottom-color: #d9c766;
+    border-left-color: #d9c766;
+}
+
+.dependency-node--missing:hover {
+    border-top-color: #df6464;
+    border-right-color: #df6464;
+    border-bottom-color: #df6464;
+    border-left-color: #df6464;
+}
+
+.dependency-node--default:hover {
+    border-top-color: #8fa1b3;
+    border-right-color: #8fa1b3;
+    border-bottom-color: #8fa1b3;
+    border-left-color: #8fa1b3;
 }

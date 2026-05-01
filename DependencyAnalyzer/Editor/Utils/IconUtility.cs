@@ -24,6 +24,11 @@ namespace DependencyAnalyzer.Editor.Utils
                 return "Camera Icon";
             }
 
+            if (typeof(Canvas).IsAssignableFrom(type))
+            {
+                return "Canvas Icon";
+            }
+
             if (typeof(Light).IsAssignableFrom(type))
             {
                 return "Light Icon";
@@ -122,6 +127,11 @@ namespace DependencyAnalyzer.Editor.Utils
             if (typeName.Contains("Camera"))
             {
                 return "dependency-node--camera";
+            }
+
+            if (typeName.Contains("Canvas"))
+            {
+                return "dependency-node--canvas";
             }
 
             if (string.Equals(node.IconContentName, "cs Script Icon", StringComparison.Ordinal))

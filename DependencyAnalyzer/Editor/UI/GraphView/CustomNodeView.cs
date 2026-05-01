@@ -8,14 +8,27 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 {
     public sealed class CustomNodeView : VisualElement
     {
-        public const float NodeWidth = 260f;
-        public const float NodeHeight = 92f;
+        public const float NodeWidth = 240f;
+        public const float NodeHeight = 72f;
 
         private const float DragThreshold = 3f;
-        private const float MaxExtraWidth = 98f;
-        private const float MaxExtraHeight = 42f;
+        private const float MinimumNodeScale = 0.58f;
+        private const float MaxExtraWidth = 76f;
+        private const float MaxExtraHeight = 24f;
+        private const float NameFontSize = 12f;
+        private const float TypeFontSize = 10f;
+        private const float BadgeFontSize = 10f;
+        private const float ToggleFontSize = 12f;
+        private const float ParentJumpFontSize = 11f;
 
         private readonly Func<float> zoomProvider;
+        private readonly bool canToggleChildren;
+        private readonly bool isExpanded;
+        private readonly bool hasMenuChildren;
+        private readonly bool isMenuExpanded;
+        private readonly bool hasParent;
+        private readonly bool hasPropagatedMissingReference;
+        private readonly float nodeScale;
         private readonly float nodeWidth;
         private readonly float nodeHeight;
         private Vector2 graphPosition;
@@ -24,13 +37,31 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private bool isDragging;
         private bool hasDragged;
 
-        public CustomNodeView(string viewId, DependencyNodeData data, bool hasHiddenChildren, Func<float> zoomProvider)
+        public CustomNodeView(
+            string viewId,
+            DependencyNodeData data,
+            bool hasHiddenChildren,
+            bool canToggleChildren,
+            bool isExpanded,
+            bool hasMenuChildren,
+            bool isMenuExpanded,
+            bool hasParent,
+            bool hasPropagatedMissingReference,
+            float sizeScale,
+            Func<float> zoomProvider)
         {
             ViewId = viewId;
             Data = data;
             HasHiddenChildren = hasHiddenChildren;
+            this.canToggleChildren = canToggleChildren;
+            this.isExpanded = isExpanded;
+            this.hasMenuChildren = hasMenuChildren;
+            this.isMenuExpanded = isMenuExpanded;
+            this.hasParent = hasParent;
+            this.hasPropagatedMissingReference = hasPropagatedMissingReference;
             this.zoomProvider = zoomProvider;
-            var preferredSize = GetPreferredSize(data);
+            nodeScale = Mathf.Clamp(sizeScale, MinimumNodeScale, 1f);
+            var preferredSize = GetPreferredSize(data, sizeScale);
             nodeWidth = preferredSize.x;
             nodeHeight = preferredSize.y;
             pickingMode = PickingMode.Position;
@@ -57,8 +88,12 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         public string ViewId { get; }
         public DependencyNodeData Data { get; }
         public bool HasHiddenChildren { get; }
+        public bool IsExpanded => isExpanded;
         public event Action<DependencyNodeData> NodeSelected;
         public event Action<CustomNodeView, Vector2> NodeMoved;
+        public event Action<CustomNodeView> ToggleRequested;
+        public event Action<CustomNodeView> MenuToggleRequested;
+        public event Action<CustomNodeView> ParentJumpRequested;
 
         public void SetGraphPosition(Vector2 position)
         {
@@ -74,11 +109,17 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         public static Vector2 GetPreferredSize(DependencyNodeData data)
         {
+            return GetPreferredSize(data, 1f);
+        }
+
+        public static Vector2 GetPreferredSize(DependencyNodeData data, float sizeScale)
+        {
             var score = GetInfluenceScore(data);
             var ratio = Mathf.Clamp01(score / 18f);
+            var scale = Mathf.Clamp(sizeScale, MinimumNodeScale, 1f);
             return new Vector2(
-                NodeWidth + Mathf.Round(MaxExtraWidth * ratio),
-                NodeHeight + Mathf.Round(MaxExtraHeight * ratio));
+                Mathf.Round((NodeWidth + Mathf.Round(MaxExtraWidth * ratio)) * scale),
+                Mathf.Round((NodeHeight + Mathf.Round(MaxExtraHeight * ratio)) * scale));
         }
 
         private void BuildContent()
@@ -106,49 +147,79 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             var header = new VisualElement();
             header.AddToClassList("dependency-node-header");
+            header.style.height = nodeHeight;
+            header.style.paddingLeft = Mathf.Round(Mathf.Clamp(13f * nodeScale, 6f, 13f));
+            header.style.paddingRight = Mathf.Round(Mathf.Clamp(7f * nodeScale, 4f, 7f));
+            header.style.paddingTop = Mathf.Round(Mathf.Clamp(6f * nodeScale, 2f, 6f));
 
             var icon = new Image { image = IconUtility.GetIcon(Data) };
             icon.AddToClassList("dependency-node-icon");
+            var iconSize = Mathf.Round(Mathf.Clamp(24f * nodeScale, 15f, 24f));
+            icon.style.width = iconSize;
+            icon.style.height = iconSize;
+            icon.style.marginRight = Mathf.Round(Mathf.Clamp(8f * nodeScale, 4f, 8f));
             header.Add(icon);
 
             var titleStack = new VisualElement();
             titleStack.AddToClassList("dependency-node-title-stack");
+            titleStack.style.flexShrink = 1f;
 
             var nameLabel = new Label(Data.DisplayName);
             nameLabel.AddToClassList("dependency-node-name");
+            var nameFontSize = NameFontSize;
+            nameLabel.style.fontSize = nameFontSize;
+            nameLabel.style.height = Mathf.Round(nameFontSize + 4f);
             titleStack.Add(nameLabel);
 
             var typeLabel = new Label(Data.TypeName);
             typeLabel.AddToClassList("dependency-node-type");
+            var typeFontSize = TypeFontSize;
+            typeLabel.style.fontSize = typeFontSize;
+            typeLabel.style.height = Mathf.Round(typeFontSize + 3f);
+            typeLabel.style.marginTop = Mathf.Round(Mathf.Clamp(2f * nodeScale, 0f, 2f));
             titleStack.Add(typeLabel);
 
             header.Add(titleStack);
 
             var badgeContainer = new VisualElement();
             badgeContainer.AddToClassList("dependency-node-badges");
+            badgeContainer.style.marginLeft = Mathf.Round(Mathf.Clamp(6f * nodeScale, 2f, 6f));
+            badgeContainer.style.flexShrink = 0f;
 
-            if (Data.HasMissingReferences || Data.Kind == DependencyNodeKind.MissingReference)
+            if (Data.HasMissingReferences || hasPropagatedMissingReference || Data.Kind == DependencyNodeKind.MissingReference)
             {
                 var warningIcon = new Image { image = IconUtility.GetWarningIcon() };
                 warningIcon.AddToClassList("dependency-node-warning");
+                var warningSize = Mathf.Round(Mathf.Clamp(16f * nodeScale, 11f, 16f));
+                warningIcon.style.width = warningSize;
+                warningIcon.style.height = warningSize;
+                warningIcon.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
+                warningIcon.tooltip = hasPropagatedMissingReference
+                    ? "Hidden child contains a missing reference"
+                    : "Missing reference";
                 badgeContainer.Add(warningIcon);
             }
 
-            badgeContainer.Add(CreateBadge(Data.DependencyCount.ToString(), "Dependencies"));
-            badgeContainer.Add(CreateBadge(Data.UsedByCount.ToString(), "Used By"));
-            if (HasHiddenChildren)
+            badgeContainer.Add(CreateBadge(Data.DependencyCount.ToString(), "Dependencies", nodeScale));
+            badgeContainer.Add(CreateBadge(Data.UsedByCount.ToString(), "Used By", nodeScale));
+            if (canToggleChildren)
             {
-                badgeContainer.Add(CreateBadge("+", "Click to expand children"));
+                badgeContainer.Add(CreateToggleButton());
+            }
+
+            if (hasMenuChildren)
+            {
+                badgeContainer.Add(CreateMenuToggleButton());
             }
 
             header.Add(badgeContainer);
 
             Add(header);
 
-            var pathLabel = new Label(Data.Path);
-            pathLabel.AddToClassList("dependency-node-path");
-            pathLabel.style.height = Mathf.Max(32f, nodeHeight - 60f);
-            Add(pathLabel);
+            if (hasParent)
+            {
+                Add(CreateParentJumpButton());
+            }
         }
 
         private static int GetInfluenceScore(DependencyNodeData data)
@@ -179,10 +250,89 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private static Label CreateBadge(string text, string tooltipText)
         {
+            return CreateBadge(text, tooltipText, 1f);
+        }
+
+        private static Label CreateBadge(string text, string tooltipText, float scale)
+        {
             var badge = new Label(text);
             badge.tooltip = tooltipText;
             badge.AddToClassList("dependency-node-badge");
+            badge.style.minWidth = Mathf.Round(Mathf.Clamp(20f * scale, 14f, 20f));
+            badge.style.height = Mathf.Round(Mathf.Clamp(17f * scale, 13f, 17f));
+            badge.style.paddingLeft = Mathf.Round(Mathf.Clamp(5f * scale, 2f, 5f));
+            badge.style.paddingRight = Mathf.Round(Mathf.Clamp(5f * scale, 2f, 5f));
+            badge.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * scale, 2f, 4f));
+            badge.style.fontSize = BadgeFontSize;
             return badge;
+        }
+
+        private Label CreateToggleButton()
+        {
+            var button = new Label(isExpanded ? "-" : "+");
+            button.tooltip = isExpanded ? "Collapse children" : "Expand children";
+            button.AddToClassList("dependency-node-toggle");
+            button.style.minWidth = Mathf.Round(Mathf.Clamp(22f * nodeScale, 15f, 22f));
+            button.style.height = Mathf.Round(Mathf.Clamp(18f * nodeScale, 13f, 18f));
+            button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
+            button.style.fontSize = ToggleFontSize;
+            button.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                if (evt.button == 0)
+                {
+                    ToggleRequested?.Invoke(this);
+                }
+
+                evt.StopPropagation();
+            });
+            return button;
+        }
+
+        private Label CreateMenuToggleButton()
+        {
+            var button = new Label("•••");
+            button.tooltip = isMenuExpanded ? "Hide inspector references" : "Show inspector references";
+            button.AddToClassList("dependency-node-menu-toggle");
+            if (isMenuExpanded)
+            {
+                button.AddToClassList("dependency-node-menu-toggle--expanded");
+            }
+
+            button.style.minWidth = Mathf.Round(Mathf.Clamp(26f * nodeScale, 18f, 26f));
+            button.style.height = Mathf.Round(Mathf.Clamp(18f * nodeScale, 13f, 18f));
+            button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
+            button.style.fontSize = BadgeFontSize;
+            button.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                if (evt.button == 0)
+                {
+                    MenuToggleRequested?.Invoke(this);
+                }
+
+                evt.StopPropagation();
+            });
+            return button;
+        }
+
+        private Label CreateParentJumpButton()
+        {
+            var button = new Label("<");
+            button.tooltip = "Jump to parent node";
+            button.AddToClassList("dependency-node-parent-jump");
+            button.style.top = Mathf.Round(Mathf.Clamp(34f * nodeScale, 20f, 34f));
+            button.style.width = Mathf.Round(Mathf.Clamp(20f * nodeScale, 15f, 20f));
+            button.style.height = Mathf.Round(Mathf.Clamp(24f * nodeScale, 16f, 24f));
+            button.style.fontSize = ParentJumpFontSize;
+            button.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                if (evt.button == 0)
+                {
+                    ParentJumpRequested?.Invoke(this);
+                }
+
+                evt.StopPropagation();
+            });
+            return button;
         }
 
         private static string BuildTooltip(DependencyNodeData data)

@@ -3,7 +3,6 @@
         <ui:VisualElement name="dependency-toolbar" class="dependency-toolbar">
             <ui:Button name="scan-button" text="Scan" />
             <ui:Button name="cancel-button" text="Cancel" />
-            <ui:IntegerField name="depth-field" label="Depth" value="3" />
             <ui:VisualElement name="zoom-step-control" class="dependency-zoom-step-control">
                 <ui:Slider name="zoom-step-slider" label="Zoom Step" low-value="0.001" high-value="0.03" value="0.004" />
                 <ui:Label name="zoom-step-value-label" text="0.004" class="dependency-zoom-step-value" />

@@ -19,7 +19,6 @@ namespace DependencyAnalyzer.Editor.Controller
         private readonly EditorSelectionSync selectionSync;
         private readonly Button scanButton;
         private readonly Button cancelButton;
-        private readonly IntegerField depthField;
         private readonly Slider zoomStepSlider;
         private readonly Label zoomStepValueLabel;
         private readonly Label statusLabel;
@@ -40,7 +39,6 @@ namespace DependencyAnalyzer.Editor.Controller
 
             scanButton = root.Q<Button>("scan-button");
             cancelButton = root.Q<Button>("cancel-button");
-            depthField = root.Q<IntegerField>("depth-field");
             zoomStepSlider = root.Q<Slider>("zoom-step-slider");
             zoomStepValueLabel = root.Q<Label>("zoom-step-value-label");
             statusLabel = root.Q<Label>("status-label");
@@ -54,12 +52,6 @@ namespace DependencyAnalyzer.Editor.Controller
             {
                 cancelButton.clicked += CancelActiveScan;
                 cancelButton.SetEnabled(false);
-            }
-
-            if (depthField != null)
-            {
-                depthField.value = Mathf.Clamp(depthField.value == 0 ? 3 : depthField.value, 3, 4);
-                depthField.RegisterValueChangedCallback(HandleDepthChanged);
             }
 
             var settings = AnalyzerSettings.LoadOrCreateRuntimeSettings();
@@ -158,7 +150,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 ApplyGraphSettings(settings);
                 var progress = new Progress<ScanProgress>(HandleScanProgress);
                 currentGraph = await scannerOrchestrator.ScanAsync(settings, cache, progress, token);
-                graphView.Populate(currentGraph, GetInitialDepth(settings));
+                graphView.Populate(currentGraph, settings.InitialExpansionDepth);
                 ReportIssues(currentGraph);
                 SetStatus("Completed: " + currentGraph.Nodes.Count + " nodes, "
                     + currentGraph.Edges.Count + " edges, "
@@ -185,22 +177,6 @@ namespace DependencyAnalyzer.Editor.Controller
             }
         }
 
-        private int GetInitialDepth(AnalyzerSettings settings)
-        {
-            if (depthField == null)
-            {
-                return settings.InitialExpansionDepth;
-            }
-
-            var depth = Mathf.Clamp(depthField.value, 3, 4);
-            if (depthField.value != depth)
-            {
-                depthField.value = depth;
-            }
-
-            return depth;
-        }
-
         private void ApplyGraphSettings(AnalyzerSettings settings)
         {
             var step = zoomStepSlider == null ? settings.ZoomStep : zoomStepSlider.value;
@@ -215,21 +191,6 @@ namespace DependencyAnalyzer.Editor.Controller
         {
             var percentage = progress.Total <= 0 ? 0f : progress.Ratio * 100f;
             SetStatus(progress.ScannerName + ": " + progress.Message + " (" + percentage.ToString("0") + "%)");
-        }
-
-        private void HandleDepthChanged(ChangeEvent<int> evt)
-        {
-            var clampedValue = Mathf.Clamp(evt.newValue, 3, 4);
-            if (depthField != null && depthField.value != clampedValue)
-            {
-                depthField.value = clampedValue;
-                return;
-            }
-
-            if (currentGraph != null)
-            {
-                graphView.Populate(currentGraph, clampedValue);
-            }
         }
 
         private void InitializeZoomFields(AnalyzerSettings settings)
@@ -267,7 +228,6 @@ namespace DependencyAnalyzer.Editor.Controller
 
         private void HandleNodeSelected(DependencyNodeData node)
         {
-            graphView.ExpandNode(node.Id);
             var target = selectionSync.ResolveObject(node);
             if (target == null)
             {

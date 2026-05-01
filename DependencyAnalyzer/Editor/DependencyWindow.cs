@@ -67,7 +67,6 @@ namespace DependencyAnalyzer.Editor
 
             var scanButton = new Button { name = "scan-button", text = "Scan" };
             var cancelButton = new Button { name = "cancel-button", text = "Cancel" };
-            var depthField = new IntegerField("Depth") { name = "depth-field", value = 3 };
             var zoomStepControl = new VisualElement { name = "zoom-step-control" };
             zoomStepControl.AddToClassList("dependency-zoom-step-control");
             var zoomStepSlider = new Slider("Zoom Step", 0.001f, 0.03f) { name = "zoom-step-slider", value = 0.004f };
@@ -79,7 +78,6 @@ namespace DependencyAnalyzer.Editor
             zoomStepControl.Add(zoomStepValueLabel);
             toolbar.Add(scanButton);
             toolbar.Add(cancelButton);
-            toolbar.Add(depthField);
             toolbar.Add(zoomStepControl);
             toolbar.Add(statusLabel);
             root.Add(toolbar);

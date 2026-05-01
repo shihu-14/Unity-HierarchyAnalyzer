@@ -97,6 +97,7 @@ namespace DependencyAnalyzer.Editor.Scanners
 
                             if (!ShouldVisualizeComponent(component))
                             {
+                                AddHiddenComponentMaterialDependencies(component, gameObjectNode, graph, cache, settings);
                                 continue;
                             }
 
@@ -186,6 +187,43 @@ namespace DependencyAnalyzer.Editor.Scanners
                         DependencyReferenceKind.SerializedProperty,
                         true));
                 }
+            }
+        }
+
+        private static void AddHiddenComponentMaterialDependencies(
+            Component component,
+            DependencyNodeData gameObjectNode,
+            DependencyGraphData graph,
+            DependencyCache cache,
+            AnalyzerSettings settings)
+        {
+            var renderer = component as Renderer;
+            if (renderer == null)
+            {
+                return;
+            }
+
+            var materials = renderer.sharedMaterials;
+            for (var i = 0; i < materials.Length; i++)
+            {
+                var material = materials[i];
+                if (material == null)
+                {
+                    continue;
+                }
+
+                var materialNode = CreateObjectReferenceNode(material, cache, settings);
+                if (materialNode == null)
+                {
+                    continue;
+                }
+
+                graph.AddOrUpdateNode(materialNode);
+                graph.AddEdge(new DependencyEdgeData(
+                    gameObjectNode.Id,
+                    materialNode.Id,
+                    "Renderer.sharedMaterials[" + i + "]",
+                    DependencyReferenceKind.SerializedProperty));
             }
         }
 
@@ -464,6 +502,11 @@ namespace DependencyAnalyzer.Editor.Scanners
                     return "Camera";
                 }
 
+                if (gameObject.GetComponent<Canvas>() != null)
+                {
+                    return "Canvas";
+                }
+
                 var light = gameObject.GetComponent<Light>();
                 if (light != null)
                 {
@@ -488,6 +531,11 @@ namespace DependencyAnalyzer.Editor.Scanners
                 if (gameObject.GetComponent<Camera>() != null)
                 {
                     return "Camera Icon";
+                }
+
+                if (gameObject.GetComponent<Canvas>() != null)
+                {
+                    return "Canvas Icon";
                 }
 
                 if (gameObject.GetComponent<Light>() != null)
