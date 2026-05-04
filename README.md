@@ -16,6 +16,10 @@ Example:
 
 ## Features
 
+- Unity 6 editor extension
+  - `Editor` 配下のみで構成し、ゲーム本編の Runtime build には含めません。
+  - `DependencyAnalyzer.Editor.asmdef` により、ツール用コードを独立した Editor Assembly として管理します。
+
 - Open scene dependency graph
   - 現在開いているシーンの Hierarchy に存在する Object を対象に可視化します。
   - 未使用アセット全体のスキャン結果はグラフに出さず、シーンで使われているものを中心に表示します。
@@ -24,6 +28,7 @@ Example:
   - GameObject 間の親子関係を抽出します。
   - ユーザーが追加した Component をノードとして表示します。
   - Transform、標準生成時に付く Camera / Light など、冗長になりやすい標準 Component は原則として省略します。
+  - Prefab instance は通常 Object と区別し、Prefab icon と専用色で表示します。
 
 - Inspector reference analysis
   - SerializedProperty を使い、Inspector で参照されている Object、Component、Asset を抽出します。
@@ -35,12 +40,14 @@ Example:
   - Inspector 参照は点線 edge で表示します。
   - edge は折れ線ではなく曲線で描画し、視認性を高めています。
   - 同じノードが複数箇所に現れる場合でも木構造として表示し、root に最も近いもの以外は初期状態で収納します。
+  - 深い階層のノードは段階的に小さくし、depth 3 以降は縦方向に詰めて配置します。
 
 - Node design
   - Object、Prefab、C# Script、Audio、Material、Camera、Canvas などをアイコンと色で区別します。
   - ノードは深い階層ほど小さく表示します。
   - フォントサイズは一定にし、小さいノードでも読みやすさを保ちます。
   - ノード本文にはパスを表示せず、ホバー時の tooltip に詳細情報を表示します。
+  - tooltip には path、type、file size、labels、dependencies、used by を表示します。
 
 - Lazy expansion
   - 初期表示では深さを制限し、必要な場所だけを `+` ボタンで展開します。
@@ -56,6 +63,7 @@ Example:
   - ノードのドラッグ移動に対応しています。
   - ズームステップは toolbar のスライダーで調整できます。
   - 右上の minimap からグラフ全体の位置を把握し、大まかに移動できます。
+  - ズーム範囲は暴走しにくいように固定し、操作感だけを `Zoom Step` で調整します。
 
 - Missing reference support
   - Missing Component や Missing Object Reference を検出します。
@@ -115,6 +123,121 @@ Tools > Dependency Analyzer > Open Graph
 - Edge click
   - edge をクリックすると接続先の子ノードへ移動します。
 
+## File Structure
+
+```text
+DependencyAnalyzer/
+└── Editor/
+    ├── DependencyAnalyzer.Editor.asmdef
+    ├── DependencyWindow.cs
+    ├── Controller/
+    │   ├── DependencyGraphController.cs
+    │   └── EditorSelectionSync.cs
+    ├── Core/
+    │   ├── DependencyCache.cs
+    │   ├── DependencyEdgeData.cs
+    │   ├── DependencyGraphData.cs
+    │   ├── DependencyNodeData.cs
+    │   └── DependencyScanIssueData.cs
+    ├── Scanners/
+    │   ├── AssetScanner.cs
+    │   ├── IDependencyScanner.cs
+    │   ├── ScannerOrchestrator.cs
+    │   └── SerializedPropertyScanner.cs
+    ├── Settings/
+    │   ├── AnalyzerSettings.cs
+    │   └── AnalyzerSettingsProvider.cs
+    ├── UI/
+    │   ├── GraphView/
+    │   │   ├── CustomEdgeView.cs
+    │   │   ├── CustomNodeView.cs
+    │   │   └── DependencyGraphView.cs
+    │   └── Styles/
+    │       ├── EdgeStyle.uss
+    │       ├── GraphWindow.uxml
+    │       └── NodeStyle.uss
+    └── Utils/
+        ├── IconUtility.cs
+        └── UnityTempDirectoryGuard.cs
+```
+
+### File Roles
+
+- `DependencyAnalyzer.Editor.asmdef`
+  - Editor 専用 Assembly Definition です。
+  - Runtime build からツールコードを切り離します。
+
+- `DependencyWindow.cs`
+  - `EditorWindow` の entry point です。
+  - UXML / USS の読み込み、GraphView の生成、Controller の初期化を担当します。
+
+- `Controller/DependencyGraphController.cs`
+  - Scan / Cancel / Zoom Step / Editor 選択同期など、ウィンドウ全体の操作を管理します。
+  - Scanner 実行後に `DependencyGraphView` へ Model を渡します。
+
+- `Controller/EditorSelectionSync.cs`
+  - Graph node 選択時に Unity Editor の `Selection` と `PingObject` を同期します。
+
+- `Core/DependencyNodeData.cs`
+  - 1つの node の ID、path、display name、type、icon、file size、label、参照数などを保持します。
+
+- `Core/DependencyEdgeData.cs`
+  - node 間の依存方向、参照種別、Inspector property path、Missing 参照かどうかを保持します。
+
+- `Core/DependencyGraphData.cs`
+  - node / edge / scan issue の集合体です。
+  - 参照数と被参照数の再計算も担当します。
+
+- `Core/DependencyCache.cs`
+  - スキャン済み node を再利用し、同じ対象の重複生成を抑えます。
+
+- `Core/DependencyScanIssueData.cs`
+  - スキャン中に検出した warning / error / info を保持します。
+
+- `Scanners/IDependencyScanner.cs`
+  - Scanner 追加のための共通 interface です。
+
+- `Scanners/AssetScanner.cs`
+  - Asset path、file size、labels、icon、Prefab / Mesh などの asset node 情報を作成します。
+
+- `Scanners/SerializedPropertyScanner.cs`
+  - 開いている Scene の Hierarchy、Component、SerializedProperty、Prefab source、Missing reference を解析します。
+  - Renderer の Material や AudioSource の AudioClip も Inspector 参照として扱います。
+
+- `Scanners/ScannerOrchestrator.cs`
+  - 登録された scanner を順番に実行し、結果を1つの graph に統合します。
+  - progress と cancellation の入口です。
+
+- `Settings/AnalyzerSettings.cs`
+  - 除外フォルダ、除外拡張子、scan yield batch size、zoom step などの設定を保持します。
+
+- `Settings/AnalyzerSettingsProvider.cs`
+  - Unity の Project Settings に Dependency Analyzer 設定 UI を登録します。
+
+- `UI/GraphView/DependencyGraphView.cs`
+  - graph 全体の描画、layout、pan、zoom、minimap、node 展開、edge click、highlight animation を担当します。
+
+- `UI/GraphView/CustomNodeView.cs`
+  - node の icon、name、type、badge、`+/-`、ミートボールメニュー、parent jump、drag 操作を担当します。
+
+- `UI/GraphView/CustomEdgeView.cs`
+  - edge の曲線描画、実線 / 点線表現、edge click を担当します。
+
+- `UI/Styles/GraphWindow.uxml`
+  - toolbar と graph container の基本 layout を定義します。
+
+- `UI/Styles/NodeStyle.uss`
+  - node、badge、highlight、minimap、toolbar などの見た目を定義します。
+
+- `UI/Styles/EdgeStyle.uss`
+  - edge 種別ごとの style hook を定義します。
+
+- `Utils/IconUtility.cs`
+  - Unity 標準 icon の取得と node type class の判定をまとめます。
+
+- `Utils/UnityTempDirectoryGuard.cs`
+  - Unity の Temp folder が存在しない場合に補助的に作成し、AssetDatabase 周辺の警告を抑えます。
+
 ## Architecture
 
 The tool follows an MVC-like structure.
@@ -150,6 +273,28 @@ DependencyAnalyzer/
 
 - `Utils`
   - Unity 標準アイコン取得や Temp ディレクトリ補助など、Editor API 依存処理を分離します。
+
+## Dependency Types
+
+- `Hierarchy`
+  - GameObject の親子関係です。
+  - 実線 edge で表示します。
+
+- `Component`
+  - GameObject に付与されている表示対象 Component です。
+  - 実線 edge で表示します。
+
+- `PrefabInstance`
+  - Scene 上の Prefab instance から Prefab asset への関係です。
+  - 実線 edge で表示します。
+
+- `SerializedProperty`
+  - Inspector 上の object reference です。
+  - 点線 edge で表示し、初期状態ではミートボールメニュー配下に収納します。
+
+- `MissingReference`
+  - Missing Component または Missing Object Reference です。
+  - Warning badge と tooltip で通知します。
 
 ## Design Notes
 
