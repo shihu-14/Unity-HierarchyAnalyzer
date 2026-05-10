@@ -1,6 +1,6 @@
 # Unity Dependency Analyzer
 
-Unity 6 向けのエディタ拡張です。現在開いているシーンの Hierarchy に存在する GameObject、ユーザーが追加した Component、Inspector 上の参照、Prefab 由来の参照などをグラフとして可視化し、依存関係の把握、Missing Reference の調査、不要な参照の発見を支援します。
+Unity 6 向けのエディタ拡張です。現在ロードされているシーンの Hierarchy に存在する GameObject、表示対象 Component、Inspector 上の参照、Prefab 由来の参照などをグラフとして可視化し、依存関係の把握、Missing Reference の調査、不要な参照の発見を支援します。
 
 このツールは Asset Store 配布品質を意識し、Model / View / Controller を分離した構成で実装しています。解析処理、データ保持、UI 描画を分けることで、Unity の UI Toolkit 変更や今後の解析ルール追加に対する影響範囲を小さくしています。
 
@@ -20,20 +20,23 @@ Example:
   - `Editor` 配下のみで構成し、ゲーム本編の Runtime build には含めません。
   - `DependencyAnalyzer.Editor.asmdef` により、ツール用コードを独立した Editor Assembly として管理します。
 
-- Open scene dependency graph
-  - 現在開いているシーンの Hierarchy に存在する Object を対象に可視化します。
-  - 未使用アセット全体のスキャン結果はグラフに出さず、シーンで使われているものを中心に表示します。
+- Loaded scene dependency graph
+  - 現在ロードされているすべての Scene の Hierarchy に存在する Object を対象に可視化します。
+  - 未使用アセット全体のスキャン結果はグラフに出さず、ロード済み Scene から到達できるものを中心に表示します。
+  - ウィンドウを開いた後に Hierarchy が変更された場合は、自動で再スキャンします。
 
 - Scene object and component analysis
   - GameObject 間の親子関係を抽出します。
-  - ユーザーが追加した Component をノードとして表示します。
-  - Transform、標準生成時に付く Camera / Light など、冗長になりやすい標準 Component は原則として省略します。
+  - 表示対象 Component をノードとして表示します。
+  - Assets 配下の Script を持つ MonoBehaviour を表示対象にします。
+  - Transform / RectTransform、MeshFilter / Renderer / Collider、テンプレート由来の Camera / Light / AudioSource など、冗長になりやすい組み込み Component は原則として省略します。
+  - Renderer ノードを省略した場合でも、Material 参照は GameObject からの Inspector 参照として追加します。
   - Prefab instance は通常 Object と区別し、Prefab icon と専用色で表示します。
 
 - Inspector reference analysis
   - SerializedProperty を使い、Inspector で参照されている Object、Component、Asset を抽出します。
   - Inspector 参照はデフォルトでは展開せず、ノード上のミートボールメニューから表示します。
-  - AudioSource の AudioClip、Renderer の Material なども Inspector 参照として扱います。
+  - 表示対象 Component の AudioClip、Material、SerializeField / public field なども Inspector 参照として扱います。
 
 - Graph visualization
   - Hierarchy などの通常依存は実線 edge で表示します。
@@ -52,6 +55,7 @@ Example:
 - Lazy expansion
   - 初期表示では深さを制限し、必要な場所だけを `+` ボタンで展開します。
   - Inspector 参照は `+` では開かず、ミートボールメニューでのみ展開します。
+  - Prefab instance / Prefab asset / AudioClip / Texture / Mesh など、グラフを大きくしやすいノードは初期状態で収納します。
   - `-` ボタンで対象ノード以下を収納できます。
 
 - Editor synchronization
@@ -61,8 +65,10 @@ Example:
 
 - Navigation support
   - ノードのドラッグ移動に対応しています。
+  - 左クリックまたは中クリックのドラッグで pan できます。
+  - マウスホイールでカーソル位置を基準に zoom できます。
   - ズームステップは toolbar のスライダーで調整できます。
-  - 右上の minimap からグラフ全体の位置を把握し、大まかに移動できます。
+  - 右上の minimap からグラフ全体の位置を把握し、クリックした位置へ移動できます。
   - ズーム範囲は暴走しにくいように固定し、操作感だけを `Zoom Step` で調整します。
 
 - Missing reference support
@@ -94,18 +100,33 @@ Assets/
 Tools > Dependency Analyzer > Open Graph
 ```
 
-4. ウィンドウが開くと、現在開いているシーンを自動でスキャンします。必要に応じて `Scan` ボタンで再スキャンできます。
+4. ウィンドウが開くと、現在ロードされている Scene を自動でスキャンします。必要に応じて `Scan` ボタンで再スキャンできます。
+
+5. 設定を共有 asset として保存したい場合は、Project Settings から以下を開きます。
+
+```text
+Project Settings > Dependency Analyzer
+```
+
+必要に応じて `Create Shared Settings Asset` を押すと、`Assets/DependencyAnalyzer/Editor/Settings/AnalyzerSettings.asset` を作成します。
 
 ## Usage
 
 - `Scan`
-  - 現在開いているシーンの依存関係を再解析します。
+  - 現在ロードされている Scene の依存関係を再解析します。
 
 - `Cancel`
   - 実行中のスキャンをキャンセルします。
 
+- Hierarchy changes
+  - ウィンドウが開いている間に Hierarchy が変更されると、自動で再スキャンします。
+
 - `Zoom Step`
   - トラックパッドやマウスホイールのズーム感度を調整します。
+
+- Pan / Zoom
+  - グラフ背景を左クリックまたは中クリックでドラッグすると pan できます。
+  - マウスホイールで zoom できます。
 
 - `+`
   - 通常の子ノードを展開します。
@@ -122,6 +143,24 @@ Tools > Dependency Analyzer > Open Graph
 
 - Edge click
   - edge をクリックすると接続先の子ノードへ移動します。
+
+## Settings
+
+`Project Settings > Dependency Analyzer` では以下を設定できます。
+
+- `Excluded Folders`
+  - Asset 参照ノード化から除外する folder path です。
+
+- `Excluded Extensions`
+  - Asset 参照ノード化から除外する file extension です。
+
+- `Scan Yield Batch Size`
+  - スキャン中に Editor へ制御を返す間隔です。
+
+- `Zoom Step`
+  - GraphView の zoom 感度です。
+
+`AnalyzerSettings` には `Initial Expansion Depth` も保持しており、初期表示の展開深度に使います。
 
 ## File Structure
 
@@ -198,11 +237,11 @@ DependencyAnalyzer/
   - Scanner 追加のための共通 interface です。
 
 - `Scanners/AssetScanner.cs`
-  - Asset path、file size、labels、icon、Prefab / Mesh などの asset node 情報を作成します。
+  - Asset path、file size、labels、icon、Prefab / Mesh などの asset node 情報と Missing reference node を作成します。
 
 - `Scanners/SerializedPropertyScanner.cs`
-  - 開いている Scene の Hierarchy、Component、SerializedProperty、Prefab source、Missing reference を解析します。
-  - Renderer の Material や AudioSource の AudioClip も Inspector 参照として扱います。
+  - ロード済み Scene の Hierarchy、Component、SerializedProperty、Prefab source、Missing reference を解析します。
+  - 表示対象 Component の参照と、Renderer の Material 参照を Inspector 参照として扱います。
 
 - `Scanners/ScannerOrchestrator.cs`
   - 登録された scanner を順番に実行し、結果を1つの graph に統合します。
@@ -213,6 +252,7 @@ DependencyAnalyzer/
 
 - `Settings/AnalyzerSettingsProvider.cs`
   - Unity の Project Settings に Dependency Analyzer 設定 UI を登録します。
+  - 共有設定 asset が存在しない場合は、作成ボタンを表示します。
 
 - `UI/GraphView/DependencyGraphView.cs`
   - graph 全体の描画、layout、pan、zoom、minimap、node 展開、edge click、highlight animation を担当します。
@@ -306,8 +346,8 @@ DependencyAnalyzer/
   - 通常の親子関係と Inspector 参照を混ぜるとグラフが急激に複雑になるためです。
   - 必要な時だけミートボールメニューから表示します。
 
-- Asset 全体スキャンではなく、開いているシーン中心です。
-  - 実際に Hierarchy / Inspector から見えている依存関係を優先するためです。
+- Asset 全体スキャンではなく、ロード済み Scene 中心です。
+  - 実際にロード済み Scene の Hierarchy / Inspector から見えている依存関係を優先するためです。
 
 - Node duplication is allowed.
   - グラフを DAG として厳密に共有すると edge が交差しやすくなるため、木構造として見やすくする目的で同じ対象を複数表示します。
@@ -315,8 +355,10 @@ DependencyAnalyzer/
 ## Current Limitations
 
 - Unity Editor 専用です。Runtime build には含めません。
+- 対象は現在ロード済み Scene から到達できる GameObject、Component、Asset 参照です。未ロード Scene や未使用 Asset 全体の棚卸しは対象外です。
 - Unity が保持していない「あとから手で追加した標準 Component」と「生成時から付いていた標準 Component」の履歴は判別できません。
 - そのため、冗長な標準 Component の除外はあらかじめ定義したルールに基づいています。
+- Packages 配下など、Assets 配下の Script を持たない MonoBehaviour は Component ノードとして表示しません。
 - Addressables や Resources.Load の文字列解析は現在の対象外です。
 
 ## License
