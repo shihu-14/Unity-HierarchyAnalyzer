@@ -68,12 +68,16 @@ Example:
   - 左クリックまたは中クリックのドラッグで pan できます。
   - マウスホイールでカーソル位置を基準に zoom できます。
   - ズームステップは toolbar のスライダーで調整できます。
+  - `Command + F` / `Ctrl + F` で検索欄へ移動し、Enter / Shift + Enter または `Next` / `Prev` で一致ノードを移動できます。
+  - 検索は node name、path、type、asset label、Missing 状態、node kind を対象にします。
+  - `Filter` を有効にすると、一致ノードとその親方向の文脈だけをグラフに表示します。
   - 右上の minimap からグラフ全体の位置を把握し、クリックした位置へ移動できます。
   - ズーム範囲は暴走しにくいように固定し、操作感だけを `Zoom Step` で調整します。
 
 - Missing reference support
   - Missing Component や Missing Object Reference を検出します。
   - 非表示の子に Missing Reference がある場合は、最も近い可視親ノードへ警告を伝播します。
+  - 下部の `Issues` panel に Missing Reference と Scanner issue を一覧表示し、クリックで該当ノードへ移動できます。
 
 ## Requirements
 
@@ -123,6 +127,19 @@ Project Settings > Dependency Analyzer
 
 - `Zoom Step`
   - トラックパッドやマウスホイールのズーム感度を調整します。
+
+- Search
+  - `Command + F` / `Ctrl + F` で検索欄を focus します。
+  - 入力中に一致数を表示し、現在の一致ノードを黄色い枠で強調します。
+  - Enter / `Next` で次の一致、Shift + Enter / `Prev` で前の一致へ移動します。
+  - Escape で検索語をクリアします。
+  - `Filter` を有効にすると、一致ノードと親方向の文脈だけを表示します。
+  - `name:Player`、`path:Assets/UI`、`type:Material`、`label:shared`、`kind:Asset`、`missing:true` のような絞り込み語も使えます。
+
+- Issues
+  - 下部 panel に Missing Reference と Scanner issue を表示します。
+  - 行をクリックすると、対応する graph node へ移動します。
+  - `Hide` / `Show` で一覧部分を折りたためます。
 
 - Pan / Zoom
   - グラフ背景を左クリックまたは中クリックでドラッグすると pan できます。

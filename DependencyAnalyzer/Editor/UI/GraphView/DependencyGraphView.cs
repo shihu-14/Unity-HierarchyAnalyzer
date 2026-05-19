@@ -35,7 +35,12 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private readonly HashSet<string> expandedViewIds = new HashSet<string>();
         private readonly HashSet<string> collapsedViewIds = new HashSet<string>();
         private readonly HashSet<string> expandedMenuViewIds = new HashSet<string>();
+        private readonly HashSet<string> expandedMenuNodeIds = new HashSet<string>();
         private readonly HashSet<string> manuallyMovedViewIds = new HashSet<string>();
+        private readonly HashSet<string> searchMatchNodeIds = new HashSet<string>();
+        private readonly HashSet<string> searchVisibleNodeIds = new HashSet<string>();
+        private readonly HashSet<string> forcedVisibleNodeIds = new HashSet<string>();
+        private readonly List<string> searchResultNodeIds = new List<string>();
 
         private DependencyGraphData graph;
         private Vector2 currentCanvasSize = Vector2.one;
@@ -49,6 +54,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private int initialDepth = 2;
         private string focusedNodeId;
         private string focusedViewId;
+        private string searchQuery = string.Empty;
+        private bool searchFilterEnabled;
+        private int currentSearchResultIndex = -1;
         private IVisualElementScheduledItem activeAnimation;
 
         public DependencyGraphView()
@@ -106,6 +114,53 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             ApplyTransform();
         }
 
+        public SearchResultState SetSearch(string query, bool filterEnabled, bool focusCurrent)
+        {
+            var previousCurrentNodeId = GetCurrentSearchNodeId();
+            searchQuery = query ?? string.Empty;
+            searchFilterEnabled = filterEnabled;
+            forcedVisibleNodeIds.Clear();
+            RebuildSearchIndex(previousCurrentNodeId);
+            Render();
+
+            if (focusCurrent && searchResultNodeIds.Count > 0)
+            {
+                FocusCurrentSearchResult();
+            }
+
+            return GetSearchResultState();
+        }
+
+        public SearchResultState FocusNextSearchResult(bool reverse)
+        {
+            if (searchResultNodeIds.Count == 0)
+            {
+                currentSearchResultIndex = -1;
+                Render();
+                return GetSearchResultState();
+            }
+
+            if (currentSearchResultIndex < 0)
+            {
+                currentSearchResultIndex = reverse ? searchResultNodeIds.Count - 1 : 0;
+            }
+            else
+            {
+                currentSearchResultIndex += reverse ? -1 : 1;
+                if (currentSearchResultIndex < 0)
+                {
+                    currentSearchResultIndex = searchResultNodeIds.Count - 1;
+                }
+                else if (currentSearchResultIndex >= searchResultNodeIds.Count)
+                {
+                    currentSearchResultIndex = 0;
+                }
+            }
+
+            FocusCurrentSearchResult();
+            return GetSearchResultState();
+        }
+
         public void Populate(DependencyGraphData graphData, int depth)
         {
             if (!ReferenceEquals(graph, graphData))
@@ -115,6 +170,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 expandedViewIds.Clear();
                 collapsedViewIds.Clear();
                 expandedMenuViewIds.Clear();
+                expandedMenuNodeIds.Clear();
                 manuallyMovedViewIds.Clear();
                 nodeRects.Clear();
                 ResetViewTransform();
@@ -122,6 +178,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             graph = graphData;
             initialDepth = Mathf.Clamp(depth, 1, 4);
+            RebuildSearchIndex(GetCurrentSearchNodeId());
             Render();
         }
 
@@ -182,6 +239,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             focusedNodeId = nodeId;
             focusedViewId = null;
+            AddForcedVisiblePath(nodeId);
             ExpandAncestors(nodeId);
             Render();
 
@@ -301,6 +359,12 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return null;
             }
 
+            var isSearchFiltering = IsSearchFilteringActive();
+            if (isSearchFiltering && !IsSearchVisibleNode(nodeId))
+            {
+                return null;
+            }
+
             var renderNode = new RenderNode(
                 viewId,
                 nodeId,
@@ -315,6 +379,13 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var outgoingEdges = GetTreeOutgoingEdges(nodeId)
                 .Where(edge => graph.TryGetNode(edge.TargetNodeId, out _))
                 .ToList();
+            if (isSearchFiltering)
+            {
+                outgoingEdges = outgoingEdges
+                    .Where(edge => IsSearchVisibleNode(edge.TargetNodeId))
+                    .ToList();
+            }
+
             var menuEdges = outgoingEdges
                 .Where(edge => !childPath.Contains(edge.TargetNodeId) && IsMenuEdge(edge))
                 .ToList();
@@ -324,7 +395,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             var isExpanded = expandedViewIds.Contains(viewId) || expandedNodeIds.Contains(nodeId);
             var isCollapsedByRule = ShouldCollapseNode(node, nodeId, depth);
-            var isMenuExpanded = expandedMenuViewIds.Contains(viewId);
+            var isMenuExpanded = expandedMenuViewIds.Contains(viewId)
+                || expandedMenuNodeIds.Contains(nodeId)
+                || (isSearchFiltering && menuEdges.Count > 0);
             var isDuplicateDefaultCollapsed = ShouldCollapseDuplicateByDefault(
                 nodeId,
                 depth,
@@ -335,6 +408,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             renderNode.HasMenuChildren = menuEdges.Count > 0;
             renderNode.IsMenuExpanded = renderNode.HasMenuChildren && isMenuExpanded;
             var isCollapsed = renderNode.CanToggleChildren
+                && !isSearchFiltering
                 && (collapsedViewIds.Contains(viewId)
                     || collapsedNodeIds.Contains(nodeId)
                     || isDuplicateDefaultCollapsed
@@ -561,6 +635,15 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 nodeView.ToggleRequested += HandleNodeToggleRequested;
                 nodeView.MenuToggleRequested += HandleMenuToggleRequested;
                 nodeView.ParentJumpRequested += HandleParentJumpRequested;
+                if (searchMatchNodeIds.Contains(renderNode.NodeId))
+                {
+                    nodeView.AddToClassList("dependency-node--search-match");
+                }
+
+                if (IsCurrentSearchNode(renderNode.NodeId))
+                {
+                    nodeView.AddToClassList("dependency-node--search-current");
+                }
 
                 nodeViews.Add(renderNode.ViewId, nodeView);
                 var rect = nodeView.GetGraphRect();
@@ -1164,7 +1247,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             focusedNodeId = nodeView.Data.Id;
             focusedViewId = nodeView.ViewId;
-            if (expandedMenuViewIds.Contains(nodeView.ViewId))
+            if (expandedMenuViewIds.Contains(nodeView.ViewId) || expandedMenuNodeIds.Contains(nodeView.Data.Id))
             {
                 CollapseMenuViewNode(nodeView.ViewId);
             }
@@ -1437,6 +1520,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
                 expandedNodeIds.Add(parentEdge.SourceNodeId);
                 collapsedNodeIds.Remove(parentEdge.SourceNodeId);
+                if (parentEdge.ReferenceKind == DependencyReferenceKind.SerializedProperty)
+                {
+                    expandedMenuNodeIds.Add(parentEdge.SourceNodeId);
+                }
+
                 current = parentEdge.SourceNodeId;
             }
         }
@@ -1526,7 +1614,14 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return;
             }
 
-            if (expandedMenuViewIds.Remove(viewId))
+            var changed = expandedMenuViewIds.Remove(viewId);
+            var renderNode = renderNodes.FirstOrDefault(node => node.ViewId == viewId);
+            if (renderNode != null)
+            {
+                changed |= expandedMenuNodeIds.Remove(renderNode.NodeId);
+            }
+
+            if (changed)
             {
                 ClearExplicitDescendantViewStates(viewId);
                 Render();
@@ -1653,6 +1748,253 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             painter.LineTo(new Vector2(rect.xMin, rect.yMax));
             painter.ClosePath();
             painter.Stroke();
+        }
+
+        private void RebuildSearchIndex(string preferredNodeId)
+        {
+            searchMatchNodeIds.Clear();
+            searchVisibleNodeIds.Clear();
+            searchResultNodeIds.Clear();
+
+            if (graph == null || string.IsNullOrWhiteSpace(searchQuery))
+            {
+                currentSearchResultIndex = -1;
+                return;
+            }
+
+            var query = searchQuery.Trim();
+            for (var i = 0; i < graph.Nodes.Count; i++)
+            {
+                var node = graph.Nodes[i];
+                if (!MatchesSearchQuery(node, query))
+                {
+                    continue;
+                }
+
+                searchResultNodeIds.Add(node.Id);
+                searchMatchNodeIds.Add(node.Id);
+            }
+
+            for (var i = 0; i < searchResultNodeIds.Count; i++)
+            {
+                AddNodeAndAncestors(searchResultNodeIds[i], searchVisibleNodeIds);
+            }
+
+            if (searchResultNodeIds.Count == 0)
+            {
+                currentSearchResultIndex = -1;
+                return;
+            }
+
+            var preferredIndex = string.IsNullOrEmpty(preferredNodeId)
+                ? -1
+                : searchResultNodeIds.IndexOf(preferredNodeId);
+            if (preferredIndex >= 0)
+            {
+                currentSearchResultIndex = preferredIndex;
+                return;
+            }
+
+            currentSearchResultIndex = Mathf.Clamp(currentSearchResultIndex, 0, searchResultNodeIds.Count - 1);
+        }
+
+        private static bool MatchesSearchQuery(DependencyNodeData node, string query)
+        {
+            if (node == null || string.IsNullOrWhiteSpace(query))
+            {
+                return false;
+            }
+
+            var terms = query.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            if (terms.Length == 0)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < terms.Length; i++)
+            {
+                if (!MatchesSearchTerm(node, terms[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool MatchesSearchTerm(DependencyNodeData node, string term)
+        {
+            var separatorIndex = term.IndexOf(':');
+            if (separatorIndex > 0 && separatorIndex < term.Length - 1)
+            {
+                var key = term.Substring(0, separatorIndex).Trim();
+                var value = term.Substring(separatorIndex + 1).Trim();
+                if (string.Equals(key, "name", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ContainsSearchText(node.DisplayName, value);
+                }
+
+                if (string.Equals(key, "path", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ContainsSearchText(node.Path, value);
+                }
+
+                if (string.Equals(key, "type", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ContainsSearchText(node.TypeName, value)
+                        || ContainsSearchText(node.NamespaceQualifiedTypeName, value);
+                }
+
+                if (string.Equals(key, "label", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ContainsSearchText(node.LabelsText, value);
+                }
+
+                if (string.Equals(key, "kind", StringComparison.OrdinalIgnoreCase))
+                {
+                    return ContainsSearchText(node.Kind.ToString(), value);
+                }
+
+                if (string.Equals(key, "missing", StringComparison.OrdinalIgnoreCase))
+                {
+                    return MatchesMissingFilter(node, value);
+                }
+            }
+
+            return ContainsSearchText(BuildSearchText(node), term);
+        }
+
+        private static bool MatchesMissingFilter(DependencyNodeData node, string value)
+        {
+            var hasMissing = node.Kind == DependencyNodeKind.MissingReference || node.HasMissingReferences;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return hasMissing;
+            }
+
+            if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase)
+                || value == "1")
+            {
+                return hasMissing;
+            }
+
+            if (string.Equals(value, "false", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, "no", StringComparison.OrdinalIgnoreCase)
+                || value == "0")
+            {
+                return !hasMissing;
+            }
+
+            return ContainsSearchText(hasMissing ? "missing true" : "missing false", value);
+        }
+
+        private static string BuildSearchText(DependencyNodeData node)
+        {
+            return node.DisplayName
+                + "\n" + node.Path
+                + "\n" + node.TypeName
+                + "\n" + node.NamespaceQualifiedTypeName
+                + "\n" + node.LabelsText
+                + "\n" + node.Kind
+                + "\n" + (node.HasMissingReferences || node.Kind == DependencyNodeKind.MissingReference ? "missing" : "valid");
+        }
+
+        private static bool ContainsSearchText(string source, string value)
+        {
+            return !string.IsNullOrEmpty(source)
+                && !string.IsNullOrEmpty(value)
+                && source.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void AddNodeAndAncestors(string nodeId, HashSet<string> target)
+        {
+            if (graph == null || string.IsNullOrEmpty(nodeId) || target == null)
+            {
+                return;
+            }
+
+            var stack = new Stack<string>();
+            stack.Push(nodeId);
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+                if (string.IsNullOrEmpty(current) || !target.Add(current))
+                {
+                    continue;
+                }
+
+                foreach (var edge in graph.GetIncomingEdges(current))
+                {
+                    if (!string.IsNullOrEmpty(edge.SourceNodeId))
+                    {
+                        stack.Push(edge.SourceNodeId);
+                    }
+                }
+            }
+        }
+
+        private void AddForcedVisiblePath(string nodeId)
+        {
+            if (!IsSearchFilteringActive())
+            {
+                return;
+            }
+
+            AddNodeAndAncestors(nodeId, forcedVisibleNodeIds);
+        }
+
+        private bool IsSearchFilteringActive()
+        {
+            return searchFilterEnabled && !string.IsNullOrWhiteSpace(searchQuery);
+        }
+
+        private bool IsSearchVisibleNode(string nodeId)
+        {
+            return searchVisibleNodeIds.Contains(nodeId) || forcedVisibleNodeIds.Contains(nodeId);
+        }
+
+        private void FocusCurrentSearchResult()
+        {
+            var nodeId = GetCurrentSearchNodeId();
+            if (string.IsNullOrEmpty(nodeId))
+            {
+                Render();
+                return;
+            }
+
+            FocusNode(nodeId, true);
+        }
+
+        private string GetCurrentSearchNodeId()
+        {
+            return currentSearchResultIndex >= 0 && currentSearchResultIndex < searchResultNodeIds.Count
+                ? searchResultNodeIds[currentSearchResultIndex]
+                : string.Empty;
+        }
+
+        private bool IsCurrentSearchNode(string nodeId)
+        {
+            return !string.IsNullOrEmpty(nodeId)
+                && string.Equals(nodeId, GetCurrentSearchNodeId(), StringComparison.Ordinal);
+        }
+
+        private SearchResultState GetSearchResultState()
+        {
+            return new SearchResultState(currentSearchResultIndex, searchResultNodeIds.Count);
+        }
+
+        public struct SearchResultState
+        {
+            public SearchResultState(int currentIndex, int total)
+            {
+                CurrentIndex = currentIndex;
+                Total = total;
+            }
+
+            public int CurrentIndex { get; }
+            public int Total { get; }
+            public int DisplayIndex => CurrentIndex < 0 || Total <= 0 ? 0 : CurrentIndex + 1;
         }
 
         private readonly struct MiniMapMetrics

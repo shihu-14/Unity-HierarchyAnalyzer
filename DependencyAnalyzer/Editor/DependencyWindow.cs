@@ -72,19 +72,48 @@ namespace DependencyAnalyzer.Editor
             var zoomStepSlider = new Slider("Zoom Step", 0.001f, 0.03f) { name = "zoom-step-slider", value = 0.004f };
             var zoomStepValueLabel = new Label("0.004") { name = "zoom-step-value-label" };
             zoomStepValueLabel.AddToClassList("dependency-zoom-step-value");
+            var searchControl = new VisualElement { name = "search-control" };
+            searchControl.AddToClassList("dependency-search-control");
+            var searchField = new TextField("Search") { name = "search-field" };
+            var searchPreviousButton = new Button { name = "search-previous-button", text = "Prev" };
+            var searchNextButton = new Button { name = "search-next-button", text = "Next" };
+            var searchCountLabel = new Label("0/0") { name = "search-count-label" };
+            searchCountLabel.AddToClassList("dependency-search-count");
+            var searchFilterToggle = new Toggle("Filter") { name = "search-filter-toggle" };
             var statusLabel = new Label("Ready") { name = "status-label" };
 
             zoomStepControl.Add(zoomStepSlider);
             zoomStepControl.Add(zoomStepValueLabel);
+            searchControl.Add(searchField);
+            searchControl.Add(searchPreviousButton);
+            searchControl.Add(searchNextButton);
+            searchControl.Add(searchCountLabel);
+            searchControl.Add(searchFilterToggle);
             toolbar.Add(scanButton);
             toolbar.Add(cancelButton);
             toolbar.Add(zoomStepControl);
+            toolbar.Add(searchControl);
             toolbar.Add(statusLabel);
             root.Add(toolbar);
 
             var graphContainer = new VisualElement { name = "graph-container" };
             graphContainer.AddToClassList("dependency-graph-container");
             root.Add(graphContainer);
+
+            var issuePanel = new VisualElement { name = "issue-panel" };
+            issuePanel.AddToClassList("dependency-issue-panel");
+            var issueHeader = new VisualElement { name = "issue-panel-header" };
+            issueHeader.AddToClassList("dependency-issue-header");
+            var issueTitleLabel = new Label("Issues (0)") { name = "issue-title-label" };
+            issueTitleLabel.AddToClassList("dependency-issue-title");
+            var issueToggleButton = new Button { name = "issue-toggle-button", text = "Hide" };
+            var issueList = new ScrollView { name = "issue-list" };
+            issueList.AddToClassList("dependency-issue-list");
+            issueHeader.Add(issueTitleLabel);
+            issueHeader.Add(issueToggleButton);
+            issuePanel.Add(issueHeader);
+            issuePanel.Add(issueList);
+            root.Add(issuePanel);
         }
 
         private void AddStyleSheetToRoot(string fileName)

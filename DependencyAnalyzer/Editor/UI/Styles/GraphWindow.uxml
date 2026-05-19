@@ -7,8 +7,22 @@
                 <ui:Slider name="zoom-step-slider" label="Zoom Step" low-value="0.001" high-value="0.03" value="0.004" />
                 <ui:Label name="zoom-step-value-label" text="0.004" class="dependency-zoom-step-value" />
             </ui:VisualElement>
+            <ui:VisualElement name="search-control" class="dependency-search-control">
+                <ui:TextField name="search-field" label="Search" />
+                <ui:Button name="search-previous-button" text="Prev" />
+                <ui:Button name="search-next-button" text="Next" />
+                <ui:Label name="search-count-label" text="0/0" class="dependency-search-count" />
+                <ui:Toggle name="search-filter-toggle" label="Filter" />
+            </ui:VisualElement>
             <ui:Label name="status-label" text="Ready" class="dependency-status-label" />
         </ui:VisualElement>
         <ui:VisualElement name="graph-container" class="dependency-graph-container" />
+        <ui:VisualElement name="issue-panel" class="dependency-issue-panel">
+            <ui:VisualElement name="issue-panel-header" class="dependency-issue-header">
+                <ui:Label name="issue-title-label" text="Issues (0)" class="dependency-issue-title" />
+                <ui:Button name="issue-toggle-button" text="Hide" />
+            </ui:VisualElement>
+            <ui:ScrollView name="issue-list" class="dependency-issue-list" />
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

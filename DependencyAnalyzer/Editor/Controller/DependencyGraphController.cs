@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DependencyAnalyzer.Editor.Core;
@@ -14,6 +16,7 @@ namespace DependencyAnalyzer.Editor.Controller
     public sealed class DependencyGraphController : IDisposable
     {
         private readonly DependencyGraphView graphView;
+        private readonly VisualElement root;
         private readonly ScannerOrchestrator scannerOrchestrator;
         private readonly DependencyCache cache;
         private readonly EditorSelectionSync selectionSync;
@@ -21,17 +24,28 @@ namespace DependencyAnalyzer.Editor.Controller
         private readonly Button cancelButton;
         private readonly Slider zoomStepSlider;
         private readonly Label zoomStepValueLabel;
+        private readonly TextField searchField;
+        private readonly Button searchPreviousButton;
+        private readonly Button searchNextButton;
+        private readonly Label searchCountLabel;
+        private readonly Toggle searchFilterToggle;
         private readonly Label statusLabel;
+        private readonly VisualElement issuePanel;
+        private readonly ScrollView issueList;
+        private readonly Label issueTitleLabel;
+        private readonly Button issueToggleButton;
 
         private CancellationTokenSource scanCancellation;
         private DependencyGraphData currentGraph;
         private bool disposed;
         private bool hierarchyRefreshQueued;
         private bool suppressNextSelectionFocus;
+        private bool issueListVisible = true;
         private int suppressedSelectionInstanceId;
 
         public DependencyGraphController(VisualElement root, DependencyGraphView graphView)
         {
+            this.root = root;
             this.graphView = graphView;
             scannerOrchestrator = new ScannerOrchestrator();
             cache = new DependencyCache();
@@ -41,7 +55,16 @@ namespace DependencyAnalyzer.Editor.Controller
             cancelButton = root.Q<Button>("cancel-button");
             zoomStepSlider = root.Q<Slider>("zoom-step-slider");
             zoomStepValueLabel = root.Q<Label>("zoom-step-value-label");
+            searchField = root.Q<TextField>("search-field");
+            searchPreviousButton = root.Q<Button>("search-previous-button");
+            searchNextButton = root.Q<Button>("search-next-button");
+            searchCountLabel = root.Q<Label>("search-count-label");
+            searchFilterToggle = root.Q<Toggle>("search-filter-toggle");
             statusLabel = root.Q<Label>("status-label");
+            issuePanel = root.Q<VisualElement>("issue-panel");
+            issueList = root.Q<ScrollView>("issue-list");
+            issueTitleLabel = root.Q<Label>("issue-title-label");
+            issueToggleButton = root.Q<Button>("issue-toggle-button");
 
             if (scanButton != null)
             {
@@ -54,6 +77,32 @@ namespace DependencyAnalyzer.Editor.Controller
                 cancelButton.SetEnabled(false);
             }
 
+            if (searchField != null)
+            {
+                searchField.RegisterValueChangedCallback(HandleSearchChanged);
+                searchField.RegisterCallback<KeyDownEvent>(HandleSearchKeyDown);
+            }
+
+            if (searchPreviousButton != null)
+            {
+                searchPreviousButton.clicked += HandleSearchPreviousClicked;
+            }
+
+            if (searchNextButton != null)
+            {
+                searchNextButton.clicked += HandleSearchNextClicked;
+            }
+
+            if (searchFilterToggle != null)
+            {
+                searchFilterToggle.RegisterValueChangedCallback(HandleSearchFilterChanged);
+            }
+
+            if (issueToggleButton != null)
+            {
+                issueToggleButton.clicked += ToggleIssueList;
+            }
+
             var settings = AnalyzerSettings.LoadOrCreateRuntimeSettings();
             InitializeZoomFields(settings);
             ApplyGraphSettings(settings);
@@ -61,6 +110,9 @@ namespace DependencyAnalyzer.Editor.Controller
             Selection.selectionChanged += HandleEditorSelectionChanged;
             EditorApplication.delayCall += RequestInitialScan;
             EditorApplication.hierarchyChanged += HandleHierarchyChanged;
+            root.RegisterCallback<KeyDownEvent>(HandleGlobalKeyDown, TrickleDown.TrickleDown);
+            UpdateSearchState(new DependencyGraphView.SearchResultState(-1, 0));
+            PopulateIssuePanel(null);
             SetStatus("Ready");
         }
 
@@ -87,6 +139,34 @@ namespace DependencyAnalyzer.Editor.Controller
             {
                 zoomStepSlider.UnregisterValueChangedCallback(HandleZoomChanged);
             }
+
+            if (searchField != null)
+            {
+                searchField.UnregisterValueChangedCallback(HandleSearchChanged);
+                searchField.UnregisterCallback<KeyDownEvent>(HandleSearchKeyDown);
+            }
+
+            if (searchPreviousButton != null)
+            {
+                searchPreviousButton.clicked -= HandleSearchPreviousClicked;
+            }
+
+            if (searchNextButton != null)
+            {
+                searchNextButton.clicked -= HandleSearchNextClicked;
+            }
+
+            if (searchFilterToggle != null)
+            {
+                searchFilterToggle.UnregisterValueChangedCallback(HandleSearchFilterChanged);
+            }
+
+            if (issueToggleButton != null)
+            {
+                issueToggleButton.clicked -= ToggleIssueList;
+            }
+
+            root?.UnregisterCallback<KeyDownEvent>(HandleGlobalKeyDown, TrickleDown.TrickleDown);
 
             CancelActiveScan();
         }
@@ -151,10 +231,12 @@ namespace DependencyAnalyzer.Editor.Controller
                 var progress = new Progress<ScanProgress>(HandleScanProgress);
                 currentGraph = await scannerOrchestrator.ScanAsync(settings, cache, progress, token);
                 graphView.Populate(currentGraph, settings.InitialExpansionDepth);
+                UpdateSearchState(graphView.SetSearch(GetSearchQuery(), IsSearchFilterEnabled(), false));
+                PopulateIssuePanel(currentGraph);
                 ReportIssues(currentGraph);
                 SetStatus("Completed: " + currentGraph.Nodes.Count + " nodes, "
                     + currentGraph.Edges.Count + " edges, "
-                    + currentGraph.Issues.Count + " issues");
+                    + CountIssueEntries(currentGraph) + " issues");
             }
             catch (OperationCanceledException)
             {
@@ -224,6 +306,84 @@ namespace DependencyAnalyzer.Editor.Controller
             {
                 zoomStepValueLabel.text = value.ToString("0.000");
             }
+        }
+
+        private void HandleSearchChanged(ChangeEvent<string> evt)
+        {
+            UpdateSearchState(graphView.SetSearch(evt.newValue, IsSearchFilterEnabled(), true));
+        }
+
+        private void HandleSearchFilterChanged(ChangeEvent<bool> evt)
+        {
+            UpdateSearchState(graphView.SetSearch(GetSearchQuery(), evt.newValue, true));
+        }
+
+        private void HandleSearchPreviousClicked()
+        {
+            UpdateSearchState(graphView.FocusNextSearchResult(true));
+        }
+
+        private void HandleSearchNextClicked()
+        {
+            UpdateSearchState(graphView.FocusNextSearchResult(false));
+        }
+
+        private void HandleSearchKeyDown(KeyDownEvent evt)
+        {
+            if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
+            {
+                UpdateSearchState(graphView.FocusNextSearchResult((evt.modifiers & EventModifiers.Shift) != 0));
+                evt.PreventDefault();
+                evt.StopPropagation();
+                return;
+            }
+
+            if (evt.keyCode == KeyCode.Escape)
+            {
+                if (searchField != null)
+                {
+                    searchField.value = string.Empty;
+                }
+
+                evt.PreventDefault();
+                evt.StopPropagation();
+            }
+        }
+
+        private void HandleGlobalKeyDown(KeyDownEvent evt)
+        {
+            var isFindShortcut = evt.keyCode == KeyCode.F
+                && ((evt.modifiers & EventModifiers.Command) != 0 || (evt.modifiers & EventModifiers.Control) != 0);
+            if (!isFindShortcut || searchField == null)
+            {
+                return;
+            }
+
+            searchField.Focus();
+            evt.PreventDefault();
+            evt.StopPropagation();
+        }
+
+        private string GetSearchQuery()
+        {
+            return searchField == null ? string.Empty : searchField.value;
+        }
+
+        private bool IsSearchFilterEnabled()
+        {
+            return searchFilterToggle != null && searchFilterToggle.value;
+        }
+
+        private void UpdateSearchState(DependencyGraphView.SearchResultState state)
+        {
+            if (searchCountLabel != null)
+            {
+                searchCountLabel.text = state.DisplayIndex + "/" + state.Total;
+            }
+
+            var hasResults = state.Total > 0;
+            searchPreviousButton?.SetEnabled(hasResults);
+            searchNextButton?.SetEnabled(hasResults);
         }
 
         private void HandleNodeSelected(DependencyNodeData node)
@@ -317,6 +477,188 @@ namespace DependencyAnalyzer.Editor.Controller
                     Debug.Log(message);
                 }
             }
+        }
+
+        private void PopulateIssuePanel(DependencyGraphData graphData)
+        {
+            if (issueList == null)
+            {
+                return;
+            }
+
+            var entries = BuildIssueEntries(graphData);
+            if (issueTitleLabel != null)
+            {
+                issueTitleLabel.text = "Issues (" + entries.Count + ")";
+            }
+
+            issueList.contentContainer.Clear();
+            if (entries.Count == 0)
+            {
+                var empty = new Label("No issues");
+                empty.AddToClassList("dependency-issue-empty");
+                issueList.Add(empty);
+                return;
+            }
+
+            for (var i = 0; i < entries.Count; i++)
+            {
+                issueList.Add(CreateIssueRow(entries[i]));
+            }
+        }
+
+        private VisualElement CreateIssueRow(IssuePanelEntry entry)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("dependency-issue-row");
+            row.AddToClassList(GetIssueSeverityClass(entry.Severity));
+            if (string.IsNullOrEmpty(entry.TargetNodeId))
+            {
+                row.AddToClassList("dependency-issue-row--disabled");
+            }
+            else
+            {
+                row.RegisterCallback<MouseDownEvent>(evt =>
+                {
+                    if (evt.button != 0)
+                    {
+                        return;
+                    }
+
+                    graphView.FocusNode(entry.TargetNodeId, true);
+                    evt.PreventDefault();
+                    evt.StopPropagation();
+                });
+            }
+
+            row.tooltip = entry.Detail;
+            var main = new Label(entry.Title);
+            main.AddToClassList("dependency-issue-main");
+            var detail = new Label(entry.Detail);
+            detail.AddToClassList("dependency-issue-detail");
+            row.Add(main);
+            row.Add(detail);
+            return row;
+        }
+
+        private void ToggleIssueList()
+        {
+            SetIssueListVisible(!issueListVisible);
+        }
+
+        private void SetIssueListVisible(bool visible)
+        {
+            issueListVisible = visible;
+            if (issueList != null)
+            {
+                issueList.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+
+            if (issuePanel != null)
+            {
+                issuePanel.style.height = visible ? 148f : 30f;
+            }
+
+            if (issueToggleButton != null)
+            {
+                issueToggleButton.text = visible ? "Hide" : "Show";
+            }
+        }
+
+        private static int CountIssueEntries(DependencyGraphData graphData)
+        {
+            return BuildIssueEntries(graphData).Count;
+        }
+
+        private static List<IssuePanelEntry> BuildIssueEntries(DependencyGraphData graphData)
+        {
+            var entries = new List<IssuePanelEntry>();
+            if (graphData == null)
+            {
+                return entries;
+            }
+
+            var missingNodes = graphData.Nodes
+                .Where(node => node.Kind == DependencyNodeKind.MissingReference)
+                .OrderBy(node => node.Path, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase);
+            foreach (var node in missingNodes)
+            {
+                entries.Add(new IssuePanelEntry(
+                    "Missing Reference: " + node.DisplayName,
+                    string.IsNullOrEmpty(node.Path) ? node.TypeName : node.Path,
+                    DependencyScanIssueSeverity.Warning,
+                    node.Id));
+            }
+
+            foreach (var issue in graphData.Issues)
+            {
+                var targetNodeId = FindIssueTargetNodeId(graphData, issue.SubjectPath);
+                entries.Add(new IssuePanelEntry(
+                    issue.Severity + ": " + issue.ScannerName,
+                    issue.SubjectPath + " - " + issue.Message,
+                    issue.Severity,
+                    targetNodeId));
+            }
+
+            return entries;
+        }
+
+        private static string FindIssueTargetNodeId(DependencyGraphData graphData, string subjectPath)
+        {
+            if (graphData == null || string.IsNullOrEmpty(subjectPath))
+            {
+                return string.Empty;
+            }
+
+            var exact = graphData.Nodes.FirstOrDefault(node =>
+                string.Equals(node.Id, subjectPath, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(node.Path, subjectPath, StringComparison.OrdinalIgnoreCase));
+            if (exact != null)
+            {
+                return exact.Id;
+            }
+
+            var containing = graphData.Nodes
+                .Where(node => !string.IsNullOrEmpty(node.Path)
+                    && (subjectPath.IndexOf(node.Path, StringComparison.OrdinalIgnoreCase) >= 0
+                        || node.Path.IndexOf(subjectPath, StringComparison.OrdinalIgnoreCase) >= 0))
+                .OrderByDescending(node => node.Path.Length)
+                .FirstOrDefault();
+            return containing == null ? string.Empty : containing.Id;
+        }
+
+        private static string GetIssueSeverityClass(DependencyScanIssueSeverity severity)
+        {
+            switch (severity)
+            {
+                case DependencyScanIssueSeverity.Error:
+                    return "dependency-issue-row--error";
+                case DependencyScanIssueSeverity.Warning:
+                    return "dependency-issue-row--warning";
+                default:
+                    return "dependency-issue-row--info";
+            }
+        }
+
+        private sealed class IssuePanelEntry
+        {
+            public IssuePanelEntry(
+                string title,
+                string detail,
+                DependencyScanIssueSeverity severity,
+                string targetNodeId)
+            {
+                Title = title ?? string.Empty;
+                Detail = detail ?? string.Empty;
+                Severity = severity;
+                TargetNodeId = targetNodeId ?? string.Empty;
+            }
+
+            public string Title { get; }
+            public string Detail { get; }
+            public DependencyScanIssueSeverity Severity { get; }
+            public string TargetNodeId { get; }
         }
     }
 }
