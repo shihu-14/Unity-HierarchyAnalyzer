@@ -19,6 +19,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float DepthNodeScaleStep = 0.08f;
         private const float MinimumDepthNodeScale = 0.58f;
         private const float AnimationDurationSeconds = 0.22f;
+        private const int MaxAnimatedLayoutNodeCount = 140;
+        private const int MaxAnimatedLayoutNodeDelta = 40;
 
         private readonly VisualElement contentLayer;
         private readonly VisualElement edgeLayer;
@@ -41,6 +43,13 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private readonly HashSet<string> searchVisibleNodeIds = new HashSet<string>();
         private readonly HashSet<string> forcedVisibleNodeIds = new HashSet<string>();
         private readonly List<string> searchResultNodeIds = new List<string>();
+        private readonly Dictionary<string, List<DependencyEdgeData>> outgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdgeData>>();
+        private readonly Dictionary<string, List<DependencyEdgeData>> incomingEdgesByNodeId = new Dictionary<string, List<DependencyEdgeData>>();
+        private readonly Dictionary<string, List<DependencyEdgeData>> treeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdgeData>>();
+        private readonly Dictionary<string, bool> missingReferenceSubtreeCache = new Dictionary<string, bool>();
+        private readonly Dictionary<string, int> minimumRegularDepths = new Dictionary<string, int>();
+        private readonly List<DependencyNodeData> rootNodes = new List<DependencyNodeData>();
+        private static readonly List<DependencyEdgeData> EmptyEdges = new List<DependencyEdgeData>();
 
         private DependencyGraphData graph;
         private Vector2 currentCanvasSize = Vector2.one;
@@ -177,6 +186,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
 
             graph = graphData;
+            RebuildGraphCaches();
             initialDepth = Mathf.Clamp(depth, 1, 4);
             RebuildSearchIndex(GetCurrentSearchNodeId());
             Render();
@@ -296,32 +306,99 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             ApplyTransform();
         }
 
-        private List<RenderNode> BuildRenderTree()
+        private void RebuildGraphCaches()
         {
-            var roots = graph.Nodes
-                .Where(IsRootNode)
-                .OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            outgoingEdgesByNodeId.Clear();
+            incomingEdgesByNodeId.Clear();
+            treeOutgoingEdgesByNodeId.Clear();
+            missingReferenceSubtreeCache.Clear();
+            minimumRegularDepths.Clear();
+            rootNodes.Clear();
 
-            if (roots.Count == 0)
+            if (graph == null)
             {
-                roots.AddRange(graph.Nodes
-                    .Where(node => !graph.GetIncomingEdges(node.Id).Any())
+                return;
+            }
+
+            for (var i = 0; i < graph.Edges.Count; i++)
+            {
+                var edge = graph.Edges[i];
+                if (edge == null)
+                {
+                    continue;
+                }
+
+                if (!outgoingEdgesByNodeId.TryGetValue(edge.SourceNodeId, out var outgoingEdges))
+                {
+                    outgoingEdges = new List<DependencyEdgeData>();
+                    outgoingEdgesByNodeId.Add(edge.SourceNodeId, outgoingEdges);
+                }
+
+                outgoingEdges.Add(edge);
+
+                if (!incomingEdgesByNodeId.TryGetValue(edge.TargetNodeId, out var incomingEdges))
+                {
+                    incomingEdges = new List<DependencyEdgeData>();
+                    incomingEdgesByNodeId.Add(edge.TargetNodeId, incomingEdges);
+                }
+
+                incomingEdges.Add(edge);
+            }
+
+            foreach (var pair in outgoingEdgesByNodeId)
+            {
+                var treeEdges = pair.Value
+                    .Where(edge => graph.TryGetNode(edge.TargetNodeId, out _))
+                    .GroupBy(edge => edge.TargetNodeId)
+                    .Select(group => group
+                        .OrderBy(edge => GetEdgeSortPriority(edge.ReferenceKind))
+                        .ThenBy(edge => edge.MemberName, StringComparer.OrdinalIgnoreCase)
+                        .First())
+                    .OrderBy(edge => GetNodeSortName(edge.TargetNodeId), StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(edge => GetNodeSortType(edge.TargetNodeId), StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(edge => GetEdgeSortPriority(edge.ReferenceKind))
+                    .ThenBy(edge => edge.MemberName, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(edge => edge.TargetNodeId, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                treeOutgoingEdgesByNodeId[pair.Key] = treeEdges;
+            }
+
+            rootNodes.AddRange(graph.Nodes
+                .Where(IsRootNodeFromCache)
+                .OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase));
+
+            if (rootNodes.Count == 0)
+            {
+                rootNodes.AddRange(graph.Nodes
+                    .Where(node => !GetIncomingEdges(node.Id).Any())
                     .OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase));
             }
 
-            if (roots.Count == 0)
+            if (rootNodes.Count == 0)
             {
-                roots.AddRange(graph.Nodes.OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase));
+                rootNodes.AddRange(graph.Nodes.OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase));
             }
 
-            var minimumRegularDepths = ComputeMinimumRegularDepths(roots);
+            foreach (var pair in ComputeMinimumRegularDepths(rootNodes))
+            {
+                minimumRegularDepths[pair.Key] = pair.Value;
+            }
+        }
+
+        private bool IsRootNodeFromCache(DependencyNodeData node)
+        {
+            return node.Kind == DependencyNodeKind.SceneObject
+                && !GetIncomingEdges(node.Id).Any(edge => edge.ReferenceKind == DependencyReferenceKind.Hierarchy);
+        }
+
+        private List<RenderNode> BuildRenderTree()
+        {
             var defaultExpandedNodeIds = new HashSet<string>();
             var renderRoots = new List<RenderNode>();
-            for (var i = 0; i < roots.Count; i++)
+            for (var i = 0; i < rootNodes.Count; i++)
             {
                 var root = BuildRenderNode(
-                    roots[i].Id,
+                    rootNodes[i].Id,
                     null,
                     null,
                     0,
@@ -545,12 +622,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return defaultExpandedNodeIds != null && !defaultExpandedNodeIds.Add(nodeId);
         }
 
-        private bool IsRootNode(DependencyNodeData node)
-        {
-            return node.Kind == DependencyNodeKind.SceneObject
-                && !graph.GetIncomingEdges(node.Id).Any(edge => edge.ReferenceKind == DependencyReferenceKind.Hierarchy);
-        }
-
         private bool ShouldCollapseNode(DependencyNodeData node, string nodeId, int depth)
         {
             return depth >= initialDepth
@@ -561,7 +632,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private bool IsPrefabInstanceNode(string nodeId)
         {
-            return graph.GetOutgoingEdges(nodeId).Any(edge => edge.ReferenceKind == DependencyReferenceKind.PrefabInstance);
+            return GetOutgoingEdges(nodeId).Any(edge => edge.ReferenceKind == DependencyReferenceKind.PrefabInstance);
         }
 
         private static bool IsPrefabAssetNode(DependencyNodeData node)
@@ -767,13 +838,24 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private bool SubtreeContainsMissingReference(string nodeId, HashSet<string> visited)
         {
-            if (string.IsNullOrEmpty(nodeId) || !visited.Add(nodeId) || !graph.TryGetNode(nodeId, out var node))
+            if (string.IsNullOrEmpty(nodeId))
+            {
+                return false;
+            }
+
+            if (missingReferenceSubtreeCache.TryGetValue(nodeId, out var cachedResult))
+            {
+                return cachedResult;
+            }
+
+            if (!visited.Add(nodeId) || !graph.TryGetNode(nodeId, out var node))
             {
                 return false;
             }
 
             if (node.Kind == DependencyNodeKind.MissingReference || node.HasMissingReferences)
             {
+                missingReferenceSubtreeCache[nodeId] = true;
                 return true;
             }
 
@@ -781,10 +863,12 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             {
                 if (SubtreeContainsMissingReference(edge.TargetNodeId, visited))
                 {
+                    missingReferenceSubtreeCache[nodeId] = true;
                     return true;
                 }
             }
 
+            missingReferenceSubtreeCache[nodeId] = false;
             return false;
         }
 
@@ -833,6 +917,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             IReadOnlyDictionary<string, RenderSnapshot> previousSnapshots,
             IReadOnlyDictionary<string, Rect> finalRects)
         {
+            if (ShouldSkipLayoutAnimation(previousRects, finalRects))
+            {
+                return;
+            }
+
             var nodeAnimations = new List<NodeAnimation>();
             foreach (var pair in finalRects)
             {
@@ -934,6 +1023,25 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }).Every(16);
         }
 
+        private static bool ShouldSkipLayoutAnimation(
+            IReadOnlyDictionary<string, Rect> previousRects,
+            IReadOnlyDictionary<string, Rect> finalRects)
+        {
+            if (previousRects == null || finalRects == null)
+            {
+                return true;
+            }
+
+            var largestNodeCount = Mathf.Max(previousRects.Count, finalRects.Count);
+            if (largestNodeCount > MaxAnimatedLayoutNodeCount)
+            {
+                return true;
+            }
+
+            var nodeDelta = Mathf.Abs(finalRects.Count - previousRects.Count);
+            return nodeDelta > MaxAnimatedLayoutNodeDelta;
+        }
+
         private List<GhostAnimation> CreateGhostAnimations(
             IReadOnlyDictionary<string, Rect> previousRects,
             IReadOnlyDictionary<string, RenderSnapshot> previousSnapshots,
@@ -1031,18 +1139,23 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private List<DependencyEdgeData> GetTreeOutgoingEdges(string nodeId)
         {
-            return graph.GetOutgoingEdges(nodeId)
-                .GroupBy(edge => edge.TargetNodeId)
-                .Select(group => group
-                    .OrderBy(edge => GetEdgeSortPriority(edge.ReferenceKind))
-                    .ThenBy(edge => edge.MemberName, StringComparer.OrdinalIgnoreCase)
-                    .First())
-                .OrderBy(edge => GetNodeSortName(edge.TargetNodeId), StringComparer.OrdinalIgnoreCase)
-                .ThenBy(edge => GetNodeSortType(edge.TargetNodeId), StringComparer.OrdinalIgnoreCase)
-                .ThenBy(edge => GetEdgeSortPriority(edge.ReferenceKind))
-                .ThenBy(edge => edge.MemberName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(edge => edge.TargetNodeId, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            return !string.IsNullOrEmpty(nodeId) && treeOutgoingEdgesByNodeId.TryGetValue(nodeId, out var edges)
+                ? edges
+                : EmptyEdges;
+        }
+
+        private List<DependencyEdgeData> GetOutgoingEdges(string nodeId)
+        {
+            return !string.IsNullOrEmpty(nodeId) && outgoingEdgesByNodeId.TryGetValue(nodeId, out var edges)
+                ? edges
+                : EmptyEdges;
+        }
+
+        private List<DependencyEdgeData> GetIncomingEdges(string nodeId)
+        {
+            return !string.IsNullOrEmpty(nodeId) && incomingEdgesByNodeId.TryGetValue(nodeId, out var edges)
+                ? edges
+                : EmptyEdges;
         }
 
         private string GetNodeSortName(string nodeId)
@@ -1510,7 +1623,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var current = nodeId;
             while (visited.Add(current))
             {
-                var parentEdge = graph.GetIncomingEdges(current)
+                var parentEdge = GetIncomingEdges(current)
                     .OrderBy(edge => GetEdgeSortPriority(edge.ReferenceKind))
                     .FirstOrDefault();
                 if (parentEdge == null || string.IsNullOrEmpty(parentEdge.SourceNodeId))
@@ -1924,7 +2037,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     continue;
                 }
 
-                foreach (var edge in graph.GetIncomingEdges(current))
+                foreach (var edge in GetIncomingEdges(current))
                 {
                     if (!string.IsNullOrEmpty(edge.SourceNodeId))
                     {
