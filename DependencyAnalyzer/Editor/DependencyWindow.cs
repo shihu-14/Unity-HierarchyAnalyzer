@@ -80,12 +80,13 @@ namespace DependencyAnalyzer.Editor
             var searchField = new TextField("Search") { name = "search-field" };
             var searchSuggestionList = new VisualElement { name = "search-suggestion-list" };
             searchSuggestionList.AddToClassList("dependency-search-suggestion-list");
-            var searchPreviousButton = new Button { name = "search-previous-button", text = "↑" };
-            var searchNextButton = new Button { name = "search-next-button", text = "↓" };
+            var searchPreviousButton = new Button { name = "search-previous-button" };
+            searchPreviousButton.AddToClassList("dependency-search-arrow-button");
+            var searchNextButton = new Button { name = "search-next-button" };
+            searchNextButton.AddToClassList("dependency-search-arrow-button");
             var searchCountLabel = new Label("0/0") { name = "search-count-label" };
             searchCountLabel.AddToClassList("dependency-search-count");
-            var searchFilterToggle = new Toggle("Filter") { name = "search-filter-toggle" };
-            var statusLabel = new Label("Ready") { name = "status-label" };
+            var searchFilterToggle = new Toggle { name = "search-filter-toggle" };
 
             zoomStepControl.Add(zoomScaleLabel);
             zoomStepControl.Add(zoomStepSlider);
@@ -100,7 +101,6 @@ namespace DependencyAnalyzer.Editor
             toolbar.Add(loadProgressLabel);
             toolbar.Add(zoomStepControl);
             toolbar.Add(searchControl);
-            toolbar.Add(statusLabel);
             root.Add(toolbar);
 
             var graphContainer = new VisualElement { name = "graph-container" };

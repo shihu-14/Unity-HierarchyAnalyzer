@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
+using DependencyAnalyzer.Editor.Utils;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -1942,15 +1943,23 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return;
             }
 
-            const float durationSeconds = 0.17f;
-            var rect = view.GetGraphRect();
+            const float durationSeconds = 0.95f;
+            const float holdSeconds = 0.16f;
+            var nodeColor = IconUtility.GetNodeAccentColor(view.Data);
+            var borderColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 1f);
+            var fillColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 0.10f);
             var ring = new VisualElement();
             ring.AddToClassList("dependency-node-flash-ring");
             ring.pickingMode = PickingMode.Ignore;
-            ring.style.left = -5f;
-            ring.style.top = -5f;
-            ring.style.width = rect.width + 10f;
-            ring.style.height = rect.height + 10f;
+            ring.style.left = -4f;
+            ring.style.top = -4f;
+            ring.style.right = -4f;
+            ring.style.bottom = -4f;
+            ring.style.borderTopColor = borderColor;
+            ring.style.borderRightColor = borderColor;
+            ring.style.borderBottomColor = borderColor;
+            ring.style.borderLeftColor = borderColor;
+            ring.style.backgroundColor = fillColor;
             ring.style.opacity = 1f;
             view.Add(ring);
 
@@ -1958,7 +1967,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             IVisualElementScheduledItem animation = null;
             animation = ring.schedule.Execute(() =>
             {
-                var t = Mathf.Clamp01((Time.realtimeSinceStartup - startTime) / durationSeconds);
+                var elapsed = Time.realtimeSinceStartup - startTime;
+                var t = Mathf.Clamp01((elapsed - holdSeconds) / (durationSeconds - holdSeconds));
                 ring.style.opacity = 1f - SmoothStep(t);
                 if (t < 1f)
                 {

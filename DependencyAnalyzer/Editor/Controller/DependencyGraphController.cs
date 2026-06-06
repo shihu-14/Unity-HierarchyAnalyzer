@@ -79,19 +79,19 @@ namespace DependencyAnalyzer.Editor.Controller
             if (searchField != null)
             {
                 searchField.RegisterValueChangedCallback(HandleSearchChanged);
-                searchField.RegisterCallback<KeyDownEvent>(HandleSearchKeyDown);
+                searchField.RegisterCallback<KeyDownEvent>(HandleSearchKeyDown, TrickleDown.TrickleDown);
             }
 
             if (searchPreviousButton != null)
             {
-                searchPreviousButton.text = "↑";
+                SetSearchArrowIcon(searchPreviousButton, true);
                 searchPreviousButton.tooltip = "Previous result";
                 searchPreviousButton.clicked += HandleSearchPreviousClicked;
             }
 
             if (searchNextButton != null)
             {
-                searchNextButton.text = "↓";
+                SetSearchArrowIcon(searchNextButton, false);
                 searchNextButton.tooltip = "Next result";
                 searchNextButton.clicked += HandleSearchNextClicked;
             }
@@ -141,7 +141,7 @@ namespace DependencyAnalyzer.Editor.Controller
             if (searchField != null)
             {
                 searchField.UnregisterValueChangedCallback(HandleSearchChanged);
-                searchField.UnregisterCallback<KeyDownEvent>(HandleSearchKeyDown);
+                searchField.UnregisterCallback<KeyDownEvent>(HandleSearchKeyDown, TrickleDown.TrickleDown);
             }
 
             if (searchPreviousButton != null)
@@ -221,7 +221,7 @@ namespace DependencyAnalyzer.Editor.Controller
             cache.Clear();
             isLoading = true;
             SetLoadControlsEnabled(false);
-            SetLoadProgress("Loading");
+            SetLoadProgress(0f);
             SetStatus(string.Empty);
 
             try
@@ -279,8 +279,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 return;
             }
 
-            var percentage = progress.Total <= 0 ? 0f : progress.Ratio * 100f;
-            SetLoadProgress(progress.ScannerName + ": " + progress.Message + " (" + percentage.ToString("0") + "%)");
+            SetLoadProgress(progress.Total <= 0 ? 0f : progress.Ratio);
         }
 
         private void InitializeZoomFields(AnalyzerSettings settings)
@@ -520,14 +519,15 @@ namespace DependencyAnalyzer.Editor.Controller
             }
         }
 
-        private void SetLoadProgress(string message)
+        private void SetLoadProgress(float ratio)
         {
             if (loadProgressLabel == null)
             {
                 return;
             }
 
-            loadProgressLabel.text = message;
+            var completed = Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(ratio) * 100f), 0, 100);
+            loadProgressLabel.text = completed + "/100";
             loadProgressLabel.style.display = DisplayStyle.Flex;
         }
 
@@ -536,8 +536,17 @@ namespace DependencyAnalyzer.Editor.Controller
             if (loadProgressLabel != null)
             {
                 loadProgressLabel.text = string.Empty;
-                loadProgressLabel.style.display = DisplayStyle.None;
+                loadProgressLabel.style.display = DisplayStyle.Flex;
             }
+        }
+
+        private static void SetSearchArrowIcon(Button button, bool pointsUp)
+        {
+            button.text = string.Empty;
+            button.Clear();
+            var icon = new ChevronIcon(pointsUp);
+            icon.StretchToParentSize();
+            button.Add(icon);
         }
 
         private void SetStatus(string message)
@@ -732,6 +741,46 @@ namespace DependencyAnalyzer.Editor.Controller
                     return "dependency-issue-row--warning";
                 default:
                     return "dependency-issue-row--info";
+            }
+        }
+
+        private sealed class ChevronIcon : VisualElement
+        {
+            private readonly bool pointsUp;
+
+            public ChevronIcon(bool pointsUp)
+            {
+                this.pointsUp = pointsUp;
+                pickingMode = PickingMode.Ignore;
+                generateVisualContent += DrawChevron;
+            }
+
+            private void DrawChevron(MeshGenerationContext context)
+            {
+                var rect = contentRect;
+                if (rect.width <= 0f || rect.height <= 0f)
+                {
+                    return;
+                }
+
+                var centerX = rect.center.x;
+                var centerY = rect.center.y;
+                var halfWidth = Mathf.Min(rect.width * 0.26f, 7f);
+                var halfHeight = Mathf.Min(rect.height * 0.22f, 5f);
+                var left = new Vector2(centerX - halfWidth, pointsUp ? centerY + halfHeight : centerY - halfHeight);
+                var peak = new Vector2(centerX, pointsUp ? centerY - halfHeight : centerY + halfHeight);
+                var right = new Vector2(centerX + halfWidth, pointsUp ? centerY + halfHeight : centerY - halfHeight);
+
+                var painter = context.painter2D;
+                painter.strokeColor = Color.white;
+                painter.lineWidth = 3.2f;
+                painter.lineCap = LineCap.Round;
+                painter.lineJoin = LineJoin.Round;
+                painter.BeginPath();
+                painter.MoveTo(left);
+                painter.LineTo(peak);
+                painter.LineTo(right);
+                painter.Stroke();
             }
         }
 

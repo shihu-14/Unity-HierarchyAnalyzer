@@ -191,5 +191,42 @@ namespace DependencyAnalyzer.Editor.Utils
 
             return "dependency-node--default";
         }
+
+        public static Color GetNodeAccentColor(DependencyNodeData node)
+        {
+            var className = GetNodeTypeClass(node);
+            switch (className)
+            {
+                case "dependency-node--prefab":
+                    return new Color(0.32f, 0.65f, 1f);
+                case "dependency-node--material":
+                    return new Color(0.82f, 0.67f, 0.33f);
+                case "dependency-node--texture":
+                    return new Color(0.37f, 0.71f, 0.52f);
+                case "dependency-node--audio":
+                    return new Color(0.69f, 0.47f, 0.78f);
+                case "dependency-node--mesh":
+                    return new Color(0.65f, 0.61f, 0.56f);
+                case "dependency-node--scriptable-object":
+                    return new Color(0.77f, 0.51f, 0.40f);
+                case "dependency-node--object":
+                case "dependency-node--scene":
+                    return new Color(0.46f, 0.66f, 0.77f);
+                case "dependency-node--component":
+                    return new Color(0.62f, 0.83f, 0.52f);
+                case "dependency-node--csharp":
+                    return new Color(0.41f, 0.72f, 0.47f);
+                case "dependency-node--camera":
+                    return new Color(0.42f, 0.72f, 0.84f);
+                case "dependency-node--canvas":
+                    return new Color(0.89f, 0.41f, 0.68f);
+                case "dependency-node--light":
+                    return new Color(0.85f, 0.78f, 0.40f);
+                case "dependency-node--missing":
+                    return new Color(0.87f, 0.39f, 0.39f);
+                default:
+                    return new Color(0.56f, 0.63f, 0.70f);
+            }
+        }
     }
 }
