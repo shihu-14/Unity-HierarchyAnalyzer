@@ -42,19 +42,21 @@
 .dependency-search-control {
     min-width: 320px;
     max-width: 520px;
-    height: 34px;
+    height: 30px;
     flex-direction: row;
     align-items: center;
     flex-grow: 1;
     flex-shrink: 1;
     margin-right: 10px;
+    margin-top: 2px;
+    margin-bottom: 2px;
     padding-left: 18px;
     padding-right: 12px;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
-    background-color: #241817;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    background-color: #050505;
     overflow: visible;
 }
 
@@ -69,7 +71,7 @@
 
 .dependency-search-field-wrap TextField {
     width: 100%;
-    height: 28px;
+    height: 26px;
     margin-right: 0;
 }
 
@@ -80,7 +82,7 @@
 }
 
 .dependency-search-field-wrap TextField TextInput {
-    height: 28px;
+    height: 26px;
     background-color: rgba(0, 0, 0, 0);
     color: #efe7e7;
     -unity-font-style: bold;
@@ -89,7 +91,7 @@
 
 .dependency-search-field-wrap .unity-base-text-field__input,
 .dependency-search-field-wrap .unity-text-field__input {
-    height: 28px;
+    height: 26px;
     background-color: rgba(0, 0, 0, 0);
     color: #efe7e7;
     -unity-font-style: bold;
@@ -119,7 +121,7 @@
 
 .dependency-search-suggestion-list {
     position: absolute;
-    top: 32px;
+    top: 30px;
     left: 0;
     right: 0;
     max-height: 178px;

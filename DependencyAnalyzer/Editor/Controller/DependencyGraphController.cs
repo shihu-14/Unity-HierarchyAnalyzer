@@ -765,15 +765,15 @@ namespace DependencyAnalyzer.Editor.Controller
 
                 var centerX = rect.center.x;
                 var centerY = rect.center.y;
-                var halfWidth = Mathf.Min(rect.width * 0.26f, 7f);
-                var halfHeight = Mathf.Min(rect.height * 0.22f, 5f);
+                var halfWidth = Mathf.Min(rect.width * 0.28f, 8f);
+                var halfHeight = Mathf.Min(rect.height * 0.26f, 6f);
                 var left = new Vector2(centerX - halfWidth, pointsUp ? centerY + halfHeight : centerY - halfHeight);
                 var peak = new Vector2(centerX, pointsUp ? centerY - halfHeight : centerY + halfHeight);
                 var right = new Vector2(centerX + halfWidth, pointsUp ? centerY + halfHeight : centerY - halfHeight);
 
                 var painter = context.painter2D;
                 painter.strokeColor = Color.white;
-                painter.lineWidth = 3.2f;
+                painter.lineWidth = 3.8f;
                 painter.lineCap = LineCap.Round;
                 painter.lineJoin = LineJoin.Round;
                 painter.BeginPath();
