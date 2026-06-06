@@ -20,11 +20,11 @@ namespace DependencyAnalyzer.Editor.Controller
         private readonly ScannerOrchestrator scannerOrchestrator;
         private readonly DependencyCache cache;
         private readonly EditorSelectionSync selectionSync;
-        private readonly Button scanButton;
-        private readonly Button cancelButton;
+        private readonly Button loadButton;
+        private readonly Label loadProgressLabel;
         private readonly Slider zoomStepSlider;
-        private readonly Label zoomStepValueLabel;
         private readonly TextField searchField;
+        private readonly VisualElement searchSuggestionList;
         private readonly Button searchPreviousButton;
         private readonly Button searchNextButton;
         private readonly Label searchCountLabel;
@@ -41,6 +41,8 @@ namespace DependencyAnalyzer.Editor.Controller
         private bool hierarchyRefreshQueued;
         private bool suppressNextSelectionFocus;
         private bool issueListVisible = true;
+        private bool hasCompletedLoad;
+        private bool isLoading;
         private int suppressedSelectionInstanceId;
 
         public DependencyGraphController(VisualElement root, DependencyGraphView graphView)
@@ -51,11 +53,11 @@ namespace DependencyAnalyzer.Editor.Controller
             cache = new DependencyCache();
             selectionSync = new EditorSelectionSync();
 
-            scanButton = root.Q<Button>("scan-button");
-            cancelButton = root.Q<Button>("cancel-button");
+            loadButton = root.Q<Button>("load-button") ?? root.Q<Button>("scan-button");
+            loadProgressLabel = root.Q<Label>("load-progress-label");
             zoomStepSlider = root.Q<Slider>("zoom-step-slider");
-            zoomStepValueLabel = root.Q<Label>("zoom-step-value-label");
             searchField = root.Q<TextField>("search-field");
+            searchSuggestionList = root.Q<VisualElement>("search-suggestion-list");
             searchPreviousButton = root.Q<Button>("search-previous-button");
             searchNextButton = root.Q<Button>("search-next-button");
             searchCountLabel = root.Q<Label>("search-count-label");
@@ -66,16 +68,13 @@ namespace DependencyAnalyzer.Editor.Controller
             issueTitleLabel = root.Q<Label>("issue-title-label");
             issueToggleButton = root.Q<Button>("issue-toggle-button");
 
-            if (scanButton != null)
+            if (loadButton != null)
             {
-                scanButton.clicked += HandleScanClicked;
+                loadButton.clicked += HandleLoadClicked;
+                UpdateLoadButtonText();
             }
 
-            if (cancelButton != null)
-            {
-                cancelButton.clicked += CancelActiveScan;
-                cancelButton.SetEnabled(false);
-            }
+            HideLoadProgress();
 
             if (searchField != null)
             {
@@ -85,11 +84,15 @@ namespace DependencyAnalyzer.Editor.Controller
 
             if (searchPreviousButton != null)
             {
+                searchPreviousButton.text = "↑";
+                searchPreviousButton.tooltip = "Previous result";
                 searchPreviousButton.clicked += HandleSearchPreviousClicked;
             }
 
             if (searchNextButton != null)
             {
+                searchNextButton.text = "↓";
+                searchNextButton.tooltip = "Next result";
                 searchNextButton.clicked += HandleSearchNextClicked;
             }
 
@@ -125,14 +128,9 @@ namespace DependencyAnalyzer.Editor.Controller
             Selection.selectionChanged -= HandleEditorSelectionChanged;
             graphView.NodeSelected -= HandleNodeSelected;
 
-            if (scanButton != null)
+            if (loadButton != null)
             {
-                scanButton.clicked -= HandleScanClicked;
-            }
-
-            if (cancelButton != null)
-            {
-                cancelButton.clicked -= CancelActiveScan;
+                loadButton.clicked -= HandleLoadClicked;
             }
 
             if (zoomStepSlider != null)
@@ -181,7 +179,7 @@ namespace DependencyAnalyzer.Editor.Controller
             _ = ScanAsync();
         }
 
-        private void HandleScanClicked()
+        private void HandleLoadClicked()
         {
             _ = ScanAsync();
         }
@@ -221,19 +219,23 @@ namespace DependencyAnalyzer.Editor.Controller
 
             var token = activeCancellation.Token;
             cache.Clear();
-            SetScanControlsEnabled(false);
-            SetStatus("Scanning");
+            isLoading = true;
+            SetLoadControlsEnabled(false);
+            SetLoadProgress("Loading");
+            SetStatus(string.Empty);
 
             try
             {
                 var settings = AnalyzerSettings.LoadOrCreateRuntimeSettings();
                 ApplyGraphSettings(settings);
-                var progress = new Progress<ScanProgress>(HandleScanProgress);
+                var progress = new Progress<ScanProgress>(scanProgress => HandleScanProgress(scanProgress, activeCancellation));
                 currentGraph = await scannerOrchestrator.ScanAsync(settings, cache, progress, token);
                 graphView.Populate(currentGraph, settings.InitialExpansionDepth);
                 UpdateSearchState(graphView.SetSearch(GetSearchQuery(), IsSearchFilterEnabled(), false));
                 PopulateIssuePanel(currentGraph);
                 ReportIssues(currentGraph);
+                hasCompletedLoad = true;
+                UpdateLoadButtonText();
                 SetStatus("Completed: " + currentGraph.Nodes.Count + " nodes, "
                     + currentGraph.Edges.Count + " edges, "
                     + CountIssueEntries(currentGraph) + " issues");
@@ -255,7 +257,9 @@ namespace DependencyAnalyzer.Editor.Controller
                     scanCancellation = null;
                 }
 
-                SetScanControlsEnabled(true);
+                isLoading = false;
+                HideLoadProgress();
+                SetLoadControlsEnabled(true);
             }
         }
 
@@ -265,20 +269,23 @@ namespace DependencyAnalyzer.Editor.Controller
 
             step = Mathf.Clamp(step, 0.001f, 0.03f);
             SetZoomSliderValue(step);
-            UpdateZoomStepValueLabel(step);
             graphView.ConfigureZoom(AnalyzerSettings.DefaultZoomMin, AnalyzerSettings.DefaultZoomMax, step);
         }
 
-        private void HandleScanProgress(ScanProgress progress)
+        private void HandleScanProgress(ScanProgress progress, CancellationTokenSource activeCancellation)
         {
+            if (!isLoading || !ReferenceEquals(scanCancellation, activeCancellation))
+            {
+                return;
+            }
+
             var percentage = progress.Total <= 0 ? 0f : progress.Ratio * 100f;
-            SetStatus(progress.ScannerName + ": " + progress.Message + " (" + percentage.ToString("0") + "%)");
+            SetLoadProgress(progress.ScannerName + ": " + progress.Message + " (" + percentage.ToString("0") + "%)");
         }
 
         private void InitializeZoomFields(AnalyzerSettings settings)
         {
             SetZoomSliderValue(settings.ZoomStep);
-            UpdateZoomStepValueLabel(settings.ZoomStep);
             if (zoomStepSlider != null)
             {
                 zoomStepSlider.RegisterValueChangedCallback(HandleZoomChanged);
@@ -298,14 +305,6 @@ namespace DependencyAnalyzer.Editor.Controller
             }
 
             zoomStepSlider.SetValueWithoutNotify(value);
-        }
-
-        private void UpdateZoomStepValueLabel(float value)
-        {
-            if (zoomStepValueLabel != null)
-            {
-                zoomStepValueLabel.text = value.ToString("0.000");
-            }
         }
 
         private void HandleSearchChanged(ChangeEvent<string> evt)
@@ -345,6 +344,7 @@ namespace DependencyAnalyzer.Editor.Controller
                     searchField.value = string.Empty;
                 }
 
+                HideSearchSuggestions();
                 evt.PreventDefault();
                 evt.StopPropagation();
             }
@@ -384,6 +384,73 @@ namespace DependencyAnalyzer.Editor.Controller
             var hasResults = state.Total > 0;
             searchPreviousButton?.SetEnabled(hasResults);
             searchNextButton?.SetEnabled(hasResults);
+            UpdateSearchSuggestions(state.Suggestions);
+        }
+
+        private void UpdateSearchSuggestions(IReadOnlyList<DependencyGraphView.SearchSuggestion> suggestions)
+        {
+            if (searchSuggestionList == null)
+            {
+                return;
+            }
+
+            searchSuggestionList.Clear();
+            if (string.IsNullOrWhiteSpace(GetSearchQuery()) || suggestions == null || suggestions.Count == 0)
+            {
+                HideSearchSuggestions();
+                return;
+            }
+
+            for (var i = 0; i < suggestions.Count; i++)
+            {
+                var suggestion = suggestions[i];
+                var row = new VisualElement();
+                row.AddToClassList("dependency-search-suggestion-row");
+                row.tooltip = suggestion.Path;
+                row.RegisterCallback<MouseDownEvent>(evt =>
+                {
+                    if (evt.button != 0)
+                    {
+                        return;
+                    }
+
+                    SelectSearchSuggestion(suggestion);
+                    evt.PreventDefault();
+                    evt.StopPropagation();
+                });
+
+                var title = new Label(suggestion.DisplayName);
+                title.AddToClassList("dependency-search-suggestion-title");
+                var detail = new Label(suggestion.Detail);
+                detail.AddToClassList("dependency-search-suggestion-detail");
+                row.Add(title);
+                row.Add(detail);
+                searchSuggestionList.Add(row);
+            }
+
+            searchSuggestionList.style.display = DisplayStyle.Flex;
+        }
+
+        private void SelectSearchSuggestion(DependencyGraphView.SearchSuggestion suggestion)
+        {
+            if (searchField == null)
+            {
+                return;
+            }
+
+            searchField.SetValueWithoutNotify(suggestion.DisplayName);
+            UpdateSearchState(graphView.SetSearch(suggestion.DisplayName, IsSearchFilterEnabled(), false));
+            graphView.FocusNode(suggestion.NodeId, true);
+            HideSearchSuggestions();
+            searchField.Focus();
+        }
+
+        private void HideSearchSuggestions()
+        {
+            if (searchSuggestionList != null)
+            {
+                searchSuggestionList.style.display = DisplayStyle.None;
+            }
         }
 
         private void HandleNodeSelected(DependencyNodeData node)
@@ -440,10 +507,37 @@ namespace DependencyAnalyzer.Editor.Controller
             scanCancellation.Cancel();
         }
 
-        private void SetScanControlsEnabled(bool enabled)
+        private void SetLoadControlsEnabled(bool enabled)
         {
-            scanButton?.SetEnabled(enabled);
-            cancelButton?.SetEnabled(!enabled);
+            loadButton?.SetEnabled(enabled);
+        }
+
+        private void UpdateLoadButtonText()
+        {
+            if (loadButton != null)
+            {
+                loadButton.text = hasCompletedLoad ? "Reload" : "Load";
+            }
+        }
+
+        private void SetLoadProgress(string message)
+        {
+            if (loadProgressLabel == null)
+            {
+                return;
+            }
+
+            loadProgressLabel.text = message;
+            loadProgressLabel.style.display = DisplayStyle.Flex;
+        }
+
+        private void HideLoadProgress()
+        {
+            if (loadProgressLabel != null)
+            {
+                loadProgressLabel.text = string.Empty;
+                loadProgressLabel.style.display = DisplayStyle.None;
+            }
         }
 
         private void SetStatus(string message)

@@ -21,6 +21,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float AnimationDurationSeconds = 0.22f;
         private const int MaxAnimatedLayoutNodeCount = 140;
         private const int MaxAnimatedLayoutNodeDelta = 40;
+        private const int MaxSearchSuggestions = 6;
 
         private readonly VisualElement contentLayer;
         private readonly VisualElement edgeLayer;
@@ -2253,20 +2254,79 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private SearchResultState GetSearchResultState()
         {
-            return new SearchResultState(currentSearchResultIndex, searchResultNodeIds.Count);
+            return new SearchResultState(currentSearchResultIndex, searchResultNodeIds.Count, BuildSearchSuggestions(MaxSearchSuggestions));
+        }
+
+        private IReadOnlyList<SearchSuggestion> BuildSearchSuggestions(int maxCount)
+        {
+            if (graph == null || searchResultNodeIds.Count == 0 || maxCount <= 0)
+            {
+                return Array.Empty<SearchSuggestion>();
+            }
+
+            var suggestions = new List<SearchSuggestion>(Mathf.Min(maxCount, searchResultNodeIds.Count));
+            for (var i = 0; i < searchResultNodeIds.Count && suggestions.Count < maxCount; i++)
+            {
+                if (!graph.TryGetNode(searchResultNodeIds[i], out var node))
+                {
+                    continue;
+                }
+
+                suggestions.Add(new SearchSuggestion(
+                    node.Id,
+                    node.DisplayName,
+                    BuildSuggestionDetail(node),
+                    node.Path));
+            }
+
+            return suggestions;
+        }
+
+        private static string BuildSuggestionDetail(DependencyNodeData node)
+        {
+            var typeName = string.IsNullOrEmpty(node.TypeName) ? node.Kind.ToString() : node.TypeName;
+            if (string.IsNullOrEmpty(node.Path))
+            {
+                return typeName;
+            }
+
+            return typeName + " - " + node.Path;
         }
 
         public struct SearchResultState
         {
             public SearchResultState(int currentIndex, int total)
+                : this(currentIndex, total, Array.Empty<SearchSuggestion>())
+            {
+            }
+
+            public SearchResultState(int currentIndex, int total, IReadOnlyList<SearchSuggestion> suggestions)
             {
                 CurrentIndex = currentIndex;
                 Total = total;
+                Suggestions = suggestions ?? Array.Empty<SearchSuggestion>();
             }
 
             public int CurrentIndex { get; }
             public int Total { get; }
+            public IReadOnlyList<SearchSuggestion> Suggestions { get; }
             public int DisplayIndex => CurrentIndex < 0 || Total <= 0 ? 0 : CurrentIndex + 1;
+        }
+
+        public readonly struct SearchSuggestion
+        {
+            public SearchSuggestion(string nodeId, string displayName, string detail, string path)
+            {
+                NodeId = nodeId ?? string.Empty;
+                DisplayName = displayName ?? string.Empty;
+                Detail = detail ?? string.Empty;
+                Path = path ?? string.Empty;
+            }
+
+            public string NodeId { get; }
+            public string DisplayName { get; }
+            public string Detail { get; }
+            public string Path { get; }
         }
 
         private readonly struct MiniMapMetrics

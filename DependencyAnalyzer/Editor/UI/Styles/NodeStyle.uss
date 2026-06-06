@@ -7,6 +7,7 @@
     height: 34px;
     flex-direction: row;
     align-items: center;
+    overflow: visible;
     padding-left: 8px;
     padding-right: 8px;
     border-bottom-width: 1px;
@@ -18,6 +19,19 @@
     min-width: 72px;
     height: 22px;
     margin-right: 6px;
+}
+
+.dependency-load-progress-label {
+    min-width: 130px;
+    max-width: 220px;
+    height: 22px;
+    margin-right: 10px;
+    color: #d7dae0;
+    font-size: 10px;
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .dependency-status-label {
@@ -35,30 +49,88 @@
     flex-grow: 1;
     flex-shrink: 1;
     margin-right: 10px;
+    overflow: visible;
 }
 
-.dependency-search-control TextField {
+.dependency-search-field-wrap {
+    position: relative;
     min-width: 112px;
     flex-grow: 1;
     flex-shrink: 1;
     margin-right: 4px;
+    overflow: visible;
 }
 
-.dependency-search-control TextField Label {
+.dependency-search-field-wrap TextField {
+    width: 100%;
+    margin-right: 0;
+}
+
+.dependency-search-field-wrap TextField Label {
     min-width: 42px;
     color: #c7d0dc;
 }
 
-.dependency-search-control TextField TextInput {
+.dependency-search-field-wrap TextField TextInput {
     height: 20px;
     background-color: #171a1f;
     color: #eef2f7;
 }
 
 .dependency-search-control Button {
-    min-width: 40px;
+    min-width: 24px;
+    width: 24px;
     height: 22px;
     margin-right: 4px;
+    font-size: 12px;
+    -unity-text-align: middle-center;
+}
+
+.dependency-search-suggestion-list {
+    position: absolute;
+    top: 24px;
+    left: 42px;
+    right: 0;
+    max-height: 178px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-color: #46515e;
+    border-right-color: #303943;
+    border-bottom-color: #242b33;
+    border-left-color: #46515e;
+    background-color: #1f242b;
+}
+
+.dependency-search-suggestion-row {
+    min-height: 34px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.dependency-search-suggestion-row:hover {
+    background-color: #303943;
+}
+
+.dependency-search-suggestion-title {
+    color: #eef2f7;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dependency-search-suggestion-detail {
+    color: #aeb8c4;
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .dependency-search-count {
@@ -75,23 +147,23 @@
 }
 
 .dependency-zoom-step-control {
-    width: 224px;
+    width: 250px;
     flex-direction: row;
     align-items: center;
     margin-left: 4px;
     margin-right: 10px;
 }
 
-.dependency-zoom-step-control Slider {
-    width: 174px;
+.dependency-zoom-scale-label {
+    width: 78px;
+    margin-right: 4px;
+    color: #c7d0dc;
+    font-size: 11px;
+    -unity-text-align: middle-left;
 }
 
-.dependency-zoom-step-value {
-    width: 38px;
-    margin-left: 6px;
-    color: #d7dae0;
-    font-size: 10px;
-    -unity-text-align: middle-left;
+.dependency-zoom-step-control Slider {
+    width: 162px;
 }
 
 .dependency-graph-container {
