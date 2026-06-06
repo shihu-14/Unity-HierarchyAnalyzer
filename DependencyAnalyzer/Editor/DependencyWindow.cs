@@ -110,6 +110,8 @@ namespace DependencyAnalyzer.Editor
 
             var issuePanel = new VisualElement { name = "issue-panel" };
             issuePanel.AddToClassList("dependency-issue-panel");
+            var issueResizeHandle = new VisualElement { name = "issue-resize-handle" };
+            issueResizeHandle.AddToClassList("dependency-issue-resize-handle");
             var issueHeader = new VisualElement { name = "issue-panel-header" };
             issueHeader.AddToClassList("dependency-issue-header");
             var issueTitleLabel = new Label("Issues (0)") { name = "issue-title-label" };
@@ -119,6 +121,7 @@ namespace DependencyAnalyzer.Editor
             issueList.AddToClassList("dependency-issue-list");
             issueHeader.Add(issueTitleLabel);
             issueHeader.Add(issueToggleButton);
+            issuePanel.Add(issueResizeHandle);
             issuePanel.Add(issueHeader);
             issuePanel.Add(issueList);
             root.Add(issuePanel);

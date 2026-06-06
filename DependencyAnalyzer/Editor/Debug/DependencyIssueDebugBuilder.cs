@@ -10,19 +10,36 @@ namespace DependencyAnalyzer.Editor.DebugTools
         [MenuItem("Tools/Dependency Analyzer/Create Debug Issue Objects")]
         public static void CreateDebugIssueObjects()
         {
-            var root = GameObject.Find(RootName);
-            if (root == null)
-            {
-                root = new GameObject(RootName);
-                Undo.RegisterCreatedObjectUndo(root, "Create dependency issue root");
-            }
+            var root = GetOrCreateRoot();
 
             CreateMeshFilterWithoutMesh(root.transform);
             CreateRendererWithEmptyMaterial(root.transform);
             CreateAudioSourceWithoutClip(root.transform);
             CreateAnimatorWithoutController(root.transform);
             CreateSkinnedMeshWithoutMesh(root.transform);
+            CreateObjectWithChildAndReferenceDetails(root.transform);
             EditorUtility.SetDirty(root);
+        }
+
+        [MenuItem("Tools/Dependency Analyzer/Create Debug Toggle Detail Object")]
+        public static void CreateDebugToggleDetailObject()
+        {
+            var root = GetOrCreateRoot();
+            CreateObjectWithChildAndReferenceDetails(root.transform);
+            EditorUtility.SetDirty(root);
+        }
+
+        private static GameObject GetOrCreateRoot()
+        {
+            var root = GameObject.Find(RootName);
+            if (root != null)
+            {
+                return root;
+            }
+
+            root = new GameObject(RootName);
+            Undo.RegisterCreatedObjectUndo(root, "Create dependency issue root");
+            return root;
         }
 
         private static void CreateMeshFilterWithoutMesh(Transform parent)
@@ -62,6 +79,34 @@ namespace DependencyAnalyzer.Editor.DebugTools
         {
             var gameObject = CreateCaseObject(parent, "Issue_SkinnedMesh_NoMesh", new Vector3(9.6f, 0f, 0f));
             gameObject.AddComponent<SkinnedMeshRenderer>();
+        }
+
+        private static void CreateObjectWithChildAndReferenceDetails(Transform parent)
+        {
+            var gameObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Undo.RegisterCreatedObjectUndo(gameObject, "Create dependency issue object");
+            gameObject.name = "Debug_BothToggleAndDetails_Parent";
+            gameObject.transform.SetParent(parent);
+            gameObject.transform.localPosition = new Vector3(12f, 0f, 0f);
+
+            var renderer = gameObject.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                if (shader != null)
+                {
+                    var material = new Material(shader) { name = "Debug_BothToggleAndDetails_Material" };
+                    Undo.RegisterCreatedObjectUndo(material, "Create dependency issue material");
+                    renderer.sharedMaterial = material;
+                }
+            }
+
+            var child = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Undo.RegisterCreatedObjectUndo(child, "Create dependency issue child object");
+            child.name = "Debug_BothToggleAndDetails_Child";
+            child.transform.SetParent(gameObject.transform);
+            child.transform.localPosition = new Vector3(0f, 1.4f, 0f);
+            child.transform.localScale = new Vector3(0.45f, 0.45f, 0.45f);
         }
 
         private static GameObject CreateCaseObject(Transform parent, string name, Vector3 position)

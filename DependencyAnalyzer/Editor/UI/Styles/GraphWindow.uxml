@@ -20,6 +20,7 @@
         </ui:VisualElement>
         <ui:VisualElement name="graph-container" class="dependency-graph-container" />
         <ui:VisualElement name="issue-panel" class="dependency-issue-panel">
+            <ui:VisualElement name="issue-resize-handle" class="dependency-issue-resize-handle" />
             <ui:VisualElement name="issue-panel-header" class="dependency-issue-header">
                 <ui:Label name="issue-title-label" text="Issues (0)" class="dependency-issue-title" />
                 <ui:Button name="issue-toggle-button" text="Hide" />

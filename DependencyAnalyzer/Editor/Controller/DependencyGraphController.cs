@@ -15,6 +15,11 @@ namespace DependencyAnalyzer.Editor.Controller
 {
     public sealed class DependencyGraphController : IDisposable
     {
+        private const float DefaultIssuePanelHeight = 148f;
+        private const float CollapsedIssuePanelHeight = 36f;
+        private const float MinimumIssuePanelHeight = 64f;
+        private const float MaximumIssuePanelHeight = 460f;
+
         private readonly DependencyGraphView graphView;
         private readonly VisualElement root;
         private readonly ScannerOrchestrator scannerOrchestrator;
@@ -31,6 +36,7 @@ namespace DependencyAnalyzer.Editor.Controller
         private readonly Toggle searchFilterToggle;
         private readonly Label statusLabel;
         private readonly VisualElement issuePanel;
+        private readonly VisualElement issueResizeHandle;
         private readonly ScrollView issueList;
         private readonly Label issueTitleLabel;
         private readonly Button issueToggleButton;
@@ -43,6 +49,10 @@ namespace DependencyAnalyzer.Editor.Controller
         private bool issueListVisible = true;
         private bool hasCompletedLoad;
         private bool isLoading;
+        private bool isResizingIssuePanel;
+        private float issuePanelHeight = DefaultIssuePanelHeight;
+        private float issueResizeStartMouseY;
+        private float issueResizeStartHeight;
         private int suppressedSelectionInstanceId;
 
         public DependencyGraphController(VisualElement root, DependencyGraphView graphView)
@@ -64,6 +74,7 @@ namespace DependencyAnalyzer.Editor.Controller
             searchFilterToggle = root.Q<Toggle>("search-filter-toggle");
             statusLabel = root.Q<Label>("status-label");
             issuePanel = root.Q<VisualElement>("issue-panel");
+            issueResizeHandle = root.Q<VisualElement>("issue-resize-handle");
             issueList = root.Q<ScrollView>("issue-list");
             issueTitleLabel = root.Q<Label>("issue-title-label");
             issueToggleButton = root.Q<Button>("issue-toggle-button");
@@ -106,6 +117,13 @@ namespace DependencyAnalyzer.Editor.Controller
                 issueToggleButton.clicked += ToggleIssueList;
             }
 
+            if (issueResizeHandle != null)
+            {
+                issueResizeHandle.RegisterCallback<MouseDownEvent>(HandleIssueResizeMouseDown);
+                issueResizeHandle.RegisterCallback<MouseMoveEvent>(HandleIssueResizeMouseMove);
+                issueResizeHandle.RegisterCallback<MouseUpEvent>(HandleIssueResizeMouseUp);
+            }
+
             var settings = AnalyzerSettings.LoadOrCreateRuntimeSettings();
             InitializeZoomFields(settings);
             ApplyGraphSettings(settings);
@@ -116,6 +134,7 @@ namespace DependencyAnalyzer.Editor.Controller
             root.RegisterCallback<KeyDownEvent>(HandleGlobalKeyDown, TrickleDown.TrickleDown);
             UpdateSearchState(new DependencyGraphView.SearchResultState(-1, 0));
             PopulateIssuePanel(null);
+            ApplyIssuePanelHeight();
             SetStatus("Ready");
         }
 
@@ -162,6 +181,13 @@ namespace DependencyAnalyzer.Editor.Controller
             if (issueToggleButton != null)
             {
                 issueToggleButton.clicked -= ToggleIssueList;
+            }
+
+            if (issueResizeHandle != null)
+            {
+                issueResizeHandle.UnregisterCallback<MouseDownEvent>(HandleIssueResizeMouseDown);
+                issueResizeHandle.UnregisterCallback<MouseMoveEvent>(HandleIssueResizeMouseMove);
+                issueResizeHandle.UnregisterCallback<MouseUpEvent>(HandleIssueResizeMouseUp);
             }
 
             root?.UnregisterCallback<KeyDownEvent>(HandleGlobalKeyDown, TrickleDown.TrickleDown);
@@ -657,15 +683,91 @@ namespace DependencyAnalyzer.Editor.Controller
                 issueList.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
             }
 
-            if (issuePanel != null)
-            {
-                issuePanel.style.height = visible ? 148f : 30f;
-            }
+            ApplyIssuePanelHeight();
 
             if (issueToggleButton != null)
             {
                 issueToggleButton.text = visible ? "Hide" : "Show";
             }
+        }
+
+        private void HandleIssueResizeMouseDown(MouseDownEvent evt)
+        {
+            if (evt.button != 0 || issuePanel == null || !issueListVisible)
+            {
+                return;
+            }
+
+            isResizingIssuePanel = true;
+            issueResizeStartMouseY = evt.mousePosition.y;
+            issueResizeStartHeight = GetCurrentIssuePanelHeight();
+            MouseCaptureController.CaptureMouse(issueResizeHandle);
+            evt.StopPropagation();
+        }
+
+        private void HandleIssueResizeMouseMove(MouseMoveEvent evt)
+        {
+            if (!isResizingIssuePanel || issuePanel == null)
+            {
+                return;
+            }
+
+            var deltaY = evt.mousePosition.y - issueResizeStartMouseY;
+            issuePanelHeight = Mathf.Clamp(issueResizeStartHeight - deltaY, MinimumIssuePanelHeight, GetMaximumIssuePanelHeight());
+            ApplyIssuePanelHeight();
+            evt.StopPropagation();
+        }
+
+        private void HandleIssueResizeMouseUp(MouseUpEvent evt)
+        {
+            if (!isResizingIssuePanel)
+            {
+                return;
+            }
+
+            isResizingIssuePanel = false;
+            if (issueResizeHandle != null && MouseCaptureController.HasMouseCapture(issueResizeHandle))
+            {
+                MouseCaptureController.ReleaseMouse(issueResizeHandle);
+            }
+
+            evt.StopPropagation();
+        }
+
+        private void ApplyIssuePanelHeight()
+        {
+            if (issuePanel == null)
+            {
+                return;
+            }
+
+            issuePanel.style.height = issueListVisible
+                ? Mathf.Clamp(issuePanelHeight, MinimumIssuePanelHeight, GetMaximumIssuePanelHeight())
+                : CollapsedIssuePanelHeight;
+        }
+
+        private float GetMaximumIssuePanelHeight()
+        {
+            var rootHeight = root == null ? 0f : root.resolvedStyle.height;
+            if (float.IsNaN(rootHeight) || rootHeight <= 0f)
+            {
+                return MaximumIssuePanelHeight;
+            }
+
+            return Mathf.Clamp(rootHeight * 0.68f, MinimumIssuePanelHeight, MaximumIssuePanelHeight);
+        }
+
+        private float GetCurrentIssuePanelHeight()
+        {
+            if (issuePanel == null)
+            {
+                return issuePanelHeight;
+            }
+
+            var currentHeight = issuePanel.resolvedStyle.height;
+            return float.IsNaN(currentHeight) || currentHeight <= 0f
+                ? issuePanelHeight
+                : currentHeight;
         }
 
         private static int CountIssueEntries(DependencyGraphData graphData)
@@ -765,15 +867,15 @@ namespace DependencyAnalyzer.Editor.Controller
 
                 var centerX = rect.center.x;
                 var centerY = rect.center.y;
-                var halfWidth = Mathf.Min(rect.width * 0.28f, 8f);
-                var halfHeight = Mathf.Min(rect.height * 0.26f, 6f);
+                var halfWidth = Mathf.Min(rect.width * 0.22f, 5.5f);
+                var halfHeight = Mathf.Min(rect.height * 0.20f, 4.2f);
                 var left = new Vector2(centerX - halfWidth, pointsUp ? centerY + halfHeight : centerY - halfHeight);
                 var peak = new Vector2(centerX, pointsUp ? centerY - halfHeight : centerY + halfHeight);
                 var right = new Vector2(centerX + halfWidth, pointsUp ? centerY + halfHeight : centerY - halfHeight);
 
                 var painter = context.painter2D;
                 painter.strokeColor = Color.white;
-                painter.lineWidth = 3.8f;
+                painter.lineWidth = 2.8f;
                 painter.lineCap = LineCap.Round;
                 painter.lineJoin = LineJoin.Round;
                 painter.BeginPath();
