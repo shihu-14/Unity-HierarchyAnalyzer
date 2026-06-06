@@ -9,13 +9,13 @@
             </ui:VisualElement>
             <ui:VisualElement name="search-control" class="dependency-search-control">
                 <ui:VisualElement name="search-field-wrap" class="dependency-search-field-wrap">
-                    <ui:TextField name="search-field" label="Search" />
+                    <ui:TextField name="search-field" />
                     <ui:VisualElement name="search-suggestion-list" class="dependency-search-suggestion-list" />
                 </ui:VisualElement>
+                <ui:Label name="search-count-label" text="0 / 0" class="dependency-search-count" />
+                <ui:VisualElement name="search-divider" class="dependency-search-divider" />
                 <ui:Button name="search-previous-button" text="" class="dependency-search-arrow-button" />
                 <ui:Button name="search-next-button" text="" class="dependency-search-arrow-button" />
-                <ui:Label name="search-count-label" text="0/0" class="dependency-search-count" />
-                <ui:Toggle name="search-filter-toggle" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="graph-container" class="dependency-graph-container" />

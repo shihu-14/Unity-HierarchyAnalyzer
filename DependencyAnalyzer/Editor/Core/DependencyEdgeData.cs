@@ -8,7 +8,8 @@ namespace DependencyAnalyzer.Editor.Core
         Component,
         PrefabInstance,
         StaticAsset,
-        SerializedProperty
+        SerializedProperty,
+        Issue
     }
 
     [Serializable]

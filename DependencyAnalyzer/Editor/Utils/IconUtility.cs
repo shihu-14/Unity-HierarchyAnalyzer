@@ -118,6 +118,11 @@ namespace DependencyAnalyzer.Editor.Utils
                 return "dependency-node--missing";
             }
 
+            if (node.Kind == DependencyNodeKind.Issue)
+            {
+                return GetIssueNodeTypeClass(node);
+            }
+
             var typeName = node.TypeName;
             if (typeName.Contains("Directional Light") || typeName == "Light")
             {
@@ -224,9 +229,30 @@ namespace DependencyAnalyzer.Editor.Utils
                     return new Color(0.85f, 0.78f, 0.40f);
                 case "dependency-node--missing":
                     return new Color(0.87f, 0.39f, 0.39f);
+                case "dependency-node--issue-error":
+                    return new Color(0.93f, 0.31f, 0.31f);
+                case "dependency-node--issue-warning":
+                    return new Color(0.95f, 0.69f, 0.27f);
+                case "dependency-node--issue-info":
+                    return new Color(0.39f, 0.67f, 0.95f);
                 default:
                     return new Color(0.56f, 0.63f, 0.70f);
             }
+        }
+
+        private static string GetIssueNodeTypeClass(DependencyNodeData node)
+        {
+            if (node.TypeName.IndexOf("Error", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return "dependency-node--issue-error";
+            }
+
+            if (node.TypeName.IndexOf("Info", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return "dependency-node--issue-info";
+            }
+
+            return "dependency-node--issue-warning";
         }
     }
 }

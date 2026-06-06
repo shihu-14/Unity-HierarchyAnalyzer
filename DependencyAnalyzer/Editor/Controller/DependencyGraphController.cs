@@ -377,7 +377,7 @@ namespace DependencyAnalyzer.Editor.Controller
         {
             if (searchCountLabel != null)
             {
-                searchCountLabel.text = state.DisplayIndex + "/" + state.Total;
+                searchCountLabel.text = state.DisplayIndex + " / " + state.Total;
             }
 
             var hasResults = state.Total > 0;

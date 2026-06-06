@@ -140,6 +140,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     return new Color(0.84f, 0.66f, 0.48f, 0.9f);
                 case DependencyReferenceKind.SerializedProperty:
                     return new Color(0.56f, 0.78f, 0.64f, 0.9f);
+                case DependencyReferenceKind.Issue:
+                    return new Color(0.95f, 0.57f, 0.32f, 0.92f);
                 default:
                     return new Color(0.72f, 0.78f, 0.85f, 0.85f);
             }
@@ -147,7 +149,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private static bool IsDottedEdge(DependencyReferenceKind kind)
         {
-            return kind == DependencyReferenceKind.SerializedProperty;
+            return kind == DependencyReferenceKind.SerializedProperty
+                || kind == DependencyReferenceKind.Issue;
         }
 
         private static void DrawDottedCurve(Painter2D painter, RoutePoints points)

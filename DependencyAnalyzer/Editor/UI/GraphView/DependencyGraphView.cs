@@ -1426,10 +1426,12 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     return 1;
                 case DependencyReferenceKind.SerializedProperty:
                     return 2;
-                case DependencyReferenceKind.PrefabInstance:
+                case DependencyReferenceKind.Issue:
                     return 3;
-                default:
+                case DependencyReferenceKind.PrefabInstance:
                     return 4;
+                default:
+                    return 5;
             }
         }
 

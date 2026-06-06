@@ -95,6 +95,8 @@ namespace DependencyAnalyzer.Editor.Scanners
                                 continue;
                             }
 
+                            AddComponentHealthIssues(component, gameObjectNode, graph);
+
                             if (!ShouldVisualizeComponent(component))
                             {
                                 AddHiddenComponentMaterialDependencies(component, gameObjectNode, graph, cache, settings);
@@ -115,6 +117,76 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             return components;
+        }
+
+        private static void AddComponentHealthIssues(
+            Component component,
+            DependencyNodeData ownerNode,
+            DependencyGraphData graph)
+        {
+            if (component == null || ownerNode == null || graph == null)
+            {
+                return;
+            }
+
+            var subjectPath = ownerNode.Path;
+            var meshFilter = component as MeshFilter;
+            if (meshFilter != null && meshFilter.sharedMesh == null)
+            {
+                AddComponentIssue(graph, subjectPath, "MeshFilter has no shared mesh", DependencyScanIssueSeverity.Warning);
+                return;
+            }
+
+            var skinnedMeshRenderer = component as SkinnedMeshRenderer;
+            if (skinnedMeshRenderer != null && skinnedMeshRenderer.sharedMesh == null)
+            {
+                AddComponentIssue(graph, subjectPath, "SkinnedMeshRenderer has no shared mesh", DependencyScanIssueSeverity.Warning);
+            }
+
+            var renderer = component as Renderer;
+            if (renderer != null)
+            {
+                var materials = renderer.sharedMaterials;
+                if (materials == null || materials.Length == 0)
+                {
+                    AddComponentIssue(graph, subjectPath, renderer.GetType().Name + " has no material slots", DependencyScanIssueSeverity.Info);
+                }
+                else
+                {
+                    for (var i = 0; i < materials.Length; i++)
+                    {
+                        if (materials[i] == null)
+                        {
+                            AddComponentIssue(graph, subjectPath, renderer.GetType().Name + " has an empty material slot [" + i + "]", DependencyScanIssueSeverity.Warning);
+                        }
+                    }
+                }
+            }
+
+            var audioSource = component as AudioSource;
+            if (audioSource != null && audioSource.playOnAwake && audioSource.clip == null)
+            {
+                AddComponentIssue(graph, subjectPath, "AudioSource is play-on-awake but has no clip", DependencyScanIssueSeverity.Warning);
+            }
+
+            var animator = component as Animator;
+            if (animator != null && animator.runtimeAnimatorController == null)
+            {
+                AddComponentIssue(graph, subjectPath, "Animator has no controller", DependencyScanIssueSeverity.Warning);
+            }
+        }
+
+        private static void AddComponentIssue(
+            DependencyGraphData graph,
+            string subjectPath,
+            string message,
+            DependencyScanIssueSeverity severity)
+        {
+            graph.AddIssue(new DependencyScanIssueData(
+                ScannerName,
+                subjectPath,
+                message,
+                severity));
         }
 
         private static void ScanComponent(
