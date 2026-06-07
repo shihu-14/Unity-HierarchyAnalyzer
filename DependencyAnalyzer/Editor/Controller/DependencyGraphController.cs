@@ -574,7 +574,7 @@ namespace DependencyAnalyzer.Editor.Controller
 
         private static void SetSearchArrowIcon(Button button, bool pointsUp)
         {
-            SetChevronButtonIcon(button, pointsUp, 0.67f);
+            SetChevronButtonIcon(button, pointsUp, 0.45f);
         }
 
         private static void SetChevronButtonIcon(Button button, bool pointsUp, float verticalScale)
@@ -709,7 +709,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 return;
             }
 
-            SetChevronButtonIcon(issueToggleButton, !issueListVisible, 0.45f);
+            SetChevronButtonIcon(issueToggleButton, !issueListVisible, 0.59f);
             issueToggleButton.tooltip = issueListVisible ? "Hide issues" : "Show issues";
         }
 

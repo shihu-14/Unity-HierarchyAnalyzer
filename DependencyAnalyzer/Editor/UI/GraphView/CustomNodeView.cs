@@ -228,17 +228,17 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             AddStackShadowEdge(
                 layerClass,
                 "dependency-node-stack-shadow--right",
-                nodeWidth - 1f,
+                nodeWidth,
                 offset,
-                offset + 1f,
+                offset,
                 nodeHeight);
             AddStackShadowEdge(
                 layerClass,
                 "dependency-node-stack-shadow--bottom",
                 offset,
-                nodeHeight - 1f,
+                nodeHeight,
                 nodeWidth,
-                offset + 1f);
+                offset);
         }
 
         private void AddStackShadowEdge(string layerClass, string edgeClass, float left, float top, float width, float height)
