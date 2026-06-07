@@ -7,6 +7,7 @@ using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Scanners;
 using DependencyAnalyzer.Editor.Settings;
 using DependencyAnalyzer.Editor.UI.GraphView;
+using DependencyAnalyzer.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -283,7 +284,6 @@ namespace DependencyAnalyzer.Editor.Controller
                 graphView.Populate(currentGraph, settings.InitialExpansionDepth);
                 UpdateSearchState(graphView.SetSearch(GetSearchQuery(), IsSearchFilterEnabled(), false));
                 PopulateIssuePanel(currentGraph);
-                ReportIssues(currentGraph);
                 hasCompletedLoad = true;
                 UpdateLoadButtonText();
                 SetStatus("Completed: " + currentGraph.Nodes.Count + " nodes, "
@@ -721,31 +721,6 @@ namespace DependencyAnalyzer.Editor.Controller
             }
         }
 
-        private static void ReportIssues(DependencyGraphData graphData)
-        {
-            if (graphData == null || graphData.Issues.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var issue in graphData.Issues)
-            {
-                var message = "[" + issue.ScannerName + "] " + issue.SubjectPath + ": " + issue.Message;
-                if (issue.Severity == DependencyScanIssueSeverity.Error)
-                {
-                    Debug.LogError(message);
-                }
-                else if (issue.Severity == DependencyScanIssueSeverity.Warning)
-                {
-                    Debug.LogWarning(message);
-                }
-                else
-                {
-                    Debug.Log(message);
-                }
-            }
-        }
-
         private void PopulateIssuePanel(DependencyGraphData graphData)
         {
             if (issueList == null)
@@ -754,9 +729,16 @@ namespace DependencyAnalyzer.Editor.Controller
             }
 
             var entries = BuildIssueEntries(graphData);
+            var errorEntries = entries
+                .Where(entry => entry.Severity == DependencyScanIssueSeverity.Error)
+                .ToList();
+            var warningEntries = entries
+                .Where(entry => entry.Severity == DependencyScanIssueSeverity.Warning)
+                .ToList();
+
             if (issueTitleLabel != null)
             {
-                issueTitleLabel.text = "Issues (" + entries.Count + ")";
+                issueTitleLabel.text = "Issues (" + errorEntries.Count + " errors, " + warningEntries.Count + " warnings)";
             }
 
             issueList.contentContainer.Clear();
@@ -767,6 +749,31 @@ namespace DependencyAnalyzer.Editor.Controller
                 issueList.Add(empty);
                 return;
             }
+
+            AddIssueSection("Errors", DependencyScanIssueSeverity.Error, errorEntries);
+            AddIssueSection("Warnings", DependencyScanIssueSeverity.Warning, warningEntries);
+        }
+
+        private void AddIssueSection(string title, DependencyScanIssueSeverity severity, IReadOnlyList<IssuePanelEntry> entries)
+        {
+            if (issueList == null || entries == null || entries.Count == 0)
+            {
+                return;
+            }
+
+            var header = new VisualElement();
+            header.AddToClassList("dependency-issue-section-header");
+            header.AddToClassList(GetIssueSeverityClass(severity));
+
+            var icon = new Image { image = IconUtility.GetIssueIcon(severity) };
+            icon.AddToClassList("dependency-issue-section-icon");
+
+            var label = new Label(title + " (" + entries.Count + ")");
+            label.AddToClassList("dependency-issue-section-label");
+
+            header.Add(icon);
+            header.Add(label);
+            issueList.Add(header);
 
             for (var i = 0; i < entries.Count; i++)
             {
@@ -799,12 +806,25 @@ namespace DependencyAnalyzer.Editor.Controller
             }
 
             row.tooltip = entry.Detail;
+            var severityIcon = new Image { image = IconUtility.GetIssueIcon(entry.Severity) };
+            severityIcon.AddToClassList("dependency-issue-severity-icon");
+
+            var nodeIcon = new Image { image = entry.NodeIcon };
+            nodeIcon.AddToClassList("dependency-issue-node-icon");
+
+            var text = new VisualElement();
+            text.AddToClassList("dependency-issue-text");
+
             var main = new Label(entry.Title);
             main.AddToClassList("dependency-issue-main");
             var detail = new Label(entry.Detail);
             detail.AddToClassList("dependency-issue-detail");
-            row.Add(main);
-            row.Add(detail);
+            text.Add(main);
+            text.Add(detail);
+
+            row.Add(severityIcon);
+            row.Add(nodeIcon);
+            row.Add(text);
             return row;
         }
 
@@ -975,20 +995,37 @@ namespace DependencyAnalyzer.Editor.Controller
                     "Missing Reference: " + node.DisplayName,
                     string.IsNullOrEmpty(node.Path) ? node.TypeName : node.Path,
                     DependencyScanIssueSeverity.Warning,
-                    node.Id));
+                    node.Id,
+                    IconUtility.GetIcon(node)));
             }
 
             foreach (var issue in graphData.Issues)
             {
+                if (!IsDisplayedIssueSeverity(issue.Severity))
+                {
+                    continue;
+                }
+
                 var targetNodeId = FindIssueTargetNodeId(graphData, issue.SubjectPath);
+                if (string.IsNullOrEmpty(targetNodeId)
+                    || !graphData.TryGetNode(targetNodeId, out var targetNode))
+                {
+                    continue;
+                }
+
                 entries.Add(new IssuePanelEntry(
-                    issue.Severity + ": " + issue.ScannerName,
-                    issue.SubjectPath + " - " + issue.Message,
+                    issue.ScannerName + ": " + targetNode.DisplayName,
+                    issue.Message,
                     issue.Severity,
-                    targetNodeId));
+                    targetNodeId,
+                    IconUtility.GetIcon(targetNode)));
             }
 
-            return entries;
+            return entries
+                .OrderByDescending(entry => entry.Severity == DependencyScanIssueSeverity.Error)
+                .ThenBy(entry => entry.Title, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(entry => entry.Detail, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         private static string FindIssueTargetNodeId(DependencyGraphData graphData, string subjectPath)
@@ -1026,6 +1063,12 @@ namespace DependencyAnalyzer.Editor.Controller
                 default:
                     return "dependency-issue-row--info";
             }
+        }
+
+        private static bool IsDisplayedIssueSeverity(DependencyScanIssueSeverity severity)
+        {
+            return severity == DependencyScanIssueSeverity.Error
+                || severity == DependencyScanIssueSeverity.Warning;
         }
 
         private sealed class ChevronIcon : VisualElement
@@ -1076,18 +1119,21 @@ namespace DependencyAnalyzer.Editor.Controller
                 string title,
                 string detail,
                 DependencyScanIssueSeverity severity,
-                string targetNodeId)
+                string targetNodeId,
+                Texture nodeIcon)
             {
                 Title = title ?? string.Empty;
                 Detail = detail ?? string.Empty;
                 Severity = severity;
                 TargetNodeId = targetNodeId ?? string.Empty;
+                NodeIcon = nodeIcon;
             }
 
             public string Title { get; }
             public string Detail { get; }
             public DependencyScanIssueSeverity Severity { get; }
             public string TargetNodeId { get; }
+            public Texture NodeIcon { get; }
         }
     }
 }

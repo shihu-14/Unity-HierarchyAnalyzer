@@ -151,11 +151,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             if (renderer != null)
             {
                 var materials = renderer.sharedMaterials;
-                if (materials == null || materials.Length == 0)
-                {
-                    AddComponentIssue(graph, subjectPath, renderer.GetType().Name + " has no material slots", DependencyScanIssueSeverity.Info);
-                }
-                else
+                if (materials != null)
                 {
                     for (var i = 0; i < materials.Length; i++)
                     {

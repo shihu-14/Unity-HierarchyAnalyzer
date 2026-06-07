@@ -45,6 +45,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             mergedGraph.RecalculateReferenceCounts();
+            ConsoleIssueScanner.AddConsoleIssues(mergedGraph, cache);
             AddIssueNodes(mergedGraph, cache);
             mergedGraph.RecalculateReferenceCounts();
             progress?.Report(new ScanProgress("Dependency Analyzer", "Completed", 1, 1));
@@ -89,20 +90,20 @@ namespace DependencyAnalyzer.Editor.Scanners
             for (var i = 0; i < graph.Issues.Count; i++)
             {
                 var issue = graph.Issues[i];
-                var sourceNodeId = FindIssueSourceNodeId(graph, issue.SubjectPath);
-                DependencyNodeData sourceNode = null;
-                if (!string.IsNullOrEmpty(sourceNodeId))
+                if (!IsNodeLinkedIssueSeverity(issue.Severity))
                 {
-                    graph.TryGetNode(sourceNodeId, out sourceNode);
+                    continue;
                 }
 
-                var issueNode = AssetScanner.CreateIssueNode(issue, cache, sourceNode);
-                graph.AddOrUpdateNode(issueNode);
-
+                var sourceNodeId = FindIssueSourceNodeId(graph, issue.SubjectPath);
                 if (string.IsNullOrEmpty(sourceNodeId))
                 {
                     continue;
                 }
+
+                graph.TryGetNode(sourceNodeId, out var sourceNode);
+                var issueNode = AssetScanner.CreateIssueNode(issue, cache, sourceNode);
+                graph.AddOrUpdateNode(issueNode);
 
                 graph.AddEdge(new DependencyEdgeData(
                     sourceNodeId,
@@ -151,6 +152,12 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             return bestNodeId;
+        }
+
+        private static bool IsNodeLinkedIssueSeverity(DependencyScanIssueSeverity severity)
+        {
+            return severity == DependencyScanIssueSeverity.Error
+                || severity == DependencyScanIssueSeverity.Warning;
         }
     }
 }

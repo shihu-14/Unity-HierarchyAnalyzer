@@ -354,8 +354,35 @@
     -unity-text-align: middle-left;
 }
 
+.dependency-issue-section-header {
+    min-height: 25px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 10px;
+    border-bottom-width: 1px;
+    border-bottom-color: #30363e;
+    background-color: #252a30;
+}
+
+.dependency-issue-section-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+
+.dependency-issue-section-label {
+    color: #dce2ea;
+    -unity-font-style: bold;
+    font-size: 11px;
+    -unity-text-align: middle-left;
+}
+
 .dependency-issue-row {
     min-height: 42px;
+    flex-direction: row;
+    align-items: center;
     padding-left: 10px;
     padding-right: 10px;
     padding-top: 5px;
@@ -385,6 +412,25 @@
 
 .dependency-issue-row--disabled {
     opacity: 0.62;
+}
+
+.dependency-issue-severity-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 7px;
+    flex-shrink: 0;
+}
+
+.dependency-issue-node-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 7px;
+    flex-shrink: 0;
+}
+
+.dependency-issue-text {
+    flex-grow: 1;
+    min-width: 0;
 }
 
 .dependency-issue-main {
