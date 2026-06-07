@@ -19,9 +19,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float DeepNodeGap = 12f;
         private const float DepthNodeScaleStep = 0.08f;
         private const float MinimumDepthNodeScale = 0.58f;
-        private const float AnimationDurationSeconds = 0.22f;
+        private const float AnimationDurationSeconds = 0.5f;
         private const int MaxAnimatedLayoutNodeCount = 140;
-        private const int MaxAnimatedLayoutNodeDelta = 40;
+        private const int MaxAnimatedLayoutNodeDelta = 120;
         private const int MaxSearchSuggestions = 6;
 
         private readonly VisualElement contentLayer;
@@ -1026,14 +1026,30 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 indexBySource[parentViewId] = edgeIndex + 1;
                 var total = totalBySource[parentViewId];
                 var routeOffset = (edgeIndex - (total - 1) * 0.5f) * 22f;
+                var visualSourceRect = GetEdgeSourceRect(renderNode.Parent, sourceRect);
                 var edgeView = new CustomEdgeView(renderNode.EdgeFromParent);
                 var targetRenderNode = renderNode;
                 edgeView.SetCanvasSize(currentCanvasSize.x, currentCanvasSize.y);
-                edgeView.SetEndpoints(sourceRect, targetRect, routeOffset, edgeIndex, total);
+                edgeView.SetEndpoints(visualSourceRect, targetRect, routeOffset, edgeIndex, total);
                 edgeView.ChildJumpRequested += _ => FocusRenderNode(targetRenderNode, true);
-                edgeRoutes.Add(new EdgeRoute(targetRenderNode, CreateEdgeRoute(sourceRect, targetRect, routeOffset, edgeIndex, total)));
+                edgeRoutes.Add(new EdgeRoute(targetRenderNode, CreateEdgeRoute(visualSourceRect, targetRect, routeOffset, edgeIndex, total)));
                 edgeLayer.Add(edgeView);
             }
+        }
+
+        private static Rect GetEdgeSourceRect(RenderNode renderNode, Rect sourceRect)
+        {
+            if (renderNode == null || !renderNode.HasHiddenChildren)
+            {
+                return sourceRect;
+            }
+
+            var stackOffset = CustomNodeView.GetHiddenStackOffset(renderNode.SizeScale);
+            return new Rect(
+                sourceRect.x + stackOffset,
+                sourceRect.y + stackOffset,
+                sourceRect.width,
+                sourceRect.height);
         }
 
         private void AnimateLayoutTransition(

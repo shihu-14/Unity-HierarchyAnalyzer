@@ -574,14 +574,14 @@ namespace DependencyAnalyzer.Editor.Controller
 
         private static void SetSearchArrowIcon(Button button, bool pointsUp)
         {
-            SetChevronButtonIcon(button, pointsUp);
+            SetChevronButtonIcon(button, pointsUp, 0.67f);
         }
 
-        private static void SetChevronButtonIcon(Button button, bool pointsUp)
+        private static void SetChevronButtonIcon(Button button, bool pointsUp, float verticalScale)
         {
             button.text = string.Empty;
             button.Clear();
-            var icon = new ChevronIcon(pointsUp);
+            var icon = new ChevronIcon(pointsUp, verticalScale);
             icon.StretchToParentSize();
             button.Add(icon);
         }
@@ -709,7 +709,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 return;
             }
 
-            SetChevronButtonIcon(issueToggleButton, !issueListVisible);
+            SetChevronButtonIcon(issueToggleButton, !issueListVisible, 0.45f);
             issueToggleButton.tooltip = issueListVisible ? "Hide issues" : "Show issues";
         }
 
@@ -904,10 +904,12 @@ namespace DependencyAnalyzer.Editor.Controller
         private sealed class ChevronIcon : VisualElement
         {
             private readonly bool pointsUp;
+            private readonly float verticalScale;
 
-            public ChevronIcon(bool pointsUp)
+            public ChevronIcon(bool pointsUp, float verticalScale)
             {
                 this.pointsUp = pointsUp;
+                this.verticalScale = Mathf.Clamp(verticalScale, 0.25f, 1f);
                 pickingMode = PickingMode.Ignore;
                 generateVisualContent += DrawChevron;
             }
@@ -923,7 +925,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 var centerX = rect.center.x;
                 var centerY = rect.center.y;
                 var halfWidth = Mathf.Min(rect.width * 0.23f, 4.7f);
-                var halfHeight = Mathf.Min(rect.height * 0.16f, 4f);
+                var halfHeight = Mathf.Min(rect.height * 0.16f, 4f) * verticalScale;
                 var left = new Vector2(centerX - halfWidth, pointsUp ? centerY + halfHeight : centerY - halfHeight);
                 var peak = new Vector2(centerX, pointsUp ? centerY - halfHeight : centerY + halfHeight);
                 var right = new Vector2(centerX + halfWidth, pointsUp ? centerY + halfHeight : centerY - halfHeight);

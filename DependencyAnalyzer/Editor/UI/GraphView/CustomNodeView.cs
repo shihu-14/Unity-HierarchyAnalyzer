@@ -18,7 +18,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float NameFontSize = 12f;
         private const float TypeFontSize = 10f;
         private const float BadgeFontSize = 10f;
-        private const float ToggleFontSize = 12f;
         private const float ParentJumpFontSize = 11f;
         private const float BackStackOffset = 8f;
         private const float MiddleStackOffset = 4f;
@@ -124,11 +123,17 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 Mathf.Round((NodeHeight + Mathf.Round(MaxExtraHeight * ratio)) * scale));
         }
 
+        public static float GetHiddenStackOffset(float sizeScale)
+        {
+            var scale = Mathf.Clamp(sizeScale, MinimumNodeScale, 1f);
+            return Mathf.Max(1f, Mathf.Round(BackStackOffset * scale));
+        }
+
         private void BuildContent()
         {
             if (HasHiddenChildren)
             {
-                AddStackShadow("dependency-node-stack-shadow--back", Mathf.Round(BackStackOffset * nodeScale));
+                AddStackShadow("dependency-node-stack-shadow--back", GetHiddenStackOffset(nodeScale));
                 AddStackShadow("dependency-node-stack-shadow--middle", Mathf.Round(MiddleStackOffset * nodeScale));
             }
 
@@ -193,12 +198,15 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             badgeContainer.Add(CreateBadge(Data.DependencyCount.ToString(), "Dependencies", nodeScale));
             badgeContainer.Add(CreateBadge(Data.UsedByCount.ToString(), "Used By", nodeScale));
-            if (canToggleChildren)
+            if (canToggleChildren && hasMenuChildren)
+            {
+                badgeContainer.Add(CreateControlStack());
+            }
+            else if (canToggleChildren)
             {
                 badgeContainer.Add(CreateToggleButton());
             }
-
-            if (hasMenuChildren)
+            else if (hasMenuChildren)
             {
                 badgeContainer.Add(CreateMenuToggleButton());
             }
@@ -220,17 +228,17 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             AddStackShadowEdge(
                 layerClass,
                 "dependency-node-stack-shadow--right",
-                nodeWidth,
+                nodeWidth - 1f,
                 offset,
-                offset,
+                offset + 1f,
                 nodeHeight);
             AddStackShadowEdge(
                 layerClass,
                 "dependency-node-stack-shadow--bottom",
                 offset,
-                nodeHeight,
+                nodeHeight - 1f,
                 nodeWidth,
-                offset);
+                offset + 1f);
         }
 
         private void AddStackShadowEdge(string layerClass, string edgeClass, float left, float top, float width, float height)
@@ -292,17 +300,36 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return badge;
         }
 
+        private VisualElement CreateControlStack()
+        {
+            var stack = new VisualElement();
+            stack.AddToClassList("dependency-node-control-stack");
+            stack.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
+
+            var toggleButton = CreateToggleButton();
+            toggleButton.style.marginLeft = 0;
+            toggleButton.style.marginBottom = Mathf.Round(Mathf.Clamp(1f * nodeScale, 0f, 1f));
+            stack.Add(toggleButton);
+
+            var menuButton = CreateMenuToggleButton();
+            menuButton.style.marginLeft = 0;
+            menuButton.style.marginTop = Mathf.Round(Mathf.Clamp(1f * nodeScale, 0f, 1f));
+            stack.Add(menuButton);
+
+            return stack;
+        }
+
         private Label CreateToggleButton()
         {
             var button = new Label(isExpanded ? "-" : "+");
-            var buttonSize = Mathf.Round(Mathf.Clamp(18f * nodeScale, 14f, 18f));
+            var buttonSize = Mathf.Round(Mathf.Clamp(16f * nodeScale, 12f, 16f));
             button.tooltip = isExpanded ? "Collapse children" : "Expand children";
             button.AddToClassList("dependency-node-toggle");
             button.style.minWidth = buttonSize;
             button.style.width = buttonSize;
             button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
-            button.style.fontSize = Mathf.Round(Mathf.Clamp(ToggleFontSize * nodeScale, 10f, ToggleFontSize));
+            button.style.fontSize = Mathf.Round(Mathf.Clamp(10f * nodeScale, 8f, 10f));
             button.RegisterCallback<MouseDownEvent>(evt =>
             {
                 if (evt.button == 0)
@@ -318,7 +345,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private Label CreateMenuToggleButton()
         {
             var button = new Label("•••");
-            var buttonSize = Mathf.Round(Mathf.Clamp(18f * nodeScale, 14f, 18f));
+            var buttonSize = Mathf.Round(Mathf.Clamp(16f * nodeScale, 12f, 16f));
             button.tooltip = isMenuExpanded ? "Hide inspector references" : "Show inspector references";
             button.AddToClassList("dependency-node-menu-toggle");
             if (isMenuExpanded)
@@ -330,7 +357,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             button.style.width = buttonSize;
             button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
-            button.style.fontSize = Mathf.Round(Mathf.Clamp(8f * nodeScale, 7f, 8f));
+            button.style.fontSize = Mathf.Round(Mathf.Clamp(7f * nodeScale, 6f, 7f));
             button.RegisterCallback<MouseDownEvent>(evt =>
             {
                 if (evt.button == 0)
