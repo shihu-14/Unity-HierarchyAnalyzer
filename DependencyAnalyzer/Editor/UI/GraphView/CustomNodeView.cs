@@ -39,6 +39,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private readonly bool isMenuExpanded;
         private readonly bool hasParent;
         private readonly bool hasPropagatedMissingReference;
+        private readonly bool hasPropagatedIssue;
+        private readonly DependencyScanIssueSeverity propagatedIssueSeverity;
+        private readonly string propagatedIssueMessage;
         private readonly float nodeScale;
         private readonly float nodeWidth;
         private readonly float nodeHeight;
@@ -58,6 +61,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             bool isMenuExpanded,
             bool hasParent,
             bool hasPropagatedMissingReference,
+            bool hasPropagatedIssue,
+            DependencyScanIssueSeverity propagatedIssueSeverity,
+            string propagatedIssueMessage,
             float sizeScale,
             Func<float> zoomProvider)
         {
@@ -70,6 +76,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             this.isMenuExpanded = isMenuExpanded;
             this.hasParent = hasParent;
             this.hasPropagatedMissingReference = hasPropagatedMissingReference;
+            this.hasPropagatedIssue = hasPropagatedIssue;
+            this.propagatedIssueSeverity = propagatedIssueSeverity;
+            this.propagatedIssueMessage = propagatedIssueMessage ?? string.Empty;
             this.zoomProvider = zoomProvider;
             nodeScale = Mathf.Clamp(sizeScale, MinimumNodeScale, 1f);
             var preferredSize = GetPreferredSize(data, sizeScale);
@@ -198,15 +207,20 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             badgeContainer.style.marginLeft = Mathf.Round(Mathf.Clamp(6f * nodeScale, 2f, 6f));
             badgeContainer.style.flexShrink = 0f;
 
-            if (hasPropagatedMissingReference)
+            if (hasPropagatedIssue || hasPropagatedMissingReference)
             {
-                var warningIcon = new Image { image = IconUtility.GetWarningIcon() };
+                var severity = hasPropagatedIssue
+                    ? propagatedIssueSeverity
+                    : DependencyScanIssueSeverity.Warning;
+                var warningIcon = new Image { image = IconUtility.GetIssueIcon(severity) };
                 warningIcon.AddToClassList("dependency-node-warning");
                 var warningSize = Mathf.Round(Mathf.Clamp(16f * nodeScale, 11f, 16f));
                 warningIcon.style.width = warningSize;
                 warningIcon.style.height = warningSize;
                 warningIcon.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
-                warningIcon.tooltip = "Hidden child contains a missing reference";
+                warningIcon.tooltip = hasPropagatedIssue
+                    ? severity + ": " + (string.IsNullOrEmpty(propagatedIssueMessage) ? "Hidden child contains an issue" : propagatedIssueMessage)
+                    : "Hidden child contains a missing reference";
                 badgeContainer.Add(warningIcon);
             }
 

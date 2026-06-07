@@ -54,6 +54,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private readonly Dictionary<string, List<DependencyEdgeData>> menuTreeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdgeData>>();
         private readonly Dictionary<int, DependencyNodeData> nodeByInstanceId = new Dictionary<int, DependencyNodeData>();
         private readonly Dictionary<string, bool> missingReferenceSubtreeCache = new Dictionary<string, bool>();
+        private readonly Dictionary<string, SubtreeIssueState> issueSubtreeCache = new Dictionary<string, SubtreeIssueState>();
         private readonly Dictionary<string, int> minimumRegularDepths = new Dictionary<string, int>();
         private readonly List<DependencyNodeData> rootNodes = new List<DependencyNodeData>();
         private static readonly List<DependencyEdgeData> EmptyEdges = new List<DependencyEdgeData>();
@@ -337,6 +338,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             menuTreeOutgoingEdgesByNodeId.Clear();
             nodeByInstanceId.Clear();
             missingReferenceSubtreeCache.Clear();
+            issueSubtreeCache.Clear();
             minimumRegularDepths.Clear();
             rootNodes.Clear();
 
@@ -776,7 +778,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 CollectRenderNodes(roots[i]);
             }
 
-            MarkNearestVisibleMissingReferences();
+            MarkNearestVisibleIssues();
 
             var occupiedRects = new List<Rect>();
             foreach (var pair in previousNodeRects)
@@ -823,6 +825,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     renderNode.IsMenuExpanded,
                     renderNode.Parent != null,
                     renderNode.HasPropagatedMissingReference,
+                    renderNode.HasPropagatedIssue,
+                    renderNode.PropagatedIssueSeverity,
+                    renderNode.PropagatedIssueMessage,
                     renderNode.SizeScale,
                     () => zoom);
                 nodeView.SetGraphPosition(position);
@@ -946,16 +951,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
         }
 
-        private void MarkNearestVisibleMissingReferences()
+        private void MarkNearestVisibleIssues()
         {
             for (var i = 0; i < renderNodes.Count; i++)
             {
                 var renderNode = renderNodes[i];
-                if (renderNode.Node.HasMissingReferences || renderNode.Node.Kind == DependencyNodeKind.MissingReference)
-                {
-                    continue;
-                }
-
                 var outgoingEdges = GetTreeOutgoingEdges(renderNode.NodeId);
                 for (var edgeIndex = 0; edgeIndex < outgoingEdges.Count; edgeIndex++)
                 {
@@ -965,10 +965,17 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                         continue;
                     }
 
-                    if (SubtreeContainsMissingReference(edge.TargetNodeId, new HashSet<string> { renderNode.NodeId }))
+                    if (!renderNode.Node.HasMissingReferences
+                        && renderNode.Node.Kind != DependencyNodeKind.MissingReference
+                        && SubtreeContainsMissingReference(edge.TargetNodeId, new HashSet<string> { renderNode.NodeId }))
                     {
                         renderNode.HasPropagatedMissingReference = true;
-                        break;
+                    }
+
+                    var issue = FindSubtreeIssue(edge.TargetNodeId, new HashSet<string> { renderNode.NodeId });
+                    if (issue.HasIssue)
+                    {
+                        renderNode.SetPropagatedIssue(issue);
                     }
                 }
             }
@@ -1021,6 +1028,72 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             missingReferenceSubtreeCache[nodeId] = false;
             return false;
+        }
+
+        private SubtreeIssueState FindSubtreeIssue(string nodeId, HashSet<string> visited)
+        {
+            if (string.IsNullOrEmpty(nodeId))
+            {
+                return SubtreeIssueState.None;
+            }
+
+            if (issueSubtreeCache.TryGetValue(nodeId, out var cachedResult))
+            {
+                return cachedResult;
+            }
+
+            if (!visited.Add(nodeId) || !graph.TryGetNode(nodeId, out var node))
+            {
+                return SubtreeIssueState.None;
+            }
+
+            var bestIssue = SubtreeIssueState.None;
+            if (node.HasIssue
+                && node.Kind != DependencyNodeKind.MissingReference
+                && !node.HasMissingReferences
+                && IsPropagatedIssueSeverity(node.IssueSeverity.Value))
+            {
+                bestIssue = new SubtreeIssueState(
+                    true,
+                    node.IssueSeverity.Value,
+                    node.IssueMessage);
+            }
+
+            foreach (var edge in GetTreeOutgoingEdges(nodeId))
+            {
+                var childIssue = FindSubtreeIssue(edge.TargetNodeId, visited);
+                if (childIssue.HasIssue && (!bestIssue.HasIssue || IsMoreSevere(childIssue.Severity, bestIssue.Severity)))
+                {
+                    bestIssue = childIssue;
+                }
+            }
+
+            issueSubtreeCache[nodeId] = bestIssue;
+            return bestIssue;
+        }
+
+        private static bool IsPropagatedIssueSeverity(DependencyScanIssueSeverity severity)
+        {
+            return severity == DependencyScanIssueSeverity.Error
+                || severity == DependencyScanIssueSeverity.Warning;
+        }
+
+        private static bool IsMoreSevere(DependencyScanIssueSeverity candidate, DependencyScanIssueSeverity current)
+        {
+            return GetIssueSeverityRank(candidate) > GetIssueSeverityRank(current);
+        }
+
+        private static int GetIssueSeverityRank(DependencyScanIssueSeverity severity)
+        {
+            switch (severity)
+            {
+                case DependencyScanIssueSeverity.Error:
+                    return 2;
+                case DependencyScanIssueSeverity.Warning:
+                    return 1;
+                default:
+                    return 0;
+            }
         }
 
         private void RefreshEdges()
@@ -2583,6 +2656,42 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             public bool HasMenuChildren { get; set; }
             public bool IsMenuExpanded { get; set; }
             public bool HasPropagatedMissingReference { get; set; }
+            public bool HasPropagatedIssue { get; private set; }
+            public DependencyScanIssueSeverity PropagatedIssueSeverity { get; private set; } = DependencyScanIssueSeverity.Warning;
+            public string PropagatedIssueMessage { get; private set; } = string.Empty;
+
+            public void SetPropagatedIssue(SubtreeIssueState issue)
+            {
+                if (!issue.HasIssue)
+                {
+                    return;
+                }
+
+                if (HasPropagatedIssue && !IsMoreSevere(issue.Severity, PropagatedIssueSeverity))
+                {
+                    return;
+                }
+
+                HasPropagatedIssue = true;
+                PropagatedIssueSeverity = issue.Severity;
+                PropagatedIssueMessage = issue.Message;
+            }
+        }
+
+        private readonly struct SubtreeIssueState
+        {
+            public static readonly SubtreeIssueState None = new SubtreeIssueState(false, DependencyScanIssueSeverity.Warning, string.Empty);
+
+            public SubtreeIssueState(bool hasIssue, DependencyScanIssueSeverity severity, string message)
+            {
+                HasIssue = hasIssue;
+                Severity = severity;
+                Message = message ?? string.Empty;
+            }
+
+            public bool HasIssue { get; }
+            public DependencyScanIssueSeverity Severity { get; }
+            public string Message { get; }
         }
 
         private readonly struct NodeDepth

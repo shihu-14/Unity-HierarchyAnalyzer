@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DependencyAnalyzer.Editor.Core;
@@ -992,8 +993,8 @@ namespace DependencyAnalyzer.Editor.Controller
             foreach (var node in missingNodes)
             {
                 entries.Add(new IssuePanelEntry(
-                    "Missing Reference: " + node.DisplayName,
-                    string.IsNullOrEmpty(node.Path) ? node.TypeName : node.Path,
+                    "Missing Reference: " + FormatIssueTitle(node.DisplayName),
+                    FormatIssueDetail(string.IsNullOrEmpty(node.Path) ? node.TypeName : node.Path),
                     DependencyScanIssueSeverity.Warning,
                     node.Id,
                     IconUtility.GetIcon(node)));
@@ -1014,8 +1015,8 @@ namespace DependencyAnalyzer.Editor.Controller
                 }
 
                 entries.Add(new IssuePanelEntry(
-                    issue.ScannerName + ": " + targetNode.DisplayName,
-                    issue.Message,
+                    FormatIssueTitle(targetNode.DisplayName),
+                    FormatIssueDetail(issue.Message),
                     issue.Severity,
                     targetNodeId,
                     IconUtility.GetIcon(targetNode)));
@@ -1050,6 +1051,78 @@ namespace DependencyAnalyzer.Editor.Controller
                 .OrderByDescending(node => node.Path.Length)
                 .FirstOrDefault();
             return containing == null ? string.Empty : containing.Id;
+        }
+
+        private static string FormatIssueTitle(string value)
+        {
+            value = TrimIssuePrefix(value);
+            return string.IsNullOrEmpty(value)
+                ? "Issue"
+                : value.Replace('_', ' ');
+        }
+
+        private static string FormatIssueDetail(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            var result = value.Trim();
+            result = ReplaceIgnoreCase(result, "Assets/DependencyAnalyzerDemo/IssueAssets/", string.Empty);
+            result = ReplaceIgnoreCase(result, "Issue_", string.Empty);
+            result = ReplaceIgnoreCase(result, "IssueConsoleWarningBehaviour", "ConsoleWarningBehaviour");
+            result = ReplaceIgnoreCase(result, "IssueConsoleErrorShader", "ConsoleErrorShader");
+            result = ReplaceIgnoreCase(result, "Analyzer demo warning: ", string.Empty);
+            result = ReplaceIgnoreCase(result, "Console demo warning: ", string.Empty);
+            return result;
+        }
+
+        private static string TrimIssuePrefix(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            var result = value.Trim();
+            while (result.StartsWith("Issue_", StringComparison.OrdinalIgnoreCase))
+            {
+                result = result.Substring("Issue_".Length);
+            }
+
+            if (result.Length > "Issue".Length
+                && result.StartsWith("Issue", StringComparison.Ordinal)
+                && char.IsUpper(result["Issue".Length]))
+            {
+                result = result.Substring("Issue".Length);
+            }
+
+            return result;
+        }
+
+        private static string ReplaceIgnoreCase(string value, string oldValue, string newValue)
+        {
+            if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(oldValue))
+            {
+                return value ?? string.Empty;
+            }
+
+            var builder = new StringBuilder();
+            var searchStart = 0;
+            while (true)
+            {
+                var index = value.IndexOf(oldValue, searchStart, StringComparison.OrdinalIgnoreCase);
+                if (index < 0)
+                {
+                    builder.Append(value, searchStart, value.Length - searchStart);
+                    return builder.ToString();
+                }
+
+                builder.Append(value, searchStart, index - searchStart);
+                builder.Append(newValue);
+                searchStart = index + oldValue.Length;
+            }
         }
 
         private static string GetIssueSeverityClass(DependencyScanIssueSeverity severity)
