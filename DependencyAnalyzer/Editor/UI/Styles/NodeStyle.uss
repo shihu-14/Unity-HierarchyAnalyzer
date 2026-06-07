@@ -64,7 +64,7 @@
     border-right-color: #3d4249;
     border-bottom-color: #2d3238;
     border-left-color: #6c7178;
-    background-color: #050505;
+    background-color: #252a30;
     overflow: visible;
 }
 
