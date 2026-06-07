@@ -24,8 +24,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float ActionButtonFontSize = 24f;
         private const float PlusButtonFontSize = 20f;
         private const float MenuButtonFontSize = 7f;
-        private const float BackStackOffset = 8f;
-        private const float MiddleStackOffset = 4f;
+        private const float StackStepOffset = 3f;
+        private const float StackBorderOverlap = 1f;
 
         private readonly Func<float> zoomProvider;
         private readonly bool canToggleChildren;
@@ -131,8 +131,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         public static float GetHiddenStackOffset(float sizeScale)
         {
-            var scale = Mathf.Clamp(sizeScale, MinimumNodeScale, 1f);
-            return Mathf.Max(1f, Mathf.Round(BackStackOffset * scale));
+            return GetStackOffset(sizeScale, 2f);
         }
 
         private void BuildContent()
@@ -140,7 +139,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             if (HasHiddenChildren)
             {
                 AddStackShadow("dependency-node-stack-shadow--back", GetHiddenStackOffset(nodeScale));
-                AddStackShadow("dependency-node-stack-shadow--middle", Mathf.Round(MiddleStackOffset * nodeScale));
+                AddStackShadow("dependency-node-stack-shadow--middle", GetMiddleStackOffset(nodeScale));
             }
 
             var accent = new VisualElement();
@@ -271,28 +270,49 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private void AddStackShadow(string layerClass, float offset)
         {
             offset = Mathf.Max(1f, offset);
+            var overlap = GetStackBorderOverlap(nodeScale);
+            var overlappedRight = nodeWidth - overlap;
+            var overlappedBottom = nodeHeight - overlap;
+            var extent = offset + overlap;
 
             AddStackShadowPart(
                 layerClass,
                 "dependency-node-stack-shadow--right",
-                nodeWidth,
+                overlappedRight,
                 offset,
-                offset,
+                extent,
                 nodeHeight);
             AddStackShadowPart(
                 layerClass,
                 "dependency-node-stack-shadow--bottom",
                 offset,
-                nodeHeight,
+                overlappedBottom,
                 nodeWidth,
-                offset);
+                extent);
             AddStackShadowPart(
                 layerClass,
                 "dependency-node-stack-shadow--corner",
-                nodeWidth,
-                nodeHeight,
-                offset,
-                offset);
+                overlappedRight,
+                overlappedBottom,
+                extent,
+                extent);
+        }
+
+        private static float GetMiddleStackOffset(float sizeScale)
+        {
+            return GetStackOffset(sizeScale, 1f);
+        }
+
+        private static float GetStackOffset(float sizeScale, float depth)
+        {
+            var scale = Mathf.Clamp(sizeScale, MinimumNodeScale, 1f);
+            return Mathf.Max(1f, Mathf.Round(StackStepOffset * depth * scale));
+        }
+
+        private static float GetStackBorderOverlap(float sizeScale)
+        {
+            var scale = Mathf.Clamp(sizeScale, MinimumNodeScale, 1f);
+            return Mathf.Max(1f, Mathf.Round(StackBorderOverlap * scale));
         }
 
         private void AddStackShadowPart(string layerClass, string partClass, float left, float top, float width, float height)
