@@ -29,7 +29,9 @@ namespace DependencyAnalyzer.Editor.Core
             IEnumerable<string> labels,
             string iconContentName,
             DependencyNodeKind kind,
-            int instanceId = 0)
+            int instanceId = 0,
+            DependencyScanIssueSeverity? issueSeverity = null,
+            string issueMessage = null)
         {
             Id = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString("N") : id;
             GlobalObjectId = globalObjectId;
@@ -42,6 +44,8 @@ namespace DependencyAnalyzer.Editor.Core
             IconContentName = string.IsNullOrEmpty(iconContentName) ? "DefaultAsset Icon" : iconContentName;
             Kind = kind;
             InstanceId = instanceId;
+            IssueSeverity = issueSeverity;
+            IssueMessage = issueMessage ?? string.Empty;
         }
 
         public string Id { get; }
@@ -55,9 +59,12 @@ namespace DependencyAnalyzer.Editor.Core
         public string IconContentName { get; }
         public DependencyNodeKind Kind { get; }
         public int InstanceId { get; }
+        public DependencyScanIssueSeverity? IssueSeverity { get; }
+        public string IssueMessage { get; }
         public bool HasMissingReferences { get; private set; }
         public int DependencyCount { get; private set; }
         public int UsedByCount { get; private set; }
+        public bool HasIssue => IssueSeverity.HasValue;
 
         public bool IsHeavyLeafType
         {

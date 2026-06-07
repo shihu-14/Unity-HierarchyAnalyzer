@@ -106,6 +106,19 @@ namespace DependencyAnalyzer.Editor.Utils
             return EditorGUIUtility.IconContent("console.warnicon.sml").image;
         }
 
+        public static Texture GetIssueIcon(DependencyScanIssueSeverity severity)
+        {
+            switch (severity)
+            {
+                case DependencyScanIssueSeverity.Error:
+                    return EditorGUIUtility.IconContent("console.erroricon.sml").image;
+                case DependencyScanIssueSeverity.Info:
+                    return EditorGUIUtility.IconContent("console.infoicon.sml").image;
+                default:
+                    return GetWarningIcon();
+            }
+        }
+
         public static string GetNodeTypeClass(DependencyNodeData node)
         {
             if (node == null)

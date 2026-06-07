@@ -90,7 +90,13 @@ namespace DependencyAnalyzer.Editor.Scanners
             {
                 var issue = graph.Issues[i];
                 var sourceNodeId = FindIssueSourceNodeId(graph, issue.SubjectPath);
-                var issueNode = AssetScanner.CreateIssueNode(issue, cache);
+                DependencyNodeData sourceNode = null;
+                if (!string.IsNullOrEmpty(sourceNodeId))
+                {
+                    graph.TryGetNode(sourceNodeId, out sourceNode);
+                }
+
+                var issueNode = AssetScanner.CreateIssueNode(issue, cache, sourceNode);
                 graph.AddOrUpdateNode(issueNode);
 
                 if (string.IsNullOrEmpty(sourceNodeId))

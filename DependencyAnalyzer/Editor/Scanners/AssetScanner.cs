@@ -36,29 +36,61 @@ namespace DependencyAnalyzer.Editor.Scanners
             return cache.Store(node);
         }
 
-        internal static DependencyNodeData CreateMissingNode(string id, string path, string displayName)
+        internal static DependencyNodeData CreateMissingNode(
+            string id,
+            string path,
+            string displayName,
+            string typeName = "Missing",
+            string namespaceQualifiedTypeName = "Missing Reference",
+            string iconContentName = "console.warnicon.sml",
+            DependencyNodeKind kind = DependencyNodeKind.MissingReference)
         {
             var node = new DependencyNodeData(
                 id,
                 default,
                 path,
                 displayName,
-                "Missing",
-                "Missing Reference",
+                typeName,
+                namespaceQualifiedTypeName,
                 0L,
                 Array.Empty<string>(),
-                "console.warnicon.sml",
-                DependencyNodeKind.MissingReference);
+                iconContentName,
+                kind,
+                0,
+                DependencyScanIssueSeverity.Warning,
+                "Missing reference");
             node.MarkMissingReferences();
             return node;
         }
 
-        internal static DependencyNodeData CreateIssueNode(DependencyScanIssueData issue, DependencyCache cache)
+        internal static DependencyNodeData CreateIssueNode(
+            DependencyScanIssueData issue,
+            DependencyCache cache,
+            DependencyNodeData sourceNode)
         {
             var severity = issue == null ? DependencyScanIssueSeverity.Warning : issue.Severity;
             var subjectPath = issue == null ? string.Empty : issue.SubjectPath;
             var message = issue == null ? string.Empty : issue.Message;
             var scannerName = issue == null ? string.Empty : issue.ScannerName;
+            if (sourceNode != null)
+            {
+                var sourceIssueNode = new DependencyNodeData(
+                    "issue:" + severity + ":" + GetStableHash(scannerName + "\n" + subjectPath + "\n" + message),
+                    sourceNode.GlobalObjectId,
+                    string.IsNullOrEmpty(subjectPath) ? sourceNode.Path : subjectPath,
+                    sourceNode.DisplayName,
+                    sourceNode.TypeName,
+                    sourceNode.NamespaceQualifiedTypeName,
+                    sourceNode.FileSizeBytes,
+                    sourceNode.AssetLabels,
+                    sourceNode.IconContentName,
+                    sourceNode.Kind,
+                    sourceNode.InstanceId,
+                    severity,
+                    message);
+                return cache.Store(sourceIssueNode);
+            }
+
             var node = new DependencyNodeData(
                 "issue:" + severity + ":" + GetStableHash(scannerName + "\n" + subjectPath + "\n" + message),
                 default,
@@ -69,7 +101,10 @@ namespace DependencyAnalyzer.Editor.Scanners
                 0L,
                 Array.Empty<string>(),
                 GetIssueIconContentName(severity),
-                DependencyNodeKind.Issue);
+                DependencyNodeKind.Issue,
+                0,
+                severity,
+                message);
             return cache.Store(node);
         }
 
@@ -110,6 +145,11 @@ namespace DependencyAnalyzer.Editor.Scanners
 
         private static string GetDisplayTypeName(string assetPath, string fallbackTypeName)
         {
+            if (assetPath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Script";
+            }
+
             if (assetPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
             {
                 return "Prefab";

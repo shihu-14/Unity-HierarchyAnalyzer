@@ -83,7 +83,11 @@ namespace DependencyAnalyzer.Editor.Scanners
                                 var missingNode = AssetScanner.CreateMissingNode(
                                     "missing:component:" + gameObjectNode.Id + ":" + componentIndex,
                                     gameObjectNode.Path,
-                                    "Missing MonoBehaviour");
+                                    "Missing MonoBehaviour",
+                                    "Script",
+                                    "UnityEngine.MonoBehaviour",
+                                    "cs Script Icon",
+                                    DependencyNodeKind.Component);
                                 gameObjectNode.MarkMissingReferences();
                                 graph.AddOrUpdateNode(missingNode);
                                 graph.AddEdge(new DependencyEdgeData(
@@ -246,10 +250,15 @@ namespace DependencyAnalyzer.Editor.Scanners
 
                 if (property.objectReferenceInstanceIDValue != 0)
                 {
+                    var missingReferenceType = GetMissingReferenceTypeName(property);
                     var missingNode = AssetScanner.CreateMissingNode(
                         "missing:property:" + sourceNode.Id + ":" + property.propertyPath + ":" + property.objectReferenceInstanceIDValue,
                         sourceNode.Path,
-                        property.propertyPath);
+                        property.propertyPath,
+                        missingReferenceType,
+                        GetMissingReferenceNamespaceQualifiedTypeName(missingReferenceType),
+                        GetMissingReferenceIconContentName(missingReferenceType),
+                        GetMissingReferenceKind(missingReferenceType));
                     sourceNode.MarkMissingReferences();
                     graph.AddOrUpdateNode(missingNode);
                     graph.AddEdge(new DependencyEdgeData(
@@ -560,6 +569,11 @@ namespace DependencyAnalyzer.Editor.Scanners
 
         private static string GetDisplayTypeName(UnityEngine.Object unityObject, Type type)
         {
+            if (unityObject is MonoBehaviour)
+            {
+                return "Script";
+            }
+
             if (unityObject is GameObject gameObject)
             {
                 if (PrefabUtility.IsPartOfPrefabInstance(gameObject))
@@ -589,6 +603,127 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             return type.Name;
+        }
+
+        private static string GetMissingReferenceTypeName(SerializedProperty property)
+        {
+            if (property == null || string.IsNullOrEmpty(property.type))
+            {
+                return "Missing Reference";
+            }
+
+            const string pointerPrefix = "PPtr<$";
+            var type = property.type;
+            var start = type.IndexOf(pointerPrefix, StringComparison.Ordinal);
+            if (start >= 0)
+            {
+                start += pointerPrefix.Length;
+                var end = type.IndexOf('>', start);
+                if (end > start)
+                {
+                    return NormalizeMissingReferenceTypeName(type.Substring(start, end - start));
+                }
+            }
+
+            return NormalizeMissingReferenceTypeName(type);
+        }
+
+        private static string NormalizeMissingReferenceTypeName(string typeName)
+        {
+            if (string.IsNullOrEmpty(typeName))
+            {
+                return "Missing Reference";
+            }
+
+            var lastDot = typeName.LastIndexOf('.');
+            if (lastDot >= 0 && lastDot < typeName.Length - 1)
+            {
+                typeName = typeName.Substring(lastDot + 1);
+            }
+
+            if (typeName == "MonoScript" || typeName == "MonoBehaviour" || typeName.EndsWith("Script", StringComparison.Ordinal))
+            {
+                return "Script";
+            }
+
+            if (typeName == "GameObject")
+            {
+                return "Object";
+            }
+
+            if (typeName == "Texture2D" || typeName == "Texture3D" || typeName == "Cubemap")
+            {
+                return "Texture";
+            }
+
+            if (typeName == "RuntimeAnimatorController" || typeName == "AnimatorController")
+            {
+                return "Animator";
+            }
+
+            return typeName;
+        }
+
+        private static string GetMissingReferenceNamespaceQualifiedTypeName(string typeName)
+        {
+            switch (typeName)
+            {
+                case "Script":
+                    return "UnityEngine.MonoBehaviour";
+                case "Object":
+                    return "UnityEngine.GameObject";
+                case "Missing Reference":
+                    return "Missing Reference";
+                default:
+                    return "UnityEngine." + typeName;
+            }
+        }
+
+        private static string GetMissingReferenceIconContentName(string typeName)
+        {
+            switch (typeName)
+            {
+                case "Script":
+                    return "cs Script Icon";
+                case "Object":
+                    return "GameObject Icon";
+                case "Material":
+                    return "Material Icon";
+                case "Texture":
+                    return "Texture Icon";
+                case "AudioClip":
+                    return "AudioClip Icon";
+                case "Mesh":
+                    return "Mesh Icon";
+                case "Camera":
+                    return "Camera Icon";
+                case "Canvas":
+                    return "Canvas Icon";
+                case "Light":
+                    return "Light Icon";
+                case "Animator":
+                    return "Animator Icon";
+                default:
+                    return "DefaultAsset Icon";
+            }
+        }
+
+        private static DependencyNodeKind GetMissingReferenceKind(string typeName)
+        {
+            switch (typeName)
+            {
+                case "Script":
+                    return DependencyNodeKind.Component;
+                case "Object":
+                case "Camera":
+                case "Canvas":
+                case "Light":
+                    return DependencyNodeKind.SceneObject;
+                case "Missing Reference":
+                    return DependencyNodeKind.MissingReference;
+                default:
+                    return DependencyNodeKind.Asset;
+            }
         }
 
         private static string GetIconContentName(UnityEngine.Object unityObject, Type type)
