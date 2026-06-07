@@ -28,6 +28,7 @@ namespace DependencyAnalyzer.Editor.Controller
         private readonly Button loadButton;
         private readonly Label loadProgressLabel;
         private readonly Slider zoomStepSlider;
+        private readonly VisualElement searchControl;
         private readonly TextField searchField;
         private readonly VisualElement searchSuggestionList;
         private readonly Button searchPreviousButton;
@@ -66,6 +67,7 @@ namespace DependencyAnalyzer.Editor.Controller
             loadButton = root.Q<Button>("load-button") ?? root.Q<Button>("scan-button");
             loadProgressLabel = root.Q<Label>("load-progress-label");
             zoomStepSlider = root.Q<Slider>("zoom-step-slider");
+            searchControl = root.Q<VisualElement>("search-control");
             searchField = root.Q<TextField>("search-field");
             searchSuggestionList = root.Q<VisualElement>("search-suggestion-list");
             searchPreviousButton = root.Q<Button>("search-previous-button");
@@ -114,11 +116,17 @@ namespace DependencyAnalyzer.Editor.Controller
 
             if (issueToggleButton != null)
             {
+                issueToggleButton.AddToClassList("dependency-issue-toggle-button");
                 issueToggleButton.clicked += ToggleIssueList;
+                UpdateIssueToggleIcon();
             }
 
             if (issueResizeHandle != null)
             {
+                issueResizeHandle.style.cursor = new StyleCursor(new UnityEngine.UIElements.Cursor
+                {
+                    defaultCursorId = (int)MouseCursor.ResizeVertical
+                });
                 issueResizeHandle.RegisterCallback<MouseDownEvent>(HandleIssueResizeMouseDown);
                 issueResizeHandle.RegisterCallback<MouseMoveEvent>(HandleIssueResizeMouseMove);
                 issueResizeHandle.RegisterCallback<MouseUpEvent>(HandleIssueResizeMouseUp);
@@ -132,6 +140,7 @@ namespace DependencyAnalyzer.Editor.Controller
             EditorApplication.delayCall += RequestInitialScan;
             EditorApplication.hierarchyChanged += HandleHierarchyChanged;
             root.RegisterCallback<KeyDownEvent>(HandleGlobalKeyDown, TrickleDown.TrickleDown);
+            root.RegisterCallback<MouseDownEvent>(HandleRootMouseDown, TrickleDown.TrickleDown);
             UpdateSearchState(new DependencyGraphView.SearchResultState(-1, 0));
             PopulateIssuePanel(null);
             ApplyIssuePanelHeight();
@@ -191,6 +200,7 @@ namespace DependencyAnalyzer.Editor.Controller
             }
 
             root?.UnregisterCallback<KeyDownEvent>(HandleGlobalKeyDown, TrickleDown.TrickleDown);
+            root?.UnregisterCallback<MouseDownEvent>(HandleRootMouseDown, TrickleDown.TrickleDown);
 
             CancelActiveScan();
         }
@@ -568,6 +578,11 @@ namespace DependencyAnalyzer.Editor.Controller
 
         private static void SetSearchArrowIcon(Button button, bool pointsUp)
         {
+            SetChevronButtonIcon(button, pointsUp);
+        }
+
+        private static void SetChevronButtonIcon(Button button, bool pointsUp)
+        {
             button.text = string.Empty;
             button.Clear();
             var icon = new ChevronIcon(pointsUp);
@@ -687,8 +702,19 @@ namespace DependencyAnalyzer.Editor.Controller
 
             if (issueToggleButton != null)
             {
-                issueToggleButton.text = visible ? "Hide" : "Show";
+                UpdateIssueToggleIcon();
             }
+        }
+
+        private void UpdateIssueToggleIcon()
+        {
+            if (issueToggleButton == null)
+            {
+                return;
+            }
+
+            SetChevronButtonIcon(issueToggleButton, !issueListVisible);
+            issueToggleButton.tooltip = issueListVisible ? "Hide issues" : "Show issues";
         }
 
         private void HandleIssueResizeMouseDown(MouseDownEvent evt)
@@ -768,6 +794,39 @@ namespace DependencyAnalyzer.Editor.Controller
             return float.IsNaN(currentHeight) || currentHeight <= 0f
                 ? issuePanelHeight
                 : currentHeight;
+        }
+
+        private void HandleRootMouseDown(MouseDownEvent evt)
+        {
+            if (searchField == null || searchControl == null)
+            {
+                return;
+            }
+
+            var target = evt.target as VisualElement;
+            if (IsDescendantOf(target, searchControl))
+            {
+                return;
+            }
+
+            HideSearchSuggestions();
+            searchField.Blur();
+        }
+
+        private static bool IsDescendantOf(VisualElement element, VisualElement ancestor)
+        {
+            var current = element;
+            while (current != null)
+            {
+                if (current == ancestor)
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private static int CountIssueEntries(DependencyGraphData graphData)

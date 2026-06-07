@@ -23,7 +23,7 @@
             <ui:VisualElement name="issue-resize-handle" class="dependency-issue-resize-handle" />
             <ui:VisualElement name="issue-panel-header" class="dependency-issue-header">
                 <ui:Label name="issue-title-label" text="Issues (0)" class="dependency-issue-title" />
-                <ui:Button name="issue-toggle-button" text="Hide" />
+                <ui:Button name="issue-toggle-button" text="" />
             </ui:VisualElement>
             <ui:ScrollView name="issue-list" class="dependency-issue-list" />
         </ui:VisualElement>

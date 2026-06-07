@@ -116,7 +116,7 @@ namespace DependencyAnalyzer.Editor
             issueHeader.AddToClassList("dependency-issue-header");
             var issueTitleLabel = new Label("Issues (0)") { name = "issue-title-label" };
             issueTitleLabel.AddToClassList("dependency-issue-title");
-            var issueToggleButton = new Button { name = "issue-toggle-button", text = "Hide" };
+            var issueToggleButton = new Button { name = "issue-toggle-button" };
             var issueList = new ScrollView { name = "issue-list" };
             issueList.AddToClassList("dependency-issue-list");
             issueHeader.Add(issueTitleLabel);

@@ -243,8 +243,25 @@
 }
 
 .dependency-issue-header Button {
-    min-width: 58px;
-    height: 22px;
+    min-width: 30px;
+    width: 30px;
+    height: 24px;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.dependency-issue-toggle-button {
+    min-width: 30px;
+    width: 30px;
+    height: 24px;
 }
 
 .dependency-issue-list {
