@@ -40,9 +40,9 @@
 }
 
 .dependency-search-control {
-    min-width: 154px;
-    max-width: 231px;
-    width: 231px;
+    min-width: 280px;
+    max-width: 280px;
+    width: 280px;
     height: 30px;
     flex-direction: row;
     align-items: center;
