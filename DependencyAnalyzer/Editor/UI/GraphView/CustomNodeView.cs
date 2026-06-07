@@ -20,6 +20,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float BadgeFontSize = 10f;
         private const float ToggleFontSize = 12f;
         private const float ParentJumpFontSize = 11f;
+        private const float BackStackOffset = 6f;
+        private const float MiddleStackOffset = 3f;
 
         private readonly Func<float> zoomProvider;
         private readonly bool canToggleChildren;
@@ -126,19 +128,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         {
             if (HasHiddenChildren)
             {
-                var backShadow = new VisualElement();
-                backShadow.AddToClassList("dependency-node-stack-shadow");
-                backShadow.AddToClassList("dependency-node-stack-shadow--back");
-                backShadow.style.width = nodeWidth;
-                backShadow.style.height = nodeHeight;
-                Add(backShadow);
-
-                var middleShadow = new VisualElement();
-                middleShadow.AddToClassList("dependency-node-stack-shadow");
-                middleShadow.AddToClassList("dependency-node-stack-shadow--middle");
-                middleShadow.style.width = nodeWidth;
-                middleShadow.style.height = nodeHeight;
-                Add(middleShadow);
+                AddStackShadow("dependency-node-stack-shadow--back", Mathf.Round(BackStackOffset * nodeScale));
+                AddStackShadow("dependency-node-stack-shadow--middle", Mathf.Round(MiddleStackOffset * nodeScale));
             }
 
             var accent = new VisualElement();
@@ -220,6 +211,40 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             {
                 Add(CreateParentJumpButton());
             }
+        }
+
+        private void AddStackShadow(string layerClass, float offset)
+        {
+            offset = Mathf.Max(1f, offset);
+
+            AddStackShadowEdge(
+                layerClass,
+                "dependency-node-stack-shadow--right",
+                nodeWidth,
+                offset,
+                offset,
+                nodeHeight);
+            AddStackShadowEdge(
+                layerClass,
+                "dependency-node-stack-shadow--bottom",
+                offset,
+                nodeHeight,
+                nodeWidth,
+                offset);
+        }
+
+        private void AddStackShadowEdge(string layerClass, string edgeClass, float left, float top, float width, float height)
+        {
+            var edge = new VisualElement();
+            edge.pickingMode = PickingMode.Ignore;
+            edge.AddToClassList("dependency-node-stack-shadow");
+            edge.AddToClassList(layerClass);
+            edge.AddToClassList(edgeClass);
+            edge.style.left = left;
+            edge.style.top = top;
+            edge.style.width = width;
+            edge.style.height = height;
+            Add(edge);
         }
 
         private static int GetInfluenceScore(DependencyNodeData data)
