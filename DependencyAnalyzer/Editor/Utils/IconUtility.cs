@@ -149,6 +149,11 @@ namespace DependencyAnalyzer.Editor.Utils
                 return "dependency-node--audio";
             }
 
+            if (typeName.Contains("Animator") || typeName.Contains("Animation"))
+            {
+                return "dependency-node--animator";
+            }
+
             if (typeName.Contains("MonoScript") || node.Path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
             {
                 return "dependency-node--csharp";
@@ -210,6 +215,8 @@ namespace DependencyAnalyzer.Editor.Utils
                     return new Color(0.37f, 0.71f, 0.52f);
                 case "dependency-node--audio":
                     return new Color(0.69f, 0.47f, 0.78f);
+                case "dependency-node--animator":
+                    return new Color(0.95f, 0.55f, 0.38f);
                 case "dependency-node--mesh":
                     return new Color(0.65f, 0.61f, 0.56f);
                 case "dependency-node--scriptable-object":

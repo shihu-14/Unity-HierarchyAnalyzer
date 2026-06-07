@@ -931,7 +931,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 var right = new Vector2(centerX + halfWidth, pointsUp ? centerY + halfHeight : centerY - halfHeight);
 
                 var painter = context.painter2D;
-                painter.strokeColor = Color.white;
+                painter.strokeColor = new Color(0.72f, 0.72f, 0.72f, 1f);
                 painter.lineWidth = 3f;
                 painter.lineCap = LineCap.Round;
                 painter.lineJoin = LineJoin.Round;

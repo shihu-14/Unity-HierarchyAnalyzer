@@ -73,7 +73,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return;
             }
 
-            var split = SplitCurve(points, 0.25f);
+            var split = SplitCurve(points, 1f / 6f);
             DrawCurveSegment(painter, split.First, parentEdgeColor);
             DrawCurveSegment(painter, split.Second, childEdgeColor);
         }
@@ -151,7 +151,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var samples = SampleCurve(points, 36);
             for (var i = 0; i < samples.Count - 1; i += 2)
             {
-                painter.strokeColor = i < 9 ? parentColor : childColor;
+                painter.strokeColor = i < 6 ? parentColor : childColor;
                 painter.BeginPath();
                 painter.MoveTo(samples[i]);
                 painter.LineTo(samples[i + 1]);
