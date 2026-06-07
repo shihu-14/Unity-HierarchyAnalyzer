@@ -24,7 +24,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float ActionButtonFontSize = 24f;
         private const float PlusButtonFontSize = 20f;
         private const float MenuButtonFontSize = 7f;
-        private const float StackStepOffset = 3f;
+        private const float StackStepOffset = 6f;
         private const float StackBorderOverlap = 1f;
 
         private readonly Func<float> zoomProvider;
