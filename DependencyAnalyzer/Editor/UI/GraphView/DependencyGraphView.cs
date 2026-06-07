@@ -831,11 +831,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 nodeView.ToggleRequested += HandleNodeToggleRequested;
                 nodeView.MenuToggleRequested += HandleMenuToggleRequested;
                 nodeView.ParentJumpRequested += HandleParentJumpRequested;
-                var isSearchMatch = searchMatchNodeIds.Contains(renderNode.NodeId);
                 var isSearchCurrent = IsCurrentSearchNode(renderNode.NodeId);
-                if (isSearchMatch)
+                if (isSearchCurrent)
                 {
-                    AddSearchPulseHighlight(nodeView, isSearchCurrent);
+                    AddSearchPulseHighlight(nodeView, true);
                 }
 
                 nodeViews.Add(renderNode.ViewId, nodeView);
