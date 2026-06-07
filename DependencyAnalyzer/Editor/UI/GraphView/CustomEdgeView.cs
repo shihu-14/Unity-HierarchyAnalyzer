@@ -13,12 +13,15 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private float routeOffset;
         private int sourceSlotIndex;
         private int sourceSlotCount = 1;
-        private readonly Color edgeColor;
+        private readonly Color parentEdgeColor;
+        private readonly Color childEdgeColor;
 
-        public CustomEdgeView(DependencyEdgeData edgeData, Color childNodeColor)
+        public CustomEdgeView(DependencyEdgeData edgeData, Color parentNodeColor, Color childNodeColor)
         {
             EdgeData = edgeData;
-            edgeColor = new Color(childNodeColor.r, childNodeColor.g, childNodeColor.b, edgeData.PointsToMissingReference ? 0.95f : 0.9f);
+            var alpha = edgeData.PointsToMissingReference ? 0.95f : 0.9f;
+            parentEdgeColor = new Color(parentNodeColor.r, parentNodeColor.g, parentNodeColor.b, alpha);
+            childEdgeColor = new Color(childNodeColor.r, childNodeColor.g, childNodeColor.b, alpha);
             pickingMode = PickingMode.Position;
             style.position = Position.Absolute;
             style.left = 0f;
@@ -63,14 +66,21 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var points = GetRoutePoints();
 
             var painter = context.painter2D;
-            painter.strokeColor = edgeColor;
             painter.lineWidth = EdgeData.PointsToMissingReference ? 3f : 2f;
             if (IsDottedEdge(EdgeData.ReferenceKind))
             {
-                DrawDottedCurve(painter, points);
+                DrawDottedCurve(painter, points, parentEdgeColor, childEdgeColor);
                 return;
             }
 
+            var split = SplitCurve(points);
+            DrawCurveSegment(painter, split.First, parentEdgeColor);
+            DrawCurveSegment(painter, split.Second, childEdgeColor);
+        }
+
+        private static void DrawCurveSegment(Painter2D painter, RoutePoints points, Color color)
+        {
+            painter.strokeColor = color;
             painter.BeginPath();
             painter.MoveTo(points.Start);
             painter.BezierCurveTo(points.FirstTurn, points.SecondTurn, points.End);
@@ -136,11 +146,12 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 || kind == DependencyReferenceKind.Issue;
         }
 
-        private static void DrawDottedCurve(Painter2D painter, RoutePoints points)
+        private static void DrawDottedCurve(Painter2D painter, RoutePoints points, Color parentColor, Color childColor)
         {
             var samples = SampleCurve(points, 36);
             for (var i = 0; i < samples.Count - 1; i += 2)
             {
+                painter.strokeColor = i < 18 ? parentColor : childColor;
                 painter.BeginPath();
                 painter.MoveTo(samples[i]);
                 painter.LineTo(samples[i + 1]);
@@ -211,6 +222,31 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 + 3f * inverse * inverse * t * points.FirstTurn
                 + 3f * inverse * t * t * points.SecondTurn
                 + t * t * t * points.End;
+        }
+
+        private static SplitRoutePoints SplitCurve(RoutePoints points)
+        {
+            var startToFirst = Vector2.Lerp(points.Start, points.FirstTurn, 0.5f);
+            var firstToSecond = Vector2.Lerp(points.FirstTurn, points.SecondTurn, 0.5f);
+            var secondToEnd = Vector2.Lerp(points.SecondTurn, points.End, 0.5f);
+            var leftMiddle = Vector2.Lerp(startToFirst, firstToSecond, 0.5f);
+            var rightMiddle = Vector2.Lerp(firstToSecond, secondToEnd, 0.5f);
+            var midpoint = Vector2.Lerp(leftMiddle, rightMiddle, 0.5f);
+            return new SplitRoutePoints(
+                new RoutePoints(points.Start, startToFirst, leftMiddle, midpoint),
+                new RoutePoints(midpoint, rightMiddle, secondToEnd, points.End));
+        }
+
+        private readonly struct SplitRoutePoints
+        {
+            public SplitRoutePoints(RoutePoints first, RoutePoints second)
+            {
+                First = first;
+                Second = second;
+            }
+
+            public RoutePoints First { get; }
+            public RoutePoints Second { get; }
         }
 
         private readonly struct RoutePoints
