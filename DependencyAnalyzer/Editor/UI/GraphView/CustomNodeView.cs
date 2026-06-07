@@ -270,10 +270,12 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private Label CreateToggleButton()
         {
             var button = new Label(isExpanded ? "-" : "+");
+            var buttonSize = Mathf.Round(Mathf.Clamp(20f * nodeScale, 16f, 20f));
             button.tooltip = isExpanded ? "Collapse children" : "Expand children";
             button.AddToClassList("dependency-node-toggle");
-            button.style.minWidth = Mathf.Round(Mathf.Clamp(22f * nodeScale, 15f, 22f));
-            button.style.height = Mathf.Round(Mathf.Clamp(18f * nodeScale, 13f, 18f));
+            button.style.minWidth = buttonSize;
+            button.style.width = buttonSize;
+            button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
             button.style.fontSize = ToggleFontSize;
             button.RegisterCallback<MouseDownEvent>(evt =>
@@ -291,6 +293,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private Label CreateMenuToggleButton()
         {
             var button = new Label("•••");
+            var buttonSize = Mathf.Round(Mathf.Clamp(20f * nodeScale, 16f, 20f));
             button.tooltip = isMenuExpanded ? "Hide inspector references" : "Show inspector references";
             button.AddToClassList("dependency-node-menu-toggle");
             if (isMenuExpanded)
@@ -298,8 +301,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 button.AddToClassList("dependency-node-menu-toggle--expanded");
             }
 
-            button.style.minWidth = Mathf.Round(Mathf.Clamp(26f * nodeScale, 18f, 26f));
-            button.style.height = Mathf.Round(Mathf.Clamp(18f * nodeScale, 13f, 18f));
+            button.style.minWidth = buttonSize;
+            button.style.width = buttonSize;
+            button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
             button.style.fontSize = BadgeFontSize;
             button.RegisterCallback<MouseDownEvent>(evt =>
