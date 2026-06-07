@@ -53,14 +53,10 @@
     margin-bottom: 2px;
     padding-left: 18px;
     padding-right: 12px;
-    border-top-width: 2px;
-    border-right-width: 2px;
-    border-bottom-width: 2px;
-    border-left-width: 2px;
-    border-top-color: #46515e;
-    border-right-color: #303943;
-    border-bottom-color: #242b33;
-    border-left-color: #46515e;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
     border-bottom-left-radius: 5px;
@@ -80,8 +76,20 @@
 
 .dependency-search-field-wrap TextField {
     width: 100%;
-    height: 26px;
+    height: 24px;
     margin-right: 0;
+    border-top-width: 4px;
+    border-right-width: 4px;
+    border-bottom-width: 4px;
+    border-left-width: 4px;
+    border-top-color: #46515e;
+    border-right-color: #303943;
+    border-bottom-color: #242b33;
+    border-left-color: #46515e;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
 }
 
 .dependency-search-field-wrap TextField Label {
@@ -91,26 +99,36 @@
 }
 
 .dependency-search-field-wrap TextField TextInput {
-    height: 26px;
+    height: 20px;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
     background-color: rgba(0, 0, 0, 0);
     color: #efe7e7;
     -unity-font-style: bold;
+    -unity-text-align: middle-left;
     font-size: 14px;
 }
 
 .dependency-search-field-wrap .unity-base-text-field__input,
 .dependency-search-field-wrap .unity-text-field__input {
-    height: 26px;
+    height: 20px;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
     background-color: rgba(0, 0, 0, 0);
     color: #efe7e7;
     -unity-font-style: bold;
+    -unity-text-align: middle-left;
     font-size: 14px;
 }
 
 .dependency-search-control Button {
-    min-width: 20px;
-    width: 20px;
-    height: 22px;
+    min-width: 18px;
+    width: 18px;
+    height: 20px;
     margin-right: 0;
     background-color: rgba(0, 0, 0, 0);
     border-top-width: 0;
@@ -256,9 +274,9 @@
 }
 
 .dependency-issue-header Button {
-    min-width: 30px;
-    width: 30px;
-    height: 24px;
+    min-width: 24px;
+    width: 24px;
+    height: 22px;
     margin-right: 0;
     padding-left: 0;
     padding-right: 0;
@@ -272,9 +290,9 @@
 }
 
 .dependency-issue-toggle-button {
-    min-width: 30px;
-    width: 30px;
-    height: 24px;
+    min-width: 24px;
+    width: 24px;
+    height: 22px;
 }
 
 .dependency-issue-list {
@@ -405,10 +423,10 @@
     border-right-width: 1px;
     border-bottom-width: 1px;
     border-left-width: 1px;
-    border-top-color: #4a515b;
-    border-right-color: #313740;
-    border-bottom-color: #252a31;
-    border-left-color: #4a515b;
+    border-top-color: #5e6a76;
+    border-right-color: #5e6a76;
+    border-bottom-color: #5e6a76;
+    border-left-color: #5e6a76;
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
     border-bottom-left-radius: 6px;
@@ -425,10 +443,10 @@
 }
 
 .dependency-node--search-match {
-    border-top-color: rgba(143, 161, 179, 0.72);
-    border-right-color: rgba(143, 161, 179, 0.52);
-    border-bottom-color: rgba(143, 161, 179, 0.38);
-    border-left-color: rgba(143, 161, 179, 0.72);
+    border-top-color: #8fa1b3;
+    border-right-color: #8fa1b3;
+    border-bottom-color: #8fa1b3;
+    border-left-color: #8fa1b3;
 }
 
 .dependency-node--search-current {
@@ -481,6 +499,10 @@
     top: 0;
     bottom: 0;
     width: 5px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 0;
     background-color: #8fa1b3;
 }
 
@@ -490,15 +512,15 @@
     border-right-width: 1px;
     border-bottom-width: 1px;
     border-left-width: 1px;
-    border-top-color: rgba(120, 152, 184, 0.42);
-    border-right-color: rgba(120, 152, 184, 0.22);
-    border-bottom-color: rgba(120, 152, 184, 0.18);
-    border-left-color: rgba(120, 152, 184, 0.42);
+    border-top-color: #5e6a76;
+    border-right-color: #5e6a76;
+    border-bottom-color: #5e6a76;
+    border-left-color: #5e6a76;
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
     border-bottom-left-radius: 6px;
     border-bottom-right-radius: 6px;
-    background-color: rgba(60, 72, 84, 0.42);
+    background-color: #2c3239;
 }
 
 .dependency-node-stack-shadow--right {
@@ -514,144 +536,153 @@
 }
 
 .dependency-node--prefab .dependency-node-stack-shadow {
-    border-top-color: rgba(82, 167, 255, 0.52);
-    border-right-color: rgba(82, 167, 255, 0.26);
-    border-bottom-color: rgba(82, 167, 255, 0.2);
-    border-left-color: rgba(82, 167, 255, 0.52);
-    background-color: rgba(19, 43, 74, 0.5);
+    border-top-color: #3370a5;
+    border-right-color: #3370a5;
+    border-bottom-color: #3370a5;
+    border-left-color: #3370a5;
+    background-color: #132b4a;
 }
 
 .dependency-node--material .dependency-node-stack-shadow {
-    border-top-color: rgba(208, 170, 85, 0.52);
-    border-right-color: rgba(208, 170, 85, 0.26);
-    border-bottom-color: rgba(208, 170, 85, 0.2);
-    border-left-color: rgba(208, 170, 85, 0.52);
-    background-color: rgba(63, 52, 33, 0.5);
+    border-top-color: #887344;
+    border-right-color: #887344;
+    border-bottom-color: #887344;
+    border-left-color: #887344;
+    background-color: #3f3421;
 }
 
 .dependency-node--texture .dependency-node-stack-shadow {
-    border-top-color: rgba(94, 182, 132, 0.52);
-    border-right-color: rgba(94, 182, 132, 0.26);
-    border-bottom-color: rgba(94, 182, 132, 0.2);
-    border-left-color: rgba(94, 182, 132, 0.52);
-    background-color: rgba(36, 59, 49, 0.5);
+    border-top-color: #416f5b;
+    border-right-color: #416f5b;
+    border-bottom-color: #416f5b;
+    border-left-color: #416f5b;
+    background-color: #243b31;
 }
 
 .dependency-node--audio .dependency-node-stack-shadow {
-    border-top-color: rgba(177, 120, 198, 0.52);
-    border-right-color: rgba(177, 120, 198, 0.26);
-    border-bottom-color: rgba(177, 120, 198, 0.2);
-    border-left-color: rgba(177, 120, 198, 0.52);
-    background-color: rgba(56, 43, 68, 0.5);
+    border-top-color: #755281;
+    border-right-color: #755281;
+    border-bottom-color: #755281;
+    border-left-color: #755281;
+    background-color: #382b44;
 }
 
 .dependency-node--mesh .dependency-node-stack-shadow {
-    border-top-color: rgba(166, 155, 142, 0.52);
-    border-right-color: rgba(166, 155, 142, 0.26);
-    border-bottom-color: rgba(166, 155, 142, 0.2);
-    border-left-color: rgba(166, 155, 142, 0.52);
-    background-color: rgba(54, 50, 47, 0.5);
+    border-top-color: #6e675f;
+    border-right-color: #6e675f;
+    border-bottom-color: #6e675f;
+    border-left-color: #6e675f;
+    background-color: #36322f;
 }
 
 .dependency-node--scriptable-object .dependency-node-stack-shadow {
-    border-top-color: rgba(196, 130, 103, 0.52);
-    border-right-color: rgba(196, 130, 103, 0.26);
-    border-bottom-color: rgba(196, 130, 103, 0.2);
-    border-left-color: rgba(196, 130, 103, 0.52);
-    background-color: rgba(61, 45, 41, 0.5);
+    border-top-color: #806055;
+    border-right-color: #806055;
+    border-bottom-color: #806055;
+    border-left-color: #806055;
+    background-color: #3d2d29;
 }
 
-.dependency-node--scene .dependency-node-stack-shadow,
+.dependency-node--scene .dependency-node-stack-shadow {
+    border-top-color: #4e7081;
+    border-right-color: #4e7081;
+    border-bottom-color: #4e7081;
+    border-left-color: #4e7081;
+    background-color: #293842;
+}
+
 .dependency-node--object .dependency-node-stack-shadow {
-    border-top-color: rgba(118, 168, 197, 0.52);
-    border-right-color: rgba(118, 168, 197, 0.26);
-    border-bottom-color: rgba(118, 168, 197, 0.2);
-    border-left-color: rgba(118, 168, 197, 0.52);
-    background-color: rgba(38, 52, 61, 0.5);
+    border-top-color: #4e6e81;
+    border-right-color: #4e6e81;
+    border-bottom-color: #4e6e81;
+    border-left-color: #4e6e81;
+    background-color: #26343d;
 }
 
 .dependency-node--component .dependency-node-stack-shadow {
-    border-top-color: rgba(158, 211, 132, 0.52);
-    border-right-color: rgba(158, 211, 132, 0.26);
-    border-bottom-color: rgba(158, 211, 132, 0.2);
-    border-left-color: rgba(158, 211, 132, 0.52);
-    background-color: rgba(41, 58, 39, 0.5);
+    border-top-color: #64975a;
+    border-right-color: #64975a;
+    border-bottom-color: #64975a;
+    border-left-color: #64975a;
+    background-color: #293a27;
 }
 
 .dependency-node--csharp .dependency-node-stack-shadow {
-    border-top-color: rgba(105, 183, 121, 0.52);
-    border-right-color: rgba(105, 183, 121, 0.26);
-    border-bottom-color: rgba(105, 183, 121, 0.2);
-    border-left-color: rgba(105, 183, 121, 0.52);
-    background-color: rgba(36, 58, 42, 0.5);
+    border-top-color: #478954;
+    border-right-color: #478954;
+    border-bottom-color: #478954;
+    border-left-color: #478954;
+    background-color: #243a2a;
 }
 
 .dependency-node--camera .dependency-node-stack-shadow {
-    border-top-color: rgba(107, 184, 214, 0.52);
-    border-right-color: rgba(107, 184, 214, 0.26);
-    border-bottom-color: rgba(107, 184, 214, 0.2);
-    border-left-color: rgba(107, 184, 214, 0.52);
-    background-color: rgba(35, 57, 68, 0.5);
+    border-top-color: #47788d;
+    border-right-color: #47788d;
+    border-bottom-color: #47788d;
+    border-left-color: #47788d;
+    background-color: #233944;
 }
 
 .dependency-node--canvas .dependency-node-stack-shadow {
-    border-top-color: rgba(226, 104, 173, 0.52);
-    border-right-color: rgba(226, 104, 173, 0.26);
-    border-bottom-color: rgba(226, 104, 173, 0.2);
-    border-left-color: rgba(226, 104, 173, 0.52);
-    background-color: rgba(64, 33, 56, 0.5);
+    border-top-color: #915383;
+    border-right-color: #915383;
+    border-bottom-color: #915383;
+    border-left-color: #915383;
+    background-color: #402138;
 }
 
 .dependency-node--light .dependency-node-stack-shadow {
-    border-top-color: rgba(217, 199, 102, 0.52);
-    border-right-color: rgba(217, 199, 102, 0.26);
-    border-bottom-color: rgba(217, 199, 102, 0.2);
-    border-left-color: rgba(217, 199, 102, 0.52);
-    background-color: rgba(66, 59, 35, 0.5);
+    border-top-color: #8e8145;
+    border-right-color: #8e8145;
+    border-bottom-color: #8e8145;
+    border-left-color: #8e8145;
+    background-color: #423b23;
 }
 
 .dependency-node--missing .dependency-node-stack-shadow {
-    border-top-color: rgba(223, 100, 100, 0.52);
-    border-right-color: rgba(223, 100, 100, 0.26);
-    border-bottom-color: rgba(223, 100, 100, 0.2);
-    border-left-color: rgba(223, 100, 100, 0.52);
-    background-color: rgba(58, 40, 43, 0.5);
+    border-top-color: #8d4648;
+    border-right-color: #8d4648;
+    border-bottom-color: #8d4648;
+    border-left-color: #8d4648;
+    background-color: #3a282b;
 }
 
 .dependency-node--issue-warning .dependency-node-stack-shadow {
-    border-top-color: rgba(242, 176, 70, 0.52);
-    border-right-color: rgba(242, 176, 70, 0.26);
-    border-bottom-color: rgba(242, 176, 70, 0.2);
-    border-left-color: rgba(242, 176, 70, 0.52);
-    background-color: rgba(67, 48, 28, 0.5);
+    border-top-color: #9b702f;
+    border-right-color: #9b702f;
+    border-bottom-color: #9b702f;
+    border-left-color: #9b702f;
+    background-color: #43301c;
 }
 
 .dependency-node--issue-error .dependency-node-stack-shadow {
-    border-top-color: rgba(236, 78, 78, 0.52);
-    border-right-color: rgba(236, 78, 78, 0.26);
-    border-bottom-color: rgba(236, 78, 78, 0.2);
-    border-left-color: rgba(236, 78, 78, 0.52);
-    background-color: rgba(67, 32, 32, 0.5);
+    border-top-color: #982f37;
+    border-right-color: #982f37;
+    border-bottom-color: #982f37;
+    border-left-color: #982f37;
+    background-color: #432020;
 }
 
 .dependency-node--issue-info .dependency-node-stack-shadow {
-    border-top-color: rgba(99, 171, 242, 0.52);
-    border-right-color: rgba(99, 171, 242, 0.26);
-    border-bottom-color: rgba(99, 171, 242, 0.2);
-    border-left-color: rgba(99, 171, 242, 0.52);
-    background-color: rgba(33, 48, 67, 0.5);
+    border-top-color: #4281a8;
+    border-right-color: #4281a8;
+    border-bottom-color: #4281a8;
+    border-left-color: #4281a8;
+    background-color: #213043;
 }
 
 .dependency-node--default .dependency-node-stack-shadow {
-    border-top-color: rgba(143, 161, 179, 0.52);
-    border-right-color: rgba(143, 161, 179, 0.26);
-    border-bottom-color: rgba(143, 161, 179, 0.2);
-    border-left-color: rgba(143, 161, 179, 0.52);
-    background-color: rgba(44, 50, 57, 0.5);
+    border-top-color: #5e6a76;
+    border-right-color: #5e6a76;
+    border-bottom-color: #5e6a76;
+    border-left-color: #5e6a76;
+    background-color: #2c3239;
 }
 
 .dependency-node--impact-medium {
     border-top-width: 2px;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
     border-left-width: 2px;
 }
 
@@ -660,10 +691,10 @@
     border-right-width: 2px;
     border-bottom-width: 2px;
     border-left-width: 2px;
-    border-top-color: #d6e6f4;
-    border-right-color: #88aeca;
-    border-bottom-color: #5f829c;
-    border-left-color: #d6e6f4;
+    border-top-color: #5e6a76;
+    border-right-color: #5e6a76;
+    border-bottom-color: #5e6a76;
+    border-left-color: #5e6a76;
 }
 
 .dependency-node-header {
@@ -737,19 +768,19 @@
 }
 
 .dependency-node-toggle {
-    min-width: 20px;
-    width: 20px;
-    height: 20px;
+    min-width: 18px;
+    width: 18px;
+    height: 18px;
     margin-left: 4px;
     padding-left: 0;
     padding-right: 0;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    border-bottom-left-radius: 10px;
-    border-bottom-right-radius: 10px;
+    border-top-left-radius: 9px;
+    border-top-right-radius: 9px;
+    border-bottom-left-radius: 9px;
+    border-bottom-right-radius: 9px;
     background-color: rgba(230, 238, 247, 0.16);
     color: #ffffff;
-    font-size: 12px;
+    font-size: 11px;
     -unity-text-align: middle-center;
 }
 
@@ -758,19 +789,19 @@
 }
 
 .dependency-node-menu-toggle {
-    min-width: 20px;
-    width: 20px;
-    height: 20px;
+    min-width: 18px;
+    width: 18px;
+    height: 18px;
     margin-left: 4px;
     padding-left: 0;
     padding-right: 0;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    border-bottom-left-radius: 10px;
-    border-bottom-right-radius: 10px;
+    border-top-left-radius: 9px;
+    border-top-right-radius: 9px;
+    border-bottom-left-radius: 9px;
+    border-bottom-right-radius: 9px;
     background-color: rgba(208, 170, 85, 0.22);
     color: #ffd66f;
-    font-size: 10px;
+    font-size: 8px;
     -unity-text-align: middle-center;
 }
 
@@ -815,8 +846,10 @@
 
 .dependency-node--prefab {
     background-color: #132b4a;
-    border-top-color: #3b79b6;
-    border-left-color: #3b79b6;
+    border-top-color: #3370a5;
+    border-right-color: #3370a5;
+    border-bottom-color: #3370a5;
+    border-left-color: #3370a5;
 }
 
 .dependency-node--material .dependency-node-accent {
@@ -825,6 +858,10 @@
 
 .dependency-node--material {
     background-color: #3f3421;
+    border-top-color: #887344;
+    border-right-color: #887344;
+    border-bottom-color: #887344;
+    border-left-color: #887344;
 }
 
 .dependency-node--texture .dependency-node-accent {
@@ -833,6 +870,10 @@
 
 .dependency-node--texture {
     background-color: #243b31;
+    border-top-color: #416f5b;
+    border-right-color: #416f5b;
+    border-bottom-color: #416f5b;
+    border-left-color: #416f5b;
 }
 
 .dependency-node--audio .dependency-node-accent {
@@ -841,6 +882,10 @@
 
 .dependency-node--audio {
     background-color: #382b44;
+    border-top-color: #755281;
+    border-right-color: #755281;
+    border-bottom-color: #755281;
+    border-left-color: #755281;
 }
 
 .dependency-node--mesh .dependency-node-accent {
@@ -849,6 +894,10 @@
 
 .dependency-node--mesh {
     background-color: #36322f;
+    border-top-color: #6e675f;
+    border-right-color: #6e675f;
+    border-bottom-color: #6e675f;
+    border-left-color: #6e675f;
 }
 
 .dependency-node--scriptable-object .dependency-node-accent {
@@ -857,6 +906,10 @@
 
 .dependency-node--scriptable-object {
     background-color: #3d2d29;
+    border-top-color: #806055;
+    border-right-color: #806055;
+    border-bottom-color: #806055;
+    border-left-color: #806055;
 }
 
 .dependency-node--scene .dependency-node-accent {
@@ -865,6 +918,10 @@
 
 .dependency-node--scene {
     background-color: #293842;
+    border-top-color: #4e7081;
+    border-right-color: #4e7081;
+    border-bottom-color: #4e7081;
+    border-left-color: #4e7081;
 }
 
 .dependency-node--object .dependency-node-accent {
@@ -873,6 +930,10 @@
 
 .dependency-node--object {
     background-color: #26343d;
+    border-top-color: #4e6e81;
+    border-right-color: #4e6e81;
+    border-bottom-color: #4e6e81;
+    border-left-color: #4e6e81;
 }
 
 .dependency-node--component .dependency-node-accent {
@@ -881,6 +942,10 @@
 
 .dependency-node--component {
     background-color: #293a27;
+    border-top-color: #64975a;
+    border-right-color: #64975a;
+    border-bottom-color: #64975a;
+    border-left-color: #64975a;
 }
 
 .dependency-node--csharp .dependency-node-accent {
@@ -889,6 +954,10 @@
 
 .dependency-node--csharp {
     background-color: #243a2a;
+    border-top-color: #478954;
+    border-right-color: #478954;
+    border-bottom-color: #478954;
+    border-left-color: #478954;
 }
 
 .dependency-node--camera .dependency-node-accent {
@@ -897,6 +966,10 @@
 
 .dependency-node--camera {
     background-color: #233944;
+    border-top-color: #47788d;
+    border-right-color: #47788d;
+    border-bottom-color: #47788d;
+    border-left-color: #47788d;
 }
 
 .dependency-node--canvas .dependency-node-accent {
@@ -905,6 +978,10 @@
 
 .dependency-node--canvas {
     background-color: #402138;
+    border-top-color: #915383;
+    border-right-color: #915383;
+    border-bottom-color: #915383;
+    border-left-color: #915383;
 }
 
 .dependency-node--light .dependency-node-accent {
@@ -913,6 +990,10 @@
 
 .dependency-node--light {
     background-color: #423b23;
+    border-top-color: #8e8145;
+    border-right-color: #8e8145;
+    border-bottom-color: #8e8145;
+    border-left-color: #8e8145;
 }
 
 .dependency-node--missing .dependency-node-accent {
@@ -921,6 +1002,10 @@
 
 .dependency-node--missing {
     background-color: #3a282b;
+    border-top-color: #8d4648;
+    border-right-color: #8d4648;
+    border-bottom-color: #8d4648;
+    border-left-color: #8d4648;
 }
 
 .dependency-node--issue-warning .dependency-node-accent {
@@ -929,6 +1014,10 @@
 
 .dependency-node--issue-warning {
     background-color: #43301c;
+    border-top-color: #9b702f;
+    border-right-color: #9b702f;
+    border-bottom-color: #9b702f;
+    border-left-color: #9b702f;
 }
 
 .dependency-node--issue-error .dependency-node-accent {
@@ -937,6 +1026,10 @@
 
 .dependency-node--issue-error {
     background-color: #432020;
+    border-top-color: #982f37;
+    border-right-color: #982f37;
+    border-bottom-color: #982f37;
+    border-left-color: #982f37;
 }
 
 .dependency-node--issue-info .dependency-node-accent {
@@ -945,10 +1038,22 @@
 
 .dependency-node--issue-info {
     background-color: #213043;
+    border-top-color: #4281a8;
+    border-right-color: #4281a8;
+    border-bottom-color: #4281a8;
+    border-left-color: #4281a8;
 }
 
 .dependency-node--default .dependency-node-accent {
     background-color: #8fa1b3;
+}
+
+.dependency-node--default {
+    background-color: #2c3239;
+    border-top-color: #5e6a76;
+    border-right-color: #5e6a76;
+    border-bottom-color: #5e6a76;
+    border-left-color: #5e6a76;
 }
 
 .dependency-node--prefab:hover {
@@ -993,8 +1098,14 @@
     border-left-color: #c48267;
 }
 
-.dependency-node--object:hover,
 .dependency-node--scene:hover {
+    border-top-color: #72a8c0;
+    border-right-color: #72a8c0;
+    border-bottom-color: #72a8c0;
+    border-left-color: #72a8c0;
+}
+
+.dependency-node--object:hover {
     border-top-color: #76a8c5;
     border-right-color: #76a8c5;
     border-bottom-color: #76a8c5;
@@ -1119,10 +1230,16 @@
     border-left-color: #c48267;
 }
 
-.dependency-node--search-match.dependency-node--object,
-.dependency-node--search-current.dependency-node--object,
 .dependency-node--search-match.dependency-node--scene,
 .dependency-node--search-current.dependency-node--scene {
+    border-top-color: #72a8c0;
+    border-right-color: #72a8c0;
+    border-bottom-color: #72a8c0;
+    border-left-color: #72a8c0;
+}
+
+.dependency-node--search-match.dependency-node--object,
+.dependency-node--search-current.dependency-node--object {
     border-top-color: #76a8c5;
     border-right-color: #76a8c5;
     border-bottom-color: #76a8c5;

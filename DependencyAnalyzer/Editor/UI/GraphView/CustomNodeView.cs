@@ -20,8 +20,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float BadgeFontSize = 10f;
         private const float ToggleFontSize = 12f;
         private const float ParentJumpFontSize = 11f;
-        private const float BackStackOffset = 6f;
-        private const float MiddleStackOffset = 3f;
+        private const float BackStackOffset = 8f;
+        private const float MiddleStackOffset = 4f;
 
         private readonly Func<float> zoomProvider;
         private readonly bool canToggleChildren;
@@ -295,14 +295,14 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private Label CreateToggleButton()
         {
             var button = new Label(isExpanded ? "-" : "+");
-            var buttonSize = Mathf.Round(Mathf.Clamp(20f * nodeScale, 16f, 20f));
+            var buttonSize = Mathf.Round(Mathf.Clamp(18f * nodeScale, 14f, 18f));
             button.tooltip = isExpanded ? "Collapse children" : "Expand children";
             button.AddToClassList("dependency-node-toggle");
             button.style.minWidth = buttonSize;
             button.style.width = buttonSize;
             button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
-            button.style.fontSize = ToggleFontSize;
+            button.style.fontSize = Mathf.Round(Mathf.Clamp(ToggleFontSize * nodeScale, 10f, ToggleFontSize));
             button.RegisterCallback<MouseDownEvent>(evt =>
             {
                 if (evt.button == 0)
@@ -318,7 +318,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private Label CreateMenuToggleButton()
         {
             var button = new Label("•••");
-            var buttonSize = Mathf.Round(Mathf.Clamp(20f * nodeScale, 16f, 20f));
+            var buttonSize = Mathf.Round(Mathf.Clamp(18f * nodeScale, 14f, 18f));
             button.tooltip = isMenuExpanded ? "Hide inspector references" : "Show inspector references";
             button.AddToClassList("dependency-node-menu-toggle");
             if (isMenuExpanded)
@@ -330,7 +330,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             button.style.width = buttonSize;
             button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
-            button.style.fontSize = BadgeFontSize;
+            button.style.fontSize = Mathf.Round(Mathf.Clamp(8f * nodeScale, 7f, 8f));
             button.RegisterCallback<MouseDownEvent>(evt =>
             {
                 if (evt.button == 0)
