@@ -13,6 +13,7 @@ namespace DependencyAnalyzer.Editor.Scanners
     {
         private const string ScannerName = "Unity Console";
         private const int MaxConsoleEntries = 500;
+        private const int MaxEditorLogBytes = 1024 * 1024;
         private const int ErrorModeMask = 1 | 2 | 16 | 64 | 2048 | 8192;
         private const int WarningModeMask = 128 | 16384 | 32768;
         private static readonly Regex AssetPathRegex = new Regex(
@@ -31,37 +32,58 @@ namespace DependencyAnalyzer.Editor.Scanners
             {
                 foreach (var entry in ReadConsoleEntries())
                 {
-                    if (!TryGetSeverity(entry, out var severity)
-                        || IsAnalyzerGeneratedLog(entry.Condition))
-                    {
-                        continue;
-                    }
-
-                    var targetNode = ResolveTargetNode(graph, cache, entry);
-                    if (targetNode == null)
-                    {
-                        continue;
-                    }
-
-                    var subjectPath = string.IsNullOrEmpty(targetNode.Path) ? targetNode.Id : targetNode.Path;
-                    var message = BuildIssueMessage(entry);
-                    var key = severity + "\n" + subjectPath + "\n" + message;
-                    if (!seen.Add(key))
-                    {
-                        continue;
-                    }
-
-                    graph.AddIssue(new DependencyScanIssueData(
-                        ScannerName,
-                        subjectPath,
-                        message,
-                        severity));
+                    AddIssueFromEntry(graph, cache, seen, entry);
                 }
             }
             catch
             {
                 // Unity's console entry API is internal and can change between editor versions.
             }
+
+            try
+            {
+                foreach (var entry in ReadEditorLogEntries())
+                {
+                    AddIssueFromEntry(graph, cache, seen, entry);
+                }
+            }
+            catch
+            {
+                // Editor.log is a fallback for compiler and shader messages that may not be exposed by LogEntries.
+            }
+        }
+
+        private static void AddIssueFromEntry(
+            DependencyGraphData graph,
+            DependencyCache cache,
+            HashSet<string> seen,
+            ConsoleLogEntry entry)
+        {
+            if (!TryGetSeverity(entry, out var severity)
+                || IsAnalyzerGeneratedLog(entry.Condition))
+            {
+                return;
+            }
+
+            var targetNode = ResolveTargetNode(graph, cache, entry);
+            if (targetNode == null)
+            {
+                return;
+            }
+
+            var subjectPath = string.IsNullOrEmpty(targetNode.Path) ? targetNode.Id : targetNode.Path;
+            var message = BuildIssueMessage(entry);
+            var key = severity + "\n" + subjectPath + "\n" + message;
+            if (!seen.Add(key))
+            {
+                return;
+            }
+
+            graph.AddIssue(new DependencyScanIssueData(
+                ScannerName,
+                subjectPath,
+                message,
+                severity));
         }
 
         private static IEnumerable<ConsoleLogEntry> ReadConsoleEntries()
@@ -134,6 +156,114 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             return null;
+        }
+
+        private static IEnumerable<ConsoleLogEntry> ReadEditorLogEntries()
+        {
+            foreach (var line in ReadRecentEditorLogLines())
+            {
+                var condition = NormalizeConsoleMessage(line);
+                if (string.IsNullOrEmpty(condition))
+                {
+                    continue;
+                }
+
+                var assetPath = ExtractAssetPath(condition);
+                if (string.IsNullOrEmpty(assetPath) || IsIgnoredEditorLogAssetPath(assetPath))
+                {
+                    continue;
+                }
+
+                var entry = new ConsoleLogEntry(
+                    condition,
+                    assetPath,
+                    string.Empty,
+                    ExtractLineNumber(condition, assetPath),
+                    0,
+                    0);
+                if (TryGetSeverity(entry, out _))
+                {
+                    yield return entry;
+                }
+            }
+        }
+
+        private static IEnumerable<string> ReadRecentEditorLogLines()
+        {
+            var logPath = GetEditorLogPath();
+            if (string.IsNullOrEmpty(logPath) || !File.Exists(logPath))
+            {
+                yield break;
+            }
+
+            using (var stream = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            {
+                var start = Math.Max(0L, stream.Length - MaxEditorLogBytes);
+                stream.Seek(start, SeekOrigin.Begin);
+                using (var reader = new StreamReader(stream))
+                {
+                    if (start > 0L)
+                    {
+                        reader.ReadLine();
+                    }
+
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        yield return line;
+                    }
+                }
+            }
+        }
+
+        private static string GetEditorLogPath()
+        {
+            if (!string.IsNullOrEmpty(Application.consoleLogPath))
+            {
+                return Application.consoleLogPath;
+            }
+
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+            return string.IsNullOrEmpty(home)
+                ? string.Empty
+                : Path.Combine(home, "Library/Logs/Unity/Editor.log");
+        }
+
+        private static bool IsIgnoredEditorLogAssetPath(string assetPath)
+        {
+            return assetPath.StartsWith("Assets/DependencyAnalyzer/", StringComparison.OrdinalIgnoreCase)
+                || assetPath.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static int ExtractLineNumber(string text, string assetPath)
+        {
+            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(assetPath))
+            {
+                return 0;
+            }
+
+            var pathIndex = text.IndexOf(assetPath, StringComparison.OrdinalIgnoreCase);
+            if (pathIndex < 0)
+            {
+                return 0;
+            }
+
+            var lineStart = pathIndex + assetPath.Length;
+            if (lineStart >= text.Length || text[lineStart] != '(')
+            {
+                return 0;
+            }
+
+            lineStart++;
+            var lineEnd = lineStart;
+            while (lineEnd < text.Length && char.IsDigit(text[lineEnd]))
+            {
+                lineEnd++;
+            }
+
+            return lineEnd > lineStart && int.TryParse(text.Substring(lineStart, lineEnd - lineStart), out var line)
+                ? line
+                : 0;
         }
 
         private static bool TryGetSeverity(ConsoleLogEntry entry, out DependencyScanIssueSeverity severity)
@@ -307,28 +437,26 @@ namespace DependencyAnalyzer.Editor.Scanners
 
         private static string BuildIssueMessage(ConsoleLogEntry entry)
         {
-            var message = FirstLine(entry.Condition);
-            var path = FindAssetPath(entry);
-            if (!string.IsNullOrEmpty(path)
-                && entry.Line > 0
-                && message.IndexOf(path, StringComparison.OrdinalIgnoreCase) < 0)
+            var message = NormalizeConsoleMessage(entry.Condition);
+            if (!string.IsNullOrEmpty(message))
             {
-                message = path + "(" + entry.Line + "): " + message;
+                return message;
             }
 
-            return string.IsNullOrEmpty(message) ? "Console issue" : message;
+            var path = FindAssetPath(entry);
+            if (!string.IsNullOrEmpty(path) && entry.Line > 0)
+            {
+                return path + "(" + entry.Line + ")";
+            }
+
+            return "Console issue";
         }
 
-        private static string FirstLine(string value)
+        private static string NormalizeConsoleMessage(string value)
         {
-            if (string.IsNullOrEmpty(value))
-            {
-                return string.Empty;
-            }
-
-            var normalized = value.Replace("\r\n", "\n");
-            var newline = normalized.IndexOf('\n');
-            return (newline >= 0 ? normalized.Substring(0, newline) : normalized).Trim();
+            return string.IsNullOrEmpty(value)
+                ? string.Empty
+                : value.Replace("\r\n", "\n").Trim();
         }
 
         private static bool IsAnalyzerGeneratedLog(string condition)
@@ -339,8 +467,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             return condition.IndexOf("[Serialized Property Scanner]", StringComparison.OrdinalIgnoreCase) >= 0
-                || condition.IndexOf("[Unity Console]", StringComparison.OrdinalIgnoreCase) >= 0
-                || condition.IndexOf("Dependency Analyzer", StringComparison.OrdinalIgnoreCase) >= 0;
+                || condition.IndexOf("[Unity Console]", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static string GetStringValue(Type type, object instance, string name)
