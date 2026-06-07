@@ -19,10 +19,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float TypeFontSize = 10f;
         private const float BadgeFontSize = 10f;
         private const float ParentJumpFontSize = 11f;
-        private const float ActionButtonBaseSize = 16f;
-        private const float ActionButtonMinSize = 12f;
-        private const float ActionButtonFontSize = 24f;
-        private const float PlusButtonFontSize = 20f;
+        private const float ActionButtonBaseSize = 18f;
+        private const float ActionButtonMinSize = 13.5f;
+        private const float MinusButtonSymbolRatio = 1.5f;
+        private const float PlusButtonSymbolRatio = 1.25f;
         private const float MenuButtonBaseSize = 18f;
         private const float MenuButtonMinSize = 13.5f;
         private const float MenuButtonFontSize = 7.875f;
@@ -422,8 +422,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             button.style.width = buttonSize;
             button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
-            var fontSize = isExpanded ? ActionButtonFontSize : PlusButtonFontSize;
-            button.style.fontSize = Mathf.Round(Mathf.Clamp(fontSize * nodeScale, ActionButtonMinSize, fontSize));
+            var symbolRatio = isExpanded ? MinusButtonSymbolRatio : PlusButtonSymbolRatio;
+            button.style.fontSize = Mathf.Round(buttonSize * symbolRatio);
             button.style.paddingTop = 0;
             button.style.paddingBottom = 0;
             button.style.unityTextAlign = TextAnchor.MiddleCenter;

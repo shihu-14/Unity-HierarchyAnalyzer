@@ -27,6 +27,7 @@ namespace DependencyAnalyzer.Editor.DebugTools
             CreateAnimatorWithoutController(root.transform);
             CreateSkinnedMeshWithoutMesh(root.transform);
             CreateMissingRigidbodyReference(root.transform);
+            CreateDebugErrorObjects(root.transform);
             CreateObjectWithChildAndReferenceDetails(root.transform);
             CreateConsoleIssueObjects(root.transform);
             EditorUtility.SetDirty(root);
@@ -37,6 +38,14 @@ namespace DependencyAnalyzer.Editor.DebugTools
         {
             var root = GetOrCreateRoot();
             CreateObjectWithChildAndReferenceDetails(root.transform);
+            EditorUtility.SetDirty(root);
+        }
+
+        [MenuItem("Tools/Dependency Analyzer/Create Debug Error Objects")]
+        public static void CreateDebugErrorObjectsOnly()
+        {
+            var root = GetOrCreateRoot();
+            CreateDebugErrorObjects(root.transform);
             EditorUtility.SetDirty(root);
         }
 
@@ -115,6 +124,33 @@ namespace DependencyAnalyzer.Editor.DebugTools
             Undo.DestroyObjectImmediate(target);
         }
 
+        private static void CreateDebugErrorObjects(Transform parent)
+        {
+            var rendererError = CreateErrorCaseObject(parent, "Issue_Error_Renderer_Material", PrimitiveType.Cube, new Vector3(0f, -2.8f, 0f));
+            var renderer = EnsureComponent<MeshRenderer>(rendererError);
+            renderer.sharedMaterials = new Material[] { null };
+
+            var cameraError = CreateErrorCaseObject(parent, "Issue_Error_Camera_Target", PrimitiveType.Capsule, new Vector3(2.4f, -2.8f, 0f));
+            EnsureComponent<Camera>(cameraError).clearFlags = CameraClearFlags.Nothing;
+
+            var lightError = CreateErrorCaseObject(parent, "Issue_Error_Light_Bake", PrimitiveType.Sphere, new Vector3(4.8f, -2.8f, 0f));
+            var light = EnsureComponent<Light>(lightError);
+            light.type = LightType.Point;
+            light.range = 0f;
+
+            var audioError = CreateErrorCaseObject(parent, "Issue_Error_Audio_Routing", PrimitiveType.Cube, new Vector3(7.2f, -2.8f, 0f));
+            var audioSource = EnsureComponent<AudioSource>(audioError);
+            audioSource.playOnAwake = true;
+            audioSource.clip = null;
+
+            var animatorError = CreateErrorCaseObject(parent, "Issue_Error_Animator_State", PrimitiveType.Sphere, new Vector3(9.6f, -2.8f, 0f));
+            EnsureComponent<Animator>(animatorError).runtimeAnimatorController = null;
+
+            var physicsError = CreateErrorCaseObject(parent, "Issue_Error_Physics_Link", PrimitiveType.Capsule, new Vector3(12f, -2.8f, 0f));
+            EnsureComponent<Rigidbody>(physicsError);
+            EnsureComponent<FixedJoint>(physicsError).connectedBody = null;
+        }
+
         private static void CreateObjectWithChildAndReferenceDetails(Transform parent)
         {
             var gameObject = CreatePrimitiveCaseObject(parent, "Debug_BothToggleAndDetails_Parent", PrimitiveType.Cube);
@@ -183,6 +219,35 @@ namespace DependencyAnalyzer.Editor.DebugTools
             gameObject.name = name;
             gameObject.transform.SetParent(parent);
             return gameObject;
+        }
+
+        private static GameObject CreateErrorCaseObject(Transform parent, string name, PrimitiveType primitiveType, Vector3 position)
+        {
+            var gameObject = CreatePrimitiveCaseObject(parent, name, primitiveType);
+            gameObject.transform.localPosition = position;
+            gameObject.transform.localScale = Vector3.one * 0.82f;
+            ApplyErrorMaterial(gameObject);
+            return gameObject;
+        }
+
+        private static void ApplyErrorMaterial(GameObject gameObject)
+        {
+            var renderer = gameObject == null ? null : gameObject.GetComponent<Renderer>();
+            if (renderer == null)
+            {
+                return;
+            }
+
+            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+            if (shader == null)
+            {
+                return;
+            }
+
+            var material = new Material(shader) { name = gameObject.name + "_DebugErrorMaterial" };
+            material.color = new Color(0.92f, 0.12f, 0.1f, 1f);
+            Undo.RegisterCreatedObjectUndo(material, "Create debug error material");
+            renderer.sharedMaterial = material;
         }
 
         private static T EnsureComponent<T>(GameObject gameObject) where T : Component

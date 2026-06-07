@@ -893,16 +893,16 @@
 }
 
 .dependency-node-toggle {
-    min-width: 16px;
-    width: 16px;
-    height: 16px;
+    min-width: 18px;
+    width: 18px;
+    height: 18px;
     margin-left: 4px;
     padding-left: 0;
     padding-right: 0;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
+    border-top-left-radius: 9px;
+    border-top-right-radius: 9px;
+    border-bottom-left-radius: 9px;
+    border-bottom-right-radius: 9px;
     background-color: rgba(230, 238, 247, 0.16);
     color: #ffffff;
     font-size: 24px;

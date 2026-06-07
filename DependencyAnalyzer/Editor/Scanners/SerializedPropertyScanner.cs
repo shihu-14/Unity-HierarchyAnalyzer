@@ -14,6 +14,7 @@ namespace DependencyAnalyzer.Editor.Scanners
     public sealed class SerializedPropertyScanner : IDependencyScanner
     {
         private const string ScannerName = "Serialized Property Scanner";
+        private const string DebugErrorObjectPrefix = "Issue_Error_";
 
         public string Name => ScannerName;
 
@@ -73,6 +74,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                         graph.AddOrUpdateNode(gameObjectNode);
                         AddHierarchyEdge(gameObject, gameObjectNode, graph, cache);
                         AddPrefabSourceDependency(gameObject, gameObjectNode, graph, cache, settings);
+                        AddGameObjectHealthIssues(gameObject, gameObjectNode, graph);
 
                         var attachedComponents = gameObject.GetComponents<Component>();
                         for (var componentIndex = 0; componentIndex < attachedComponents.Length; componentIndex++)
@@ -174,6 +176,35 @@ namespace DependencyAnalyzer.Editor.Scanners
             {
                 AddComponentIssue(graph, subjectPath, "Animator has no controller", DependencyScanIssueSeverity.Warning);
             }
+        }
+
+        private static void AddGameObjectHealthIssues(
+            GameObject gameObject,
+            DependencyNodeData ownerNode,
+            DependencyGraphData graph)
+        {
+            if (gameObject == null || ownerNode == null || graph == null)
+            {
+                return;
+            }
+
+            if (!gameObject.name.StartsWith(DebugErrorObjectPrefix, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            AddComponentIssue(
+                graph,
+                ownerNode.Path,
+                "Debug error marker: " + FormatDebugIssueName(gameObject.name.Substring(DebugErrorObjectPrefix.Length)),
+                DependencyScanIssueSeverity.Error);
+        }
+
+        private static string FormatDebugIssueName(string value)
+        {
+            return string.IsNullOrEmpty(value)
+                ? "Object"
+                : value.Replace('_', ' ');
         }
 
         private static void AddComponentIssue(
