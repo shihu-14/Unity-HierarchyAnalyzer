@@ -73,7 +73,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return;
             }
 
-            var split = SplitCurve(points);
+            var split = SplitCurve(points, 0.25f);
             DrawCurveSegment(painter, split.First, parentEdgeColor);
             DrawCurveSegment(painter, split.Second, childEdgeColor);
         }
@@ -151,7 +151,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var samples = SampleCurve(points, 36);
             for (var i = 0; i < samples.Count - 1; i += 2)
             {
-                painter.strokeColor = i < 18 ? parentColor : childColor;
+                painter.strokeColor = i < 9 ? parentColor : childColor;
                 painter.BeginPath();
                 painter.MoveTo(samples[i]);
                 painter.LineTo(samples[i + 1]);
@@ -224,14 +224,15 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 + t * t * t * points.End;
         }
 
-        private static SplitRoutePoints SplitCurve(RoutePoints points)
+        private static SplitRoutePoints SplitCurve(RoutePoints points, float splitT)
         {
-            var startToFirst = Vector2.Lerp(points.Start, points.FirstTurn, 0.5f);
-            var firstToSecond = Vector2.Lerp(points.FirstTurn, points.SecondTurn, 0.5f);
-            var secondToEnd = Vector2.Lerp(points.SecondTurn, points.End, 0.5f);
-            var leftMiddle = Vector2.Lerp(startToFirst, firstToSecond, 0.5f);
-            var rightMiddle = Vector2.Lerp(firstToSecond, secondToEnd, 0.5f);
-            var midpoint = Vector2.Lerp(leftMiddle, rightMiddle, 0.5f);
+            var t = Mathf.Clamp01(splitT);
+            var startToFirst = Vector2.Lerp(points.Start, points.FirstTurn, t);
+            var firstToSecond = Vector2.Lerp(points.FirstTurn, points.SecondTurn, t);
+            var secondToEnd = Vector2.Lerp(points.SecondTurn, points.End, t);
+            var leftMiddle = Vector2.Lerp(startToFirst, firstToSecond, t);
+            var rightMiddle = Vector2.Lerp(firstToSecond, secondToEnd, t);
+            var midpoint = Vector2.Lerp(leftMiddle, rightMiddle, t);
             return new SplitRoutePoints(
                 new RoutePoints(points.Start, startToFirst, leftMiddle, midpoint),
                 new RoutePoints(midpoint, rightMiddle, secondToEnd, points.End));

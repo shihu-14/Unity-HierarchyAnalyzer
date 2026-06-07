@@ -103,10 +103,10 @@
     margin-bottom: 0;
     padding-top: 0;
     padding-bottom: 0;
-    border-top-width: 1px;
-    border-right-width: 1px;
-    border-bottom-width: 1px;
-    border-left-width: 1px;
+    border-top-width: 0.5px;
+    border-right-width: 0.5px;
+    border-bottom-width: 0.5px;
+    border-left-width: 0.5px;
     border-top-color: #ffffff;
     border-right-color: #ffffff;
     border-bottom-color: #ffffff;
@@ -137,10 +137,10 @@
     margin-bottom: 0;
     padding-top: 0;
     padding-bottom: 0;
-    border-top-width: 1px;
-    border-right-width: 1px;
-    border-bottom-width: 1px;
-    border-left-width: 1px;
+    border-top-width: 0.5px;
+    border-right-width: 0.5px;
+    border-bottom-width: 0.5px;
+    border-left-width: 0.5px;
     border-top-color: #ffffff;
     border-right-color: #ffffff;
     border-bottom-color: #ffffff;
@@ -563,6 +563,18 @@
     background-color: #2c3239;
 }
 
+.dependency-node-stack-shadow--right {
+    border-left-width: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.dependency-node-stack-shadow--bottom {
+    border-top-width: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
 .dependency-node--prefab .dependency-node-stack-shadow {
     border-top-color: #3370a5;
     border-right-color: #3370a5;
@@ -801,19 +813,19 @@
 }
 
 .dependency-node-toggle {
-    min-width: 18px;
-    width: 18px;
-    height: 18px;
+    min-width: 24px;
+    width: 24px;
+    height: 24px;
     margin-left: 4px;
     padding-left: 0;
     padding-right: 0;
-    border-top-left-radius: 9px;
-    border-top-right-radius: 9px;
-    border-bottom-left-radius: 9px;
-    border-bottom-right-radius: 9px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
     background-color: rgba(230, 238, 247, 0.16);
     color: #ffffff;
-    font-size: 11px;
+    font-size: 14px;
     -unity-text-align: middle-center;
 }
 

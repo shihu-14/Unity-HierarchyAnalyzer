@@ -322,14 +322,14 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private Label CreateToggleButton()
         {
             var button = new Label(isExpanded ? "-" : "+");
-            var buttonSize = Mathf.Round(Mathf.Clamp(18f * nodeScale, 14f, 18f));
+            var buttonSize = Mathf.Round(Mathf.Clamp(24f * nodeScale, 16f, 24f));
             button.tooltip = isExpanded ? "Collapse children" : "Expand children";
             button.AddToClassList("dependency-node-toggle");
             button.style.minWidth = buttonSize;
             button.style.width = buttonSize;
             button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
-            button.style.fontSize = Mathf.Round(Mathf.Clamp(11f * nodeScale, 9f, 11f));
+            button.style.fontSize = Mathf.Round(Mathf.Clamp(14f * nodeScale, 10f, 14f));
             button.RegisterCallback<MouseDownEvent>(evt =>
             {
                 if (evt.button == 0)
