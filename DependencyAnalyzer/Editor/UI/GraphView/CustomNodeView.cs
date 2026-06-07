@@ -140,7 +140,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             {
                 AddStackShadow("dependency-node-stack-shadow--back", GetHiddenStackOffset(nodeScale));
                 AddStackShadow("dependency-node-stack-shadow--middle", Mathf.Round(MiddleStackOffset * nodeScale));
-                AddStackCover();
             }
 
             var accent = new VisualElement();
@@ -272,27 +271,41 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         {
             offset = Mathf.Max(1f, offset);
 
-            var shadow = new VisualElement();
-            shadow.pickingMode = PickingMode.Ignore;
-            shadow.AddToClassList("dependency-node-stack-shadow");
-            shadow.AddToClassList(layerClass);
-            shadow.style.left = offset;
-            shadow.style.top = offset;
-            shadow.style.width = nodeWidth;
-            shadow.style.height = nodeHeight;
-            Add(shadow);
+            AddStackShadowPart(
+                layerClass,
+                "dependency-node-stack-shadow--right",
+                nodeWidth,
+                offset,
+                offset,
+                nodeHeight);
+            AddStackShadowPart(
+                layerClass,
+                "dependency-node-stack-shadow--bottom",
+                offset,
+                nodeHeight,
+                nodeWidth,
+                offset);
+            AddStackShadowPart(
+                layerClass,
+                "dependency-node-stack-shadow--corner",
+                nodeWidth,
+                nodeHeight,
+                offset,
+                offset);
         }
 
-        private void AddStackCover()
+        private void AddStackShadowPart(string layerClass, string partClass, float left, float top, float width, float height)
         {
-            var cover = new VisualElement();
-            cover.pickingMode = PickingMode.Ignore;
-            cover.AddToClassList("dependency-node-stack-cover");
-            cover.style.left = 1f;
-            cover.style.top = 1f;
-            cover.style.width = Mathf.Max(1f, nodeWidth - 2f);
-            cover.style.height = Mathf.Max(1f, nodeHeight - 2f);
-            Add(cover);
+            var part = new VisualElement();
+            part.pickingMode = PickingMode.Ignore;
+            part.AddToClassList("dependency-node-stack-shadow");
+            part.AddToClassList(layerClass);
+            part.AddToClassList(partClass);
+            part.style.left = left;
+            part.style.top = top;
+            part.style.width = width;
+            part.style.height = height;
+            Add(part);
         }
 
         private static int GetInfluenceScore(DependencyNodeData data)

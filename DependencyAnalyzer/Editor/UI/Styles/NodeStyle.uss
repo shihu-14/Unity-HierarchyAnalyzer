@@ -40,9 +40,9 @@
 }
 
 .dependency-search-control {
-    min-width: 213px;
-    max-width: 347px;
-    width: 347px;
+    min-width: 154px;
+    max-width: 231px;
+    width: 231px;
     height: 30px;
     flex-direction: row;
     align-items: center;
@@ -88,7 +88,7 @@
 .dependency-search-icon {
     position: absolute;
     left: 6px;
-    top: 3px;
+    top: 5px;
     width: 14px;
     height: 14px;
 }
@@ -587,21 +587,32 @@
     background-color: #2c3239;
 }
 
-.dependency-node-stack-cover {
-    position: absolute;
-    border-top-width: 0;
-    border-right-width: 0;
-    border-bottom-width: 0;
+.dependency-node-stack-shadow--right {
     border-left-width: 0;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
-    background-color: #2c3239;
+    border-top-left-radius: 0;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 6px;
 }
 
-.dependency-node--prefab .dependency-node-stack-shadow,
-.dependency-node--prefab .dependency-node-stack-cover {
+.dependency-node-stack-shadow--bottom {
+    border-top-width: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.dependency-node-stack-shadow--corner {
+    border-top-width: 0;
+    border-left-width: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 6px;
+}
+
+.dependency-node--prefab .dependency-node-stack-shadow {
     border-top-color: #3370a5;
     border-right-color: #3370a5;
     border-bottom-color: #3370a5;
@@ -609,8 +620,7 @@
     background-color: #132b4a;
 }
 
-.dependency-node--material .dependency-node-stack-shadow,
-.dependency-node--material .dependency-node-stack-cover {
+.dependency-node--material .dependency-node-stack-shadow {
     border-top-color: #887344;
     border-right-color: #887344;
     border-bottom-color: #887344;
@@ -618,8 +628,7 @@
     background-color: #3f3421;
 }
 
-.dependency-node--texture .dependency-node-stack-shadow,
-.dependency-node--texture .dependency-node-stack-cover {
+.dependency-node--texture .dependency-node-stack-shadow {
     border-top-color: #416f5b;
     border-right-color: #416f5b;
     border-bottom-color: #416f5b;
@@ -627,8 +636,7 @@
     background-color: #243b31;
 }
 
-.dependency-node--audio .dependency-node-stack-shadow,
-.dependency-node--audio .dependency-node-stack-cover {
+.dependency-node--audio .dependency-node-stack-shadow {
     border-top-color: #755281;
     border-right-color: #755281;
     border-bottom-color: #755281;
@@ -636,8 +644,7 @@
     background-color: #382b44;
 }
 
-.dependency-node--animator .dependency-node-stack-shadow,
-.dependency-node--animator .dependency-node-stack-cover {
+.dependency-node--animator .dependency-node-stack-shadow {
     border-top-color: #9c6248;
     border-right-color: #9c6248;
     border-bottom-color: #9c6248;
@@ -645,8 +652,7 @@
     background-color: #3f2b24;
 }
 
-.dependency-node--mesh .dependency-node-stack-shadow,
-.dependency-node--mesh .dependency-node-stack-cover {
+.dependency-node--mesh .dependency-node-stack-shadow {
     border-top-color: #6e675f;
     border-right-color: #6e675f;
     border-bottom-color: #6e675f;
@@ -654,8 +660,7 @@
     background-color: #36322f;
 }
 
-.dependency-node--scriptable-object .dependency-node-stack-shadow,
-.dependency-node--scriptable-object .dependency-node-stack-cover {
+.dependency-node--scriptable-object .dependency-node-stack-shadow {
     border-top-color: #806055;
     border-right-color: #806055;
     border-bottom-color: #806055;
@@ -663,8 +668,7 @@
     background-color: #3d2d29;
 }
 
-.dependency-node--scene .dependency-node-stack-shadow,
-.dependency-node--scene .dependency-node-stack-cover {
+.dependency-node--scene .dependency-node-stack-shadow {
     border-top-color: #4e7081;
     border-right-color: #4e7081;
     border-bottom-color: #4e7081;
@@ -672,8 +676,7 @@
     background-color: #293842;
 }
 
-.dependency-node--object .dependency-node-stack-shadow,
-.dependency-node--object .dependency-node-stack-cover {
+.dependency-node--object .dependency-node-stack-shadow {
     border-top-color: #4e6e81;
     border-right-color: #4e6e81;
     border-bottom-color: #4e6e81;
@@ -681,8 +684,7 @@
     background-color: #26343d;
 }
 
-.dependency-node--component .dependency-node-stack-shadow,
-.dependency-node--component .dependency-node-stack-cover {
+.dependency-node--component .dependency-node-stack-shadow {
     border-top-color: #64975a;
     border-right-color: #64975a;
     border-bottom-color: #64975a;
@@ -690,8 +692,7 @@
     background-color: #293a27;
 }
 
-.dependency-node--csharp .dependency-node-stack-shadow,
-.dependency-node--csharp .dependency-node-stack-cover {
+.dependency-node--csharp .dependency-node-stack-shadow {
     border-top-color: #478954;
     border-right-color: #478954;
     border-bottom-color: #478954;
@@ -699,8 +700,7 @@
     background-color: #243a2a;
 }
 
-.dependency-node--camera .dependency-node-stack-shadow,
-.dependency-node--camera .dependency-node-stack-cover {
+.dependency-node--camera .dependency-node-stack-shadow {
     border-top-color: #47788d;
     border-right-color: #47788d;
     border-bottom-color: #47788d;
@@ -708,8 +708,7 @@
     background-color: #233944;
 }
 
-.dependency-node--canvas .dependency-node-stack-shadow,
-.dependency-node--canvas .dependency-node-stack-cover {
+.dependency-node--canvas .dependency-node-stack-shadow {
     border-top-color: #915383;
     border-right-color: #915383;
     border-bottom-color: #915383;
@@ -717,8 +716,7 @@
     background-color: #402138;
 }
 
-.dependency-node--light .dependency-node-stack-shadow,
-.dependency-node--light .dependency-node-stack-cover {
+.dependency-node--light .dependency-node-stack-shadow {
     border-top-color: #8e8145;
     border-right-color: #8e8145;
     border-bottom-color: #8e8145;
@@ -726,8 +724,7 @@
     background-color: #423b23;
 }
 
-.dependency-node--missing .dependency-node-stack-shadow,
-.dependency-node--missing .dependency-node-stack-cover {
+.dependency-node--missing .dependency-node-stack-shadow {
     border-top-color: #8d4648;
     border-right-color: #8d4648;
     border-bottom-color: #8d4648;
@@ -735,8 +732,7 @@
     background-color: #3a282b;
 }
 
-.dependency-node--issue-warning .dependency-node-stack-shadow,
-.dependency-node--issue-warning .dependency-node-stack-cover {
+.dependency-node--issue-warning .dependency-node-stack-shadow {
     border-top-color: #9b702f;
     border-right-color: #9b702f;
     border-bottom-color: #9b702f;
@@ -744,8 +740,7 @@
     background-color: #43301c;
 }
 
-.dependency-node--issue-error .dependency-node-stack-shadow,
-.dependency-node--issue-error .dependency-node-stack-cover {
+.dependency-node--issue-error .dependency-node-stack-shadow {
     border-top-color: #982f37;
     border-right-color: #982f37;
     border-bottom-color: #982f37;
@@ -753,8 +748,7 @@
     background-color: #432020;
 }
 
-.dependency-node--issue-info .dependency-node-stack-shadow,
-.dependency-node--issue-info .dependency-node-stack-cover {
+.dependency-node--issue-info .dependency-node-stack-shadow {
     border-top-color: #4281a8;
     border-right-color: #4281a8;
     border-bottom-color: #4281a8;
@@ -762,8 +756,7 @@
     background-color: #213043;
 }
 
-.dependency-node--default .dependency-node-stack-shadow,
-.dependency-node--default .dependency-node-stack-cover {
+.dependency-node--default .dependency-node-stack-shadow {
     border-top-color: #5e6a76;
     border-right-color: #5e6a76;
     border-bottom-color: #5e6a76;
