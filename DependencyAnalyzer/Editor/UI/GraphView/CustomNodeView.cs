@@ -288,10 +288,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var cover = new VisualElement();
             cover.pickingMode = PickingMode.Ignore;
             cover.AddToClassList("dependency-node-stack-cover");
-            cover.style.left = 0;
-            cover.style.top = 0;
-            cover.style.width = nodeWidth;
-            cover.style.height = nodeHeight;
+            cover.style.left = 1f;
+            cover.style.top = 1f;
+            cover.style.width = Mathf.Max(1f, nodeWidth - 2f);
+            cover.style.height = Mathf.Max(1f, nodeHeight - 2f);
             Add(cover);
         }
 

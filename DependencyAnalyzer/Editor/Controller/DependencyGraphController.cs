@@ -30,6 +30,7 @@ namespace DependencyAnalyzer.Editor.Controller
         private readonly Slider zoomStepSlider;
         private readonly VisualElement searchControl;
         private readonly TextField searchField;
+        private readonly SearchIconElement searchIcon;
         private readonly VisualElement searchSuggestionList;
         private readonly Button searchPreviousButton;
         private readonly Button searchNextButton;
@@ -51,6 +52,7 @@ namespace DependencyAnalyzer.Editor.Controller
         private bool hasCompletedLoad;
         private bool isLoading;
         private bool isResizingIssuePanel;
+        private bool isSearchFieldFocused;
         private float issuePanelHeight = DefaultIssuePanelHeight;
         private float issueResizeStartMouseY;
         private float issueResizeStartHeight;
@@ -69,6 +71,7 @@ namespace DependencyAnalyzer.Editor.Controller
             zoomStepSlider = root.Q<Slider>("zoom-step-slider");
             searchControl = root.Q<VisualElement>("search-control");
             searchField = root.Q<TextField>("search-field");
+            searchIcon = EnsureSearchIcon(root.Q<VisualElement>("search-field-wrap"));
             searchSuggestionList = root.Q<VisualElement>("search-suggestion-list");
             searchPreviousButton = root.Q<Button>("search-previous-button");
             searchNextButton = root.Q<Button>("search-next-button");
@@ -93,6 +96,14 @@ namespace DependencyAnalyzer.Editor.Controller
             {
                 searchField.RegisterValueChangedCallback(HandleSearchChanged);
                 searchField.RegisterCallback<KeyDownEvent>(HandleSearchKeyDown, TrickleDown.TrickleDown);
+                searchField.RegisterCallback<FocusInEvent>(HandleSearchFocusIn);
+                searchField.RegisterCallback<FocusOutEvent>(HandleSearchFocusOut);
+            }
+
+            if (searchIcon != null)
+            {
+                searchIcon.RegisterCallback<MouseDownEvent>(HandleSearchIconMouseDown);
+                UpdateSearchIconVisibility();
             }
 
             if (searchPreviousButton != null)
@@ -166,6 +177,13 @@ namespace DependencyAnalyzer.Editor.Controller
             {
                 searchField.UnregisterValueChangedCallback(HandleSearchChanged);
                 searchField.UnregisterCallback<KeyDownEvent>(HandleSearchKeyDown, TrickleDown.TrickleDown);
+                searchField.UnregisterCallback<FocusInEvent>(HandleSearchFocusIn);
+                searchField.UnregisterCallback<FocusOutEvent>(HandleSearchFocusOut);
+            }
+
+            if (searchIcon != null)
+            {
+                searchIcon.UnregisterCallback<MouseDownEvent>(HandleSearchIconMouseDown);
             }
 
             if (searchPreviousButton != null)
@@ -341,6 +359,31 @@ namespace DependencyAnalyzer.Editor.Controller
         private void HandleSearchChanged(ChangeEvent<string> evt)
         {
             UpdateSearchState(graphView.SetSearch(evt.newValue, IsSearchFilterEnabled(), true));
+            UpdateSearchIconVisibility();
+        }
+
+        private void HandleSearchFocusIn(FocusInEvent evt)
+        {
+            isSearchFieldFocused = true;
+            UpdateSearchIconVisibility();
+        }
+
+        private void HandleSearchFocusOut(FocusOutEvent evt)
+        {
+            isSearchFieldFocused = false;
+            UpdateSearchIconVisibility();
+        }
+
+        private void HandleSearchIconMouseDown(MouseDownEvent evt)
+        {
+            if (evt.button != 0)
+            {
+                return;
+            }
+
+            searchField?.Focus();
+            evt.PreventDefault();
+            evt.StopPropagation();
         }
 
         private void HandleSearchFilterChanged(ChangeEvent<bool> evt)
@@ -403,6 +446,39 @@ namespace DependencyAnalyzer.Editor.Controller
         private bool IsSearchFilterEnabled()
         {
             return searchFilterToggle != null && searchFilterToggle.value;
+        }
+
+        private static SearchIconElement EnsureSearchIcon(VisualElement searchFieldWrap)
+        {
+            if (searchFieldWrap == null)
+            {
+                return null;
+            }
+
+            var existing = searchFieldWrap.Q<SearchIconElement>("search-icon");
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var icon = new SearchIconElement { name = "search-icon" };
+            icon.AddToClassList("dependency-search-icon");
+            icon.tooltip = "Focus search";
+            searchFieldWrap.Add(icon);
+            icon.BringToFront();
+            return icon;
+        }
+
+        private void UpdateSearchIconVisibility()
+        {
+            if (searchIcon == null)
+            {
+                return;
+            }
+
+            searchIcon.style.display = !isSearchFieldFocused && string.IsNullOrEmpty(GetSearchQuery())
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
         }
 
         private void UpdateSearchState(DependencyGraphView.SearchResultState state)
@@ -584,6 +660,57 @@ namespace DependencyAnalyzer.Editor.Controller
             var icon = new ChevronIcon(pointsUp, verticalScale);
             icon.StretchToParentSize();
             button.Add(icon);
+        }
+
+        private sealed class SearchIconElement : VisualElement
+        {
+            public SearchIconElement()
+            {
+                pickingMode = PickingMode.Position;
+                generateVisualContent += DrawSearchIcon;
+            }
+
+            private void DrawSearchIcon(MeshGenerationContext context)
+            {
+                var rect = contentRect;
+                if (rect.width <= 0f || rect.height <= 0f)
+                {
+                    return;
+                }
+
+                var painter = context.painter2D;
+                painter.strokeColor = Color.white;
+                painter.lineWidth = 1.15f;
+                painter.lineCap = LineCap.Round;
+                painter.lineJoin = LineJoin.Round;
+
+                var center = new Vector2(rect.x + rect.width * 0.43f, rect.y + rect.height * 0.42f);
+                var radius = Mathf.Min(rect.width, rect.height) * 0.25f;
+                const int segments = 36;
+                painter.BeginPath();
+                for (var i = 0; i <= segments; i++)
+                {
+                    var angle = i / (float)segments * Mathf.PI * 2f;
+                    var point = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                    if (i == 0)
+                    {
+                        painter.MoveTo(point);
+                    }
+                    else
+                    {
+                        painter.LineTo(point);
+                    }
+                }
+
+                painter.Stroke();
+
+                var handleStart = center + new Vector2(radius * 0.68f, radius * 0.68f);
+                var handleEnd = new Vector2(rect.x + rect.width * 0.78f, rect.y + rect.height * 0.78f);
+                painter.BeginPath();
+                painter.MoveTo(handleStart);
+                painter.LineTo(handleEnd);
+                painter.Stroke();
+            }
         }
 
         private void SetStatus(string message)
