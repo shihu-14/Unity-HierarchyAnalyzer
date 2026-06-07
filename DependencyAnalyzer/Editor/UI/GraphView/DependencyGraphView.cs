@@ -432,6 +432,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 rootNodes.AddRange(graph.Nodes.OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase));
             }
 
+            AddDisconnectedIssueSourceRoots();
+
             foreach (var pair in ComputeMinimumRegularDepths(rootNodes))
             {
                 minimumRegularDepths[pair.Key] = pair.Value;
@@ -455,6 +457,72 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
 
             return true;
+        }
+
+        private void AddDisconnectedIssueSourceRoots()
+        {
+            if (graph == null || rootNodes.Count == 0)
+            {
+                return;
+            }
+
+            var rootIds = new HashSet<string>(rootNodes.Select(node => node.Id), StringComparer.Ordinal);
+            var reachableNodeIds = GetReachableNodeIds(rootNodes);
+            var additionalRoots = new List<DependencyNodeData>();
+            for (var i = 0; i < graph.Edges.Count; i++)
+            {
+                var edge = graph.Edges[i];
+                if (edge == null
+                    || edge.ReferenceKind != DependencyReferenceKind.Issue
+                    || string.IsNullOrEmpty(edge.SourceNodeId)
+                    || rootIds.Contains(edge.SourceNodeId)
+                    || reachableNodeIds.Contains(edge.SourceNodeId)
+                    || !graph.TryGetNode(edge.SourceNodeId, out var sourceNode)
+                    || sourceNode.Kind == DependencyNodeKind.Issue)
+                {
+                    continue;
+                }
+
+                additionalRoots.Add(sourceNode);
+                rootIds.Add(sourceNode.Id);
+                reachableNodeIds.Add(sourceNode.Id);
+            }
+
+            rootNodes.AddRange(additionalRoots
+                .OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(node => node.Path, StringComparer.OrdinalIgnoreCase));
+        }
+
+        private HashSet<string> GetReachableNodeIds(IReadOnlyList<DependencyNodeData> roots)
+        {
+            var reachableNodeIds = new HashSet<string>(StringComparer.Ordinal);
+            var stack = new Stack<string>();
+            for (var i = 0; i < roots.Count; i++)
+            {
+                if (roots[i] != null && !string.IsNullOrEmpty(roots[i].Id))
+                {
+                    stack.Push(roots[i].Id);
+                }
+            }
+
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+                if (!reachableNodeIds.Add(current))
+                {
+                    continue;
+                }
+
+                foreach (var edge in GetTreeOutgoingEdges(current))
+                {
+                    if (!string.IsNullOrEmpty(edge.TargetNodeId))
+                    {
+                        stack.Push(edge.TargetNodeId);
+                    }
+                }
+            }
+
+            return reachableNodeIds;
         }
 
         private List<RenderNode> BuildRenderTree()
@@ -973,7 +1041,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     }
 
                     var issue = FindSubtreeIssue(edge.TargetNodeId, new HashSet<string> { renderNode.NodeId });
-                    if (issue.HasIssue)
+                    if (issue.HasIssue
+                        && !ContainsVisibleDescendant(renderNode, issue.NodeId)
+                        && !ContainsVisibleDescendant(renderNode, issue.SourceNodeId))
                     {
                         renderNode.SetPropagatedIssue(issue);
                     }
@@ -988,6 +1058,36 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 if (string.Equals(renderNode.Children[i].NodeId, targetNodeId, StringComparison.Ordinal))
                 {
                     return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsVisibleDescendant(RenderNode renderNode, string nodeId)
+        {
+            if (renderNode == null || string.IsNullOrEmpty(nodeId))
+            {
+                return false;
+            }
+
+            var stack = new Stack<RenderNode>();
+            for (var i = 0; i < renderNode.Children.Count; i++)
+            {
+                stack.Push(renderNode.Children[i]);
+            }
+
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+                if (string.Equals(current.NodeId, nodeId, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+
+                for (var i = 0; i < current.Children.Count; i++)
+                {
+                    stack.Push(current.Children[i]);
                 }
             }
 
@@ -1056,7 +1156,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 bestIssue = new SubtreeIssueState(
                     true,
                     node.IssueSeverity.Value,
-                    node.IssueMessage);
+                    node.IssueMessage,
+                    node.Id,
+                    GetIssueSourceNodeId(node.Id));
             }
 
             foreach (var edge in GetTreeOutgoingEdges(nodeId))
@@ -1070,6 +1172,26 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             issueSubtreeCache[nodeId] = bestIssue;
             return bestIssue;
+        }
+
+        private string GetIssueSourceNodeId(string issueNodeId)
+        {
+            if (string.IsNullOrEmpty(issueNodeId))
+            {
+                return string.Empty;
+            }
+
+            var incomingEdges = GetIncomingEdges(issueNodeId);
+            for (var i = 0; i < incomingEdges.Count; i++)
+            {
+                var edge = incomingEdges[i];
+                if (edge.ReferenceKind == DependencyReferenceKind.Issue)
+                {
+                    return edge.SourceNodeId;
+                }
+            }
+
+            return string.Empty;
         }
 
         private static bool IsPropagatedIssueSeverity(DependencyScanIssueSeverity severity)
@@ -2680,18 +2802,22 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private readonly struct SubtreeIssueState
         {
-            public static readonly SubtreeIssueState None = new SubtreeIssueState(false, DependencyScanIssueSeverity.Warning, string.Empty);
+            public static readonly SubtreeIssueState None = new SubtreeIssueState(false, DependencyScanIssueSeverity.Warning, string.Empty, string.Empty, string.Empty);
 
-            public SubtreeIssueState(bool hasIssue, DependencyScanIssueSeverity severity, string message)
+            public SubtreeIssueState(bool hasIssue, DependencyScanIssueSeverity severity, string message, string nodeId, string sourceNodeId)
             {
                 HasIssue = hasIssue;
                 Severity = severity;
                 Message = message ?? string.Empty;
+                NodeId = nodeId ?? string.Empty;
+                SourceNodeId = sourceNodeId ?? string.Empty;
             }
 
             public bool HasIssue { get; }
             public DependencyScanIssueSeverity Severity { get; }
             public string Message { get; }
+            public string NodeId { get; }
+            public string SourceNodeId { get; }
         }
 
         private readonly struct NodeDepth

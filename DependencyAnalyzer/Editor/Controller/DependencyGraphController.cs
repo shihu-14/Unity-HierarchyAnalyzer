@@ -1007,7 +1007,7 @@ namespace DependencyAnalyzer.Editor.Controller
                     continue;
                 }
 
-                var targetNodeId = FindIssueTargetNodeId(graphData, issue.SubjectPath);
+                var targetNodeId = FindIssueEntryTargetNodeId(graphData, issue);
                 if (string.IsNullOrEmpty(targetNodeId)
                     || !graphData.TryGetNode(targetNodeId, out var targetNode))
                 {
@@ -1027,6 +1027,59 @@ namespace DependencyAnalyzer.Editor.Controller
                 .ThenBy(entry => entry.Title, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(entry => entry.Detail, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        private static string FindIssueEntryTargetNodeId(DependencyGraphData graphData, DependencyScanIssueData issue)
+        {
+            if (graphData == null || issue == null)
+            {
+                return string.Empty;
+            }
+
+            var issueNode = FindIssueNode(graphData, issue);
+            if (issueNode != null)
+            {
+                var sourceEdge = graphData.Edges.FirstOrDefault(edge =>
+                    edge != null
+                    && edge.ReferenceKind == DependencyReferenceKind.Issue
+                    && string.Equals(edge.TargetNodeId, issueNode.Id, StringComparison.Ordinal));
+                if (sourceEdge != null && !string.IsNullOrEmpty(sourceEdge.SourceNodeId))
+                {
+                    return sourceEdge.SourceNodeId;
+                }
+            }
+
+            return FindIssueTargetNodeId(graphData, issue.SubjectPath);
+        }
+
+        private static DependencyNodeData FindIssueNode(DependencyGraphData graphData, DependencyScanIssueData issue)
+        {
+            if (graphData == null || issue == null)
+            {
+                return null;
+            }
+
+            return graphData.Nodes.FirstOrDefault(node =>
+                node != null
+                && node.HasIssue
+                && node.IssueSeverity == issue.Severity
+                && string.Equals(node.IssueMessage, issue.Message, StringComparison.Ordinal)
+                && MatchesIssueSubject(node, issue.SubjectPath)
+                && graphData.Edges.Any(edge =>
+                    edge != null
+                    && edge.ReferenceKind == DependencyReferenceKind.Issue
+                    && string.Equals(edge.TargetNodeId, node.Id, StringComparison.Ordinal)));
+        }
+
+        private static bool MatchesIssueSubject(DependencyNodeData node, string subjectPath)
+        {
+            if (node == null || string.IsNullOrEmpty(subjectPath))
+            {
+                return false;
+            }
+
+            return string.Equals(node.Id, subjectPath, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(node.Path, subjectPath, StringComparison.OrdinalIgnoreCase);
         }
 
         private static string FindIssueTargetNodeId(DependencyGraphData graphData, string subjectPath)
