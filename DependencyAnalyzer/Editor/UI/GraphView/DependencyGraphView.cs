@@ -19,7 +19,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float DeepNodeGap = 12f;
         private const float DepthNodeScaleStep = 0.08f;
         private const float MinimumDepthNodeScale = 0.58f;
-        private const float AnimationDurationSeconds = 0.25f;
+        private const float AnimationDurationSeconds = 0.38f;
         private const int MaxAnimatedLayoutNodeCount = 140;
         private const int MaxAnimatedLayoutNodeDelta = 120;
         private const int MaxSearchSuggestions = 6;
