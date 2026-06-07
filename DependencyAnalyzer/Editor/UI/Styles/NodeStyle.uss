@@ -52,10 +52,10 @@
     margin-bottom: 2px;
     padding-left: 18px;
     padding-right: 12px;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
     background-color: #252a30;
     overflow: visible;
 }
@@ -219,6 +219,7 @@
     height: 6px;
     min-height: 6px;
     background-color: #20242a;
+    cursor: resize-vertical;
 }
 
 .dependency-issue-resize-handle:hover {

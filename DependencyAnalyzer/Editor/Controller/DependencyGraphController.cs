@@ -123,10 +123,6 @@ namespace DependencyAnalyzer.Editor.Controller
 
             if (issueResizeHandle != null)
             {
-                issueResizeHandle.style.cursor = new StyleCursor(new UnityEngine.UIElements.Cursor
-                {
-                    defaultCursorId = (int)MouseCursor.ResizeVertical
-                });
                 issueResizeHandle.RegisterCallback<MouseDownEvent>(HandleIssueResizeMouseDown);
                 issueResizeHandle.RegisterCallback<MouseMoveEvent>(HandleIssueResizeMouseMove);
                 issueResizeHandle.RegisterCallback<MouseUpEvent>(HandleIssueResizeMouseUp);
