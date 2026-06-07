@@ -13,10 +13,12 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private float routeOffset;
         private int sourceSlotIndex;
         private int sourceSlotCount = 1;
+        private readonly Color edgeColor;
 
-        public CustomEdgeView(DependencyEdgeData edgeData)
+        public CustomEdgeView(DependencyEdgeData edgeData, Color childNodeColor)
         {
             EdgeData = edgeData;
+            edgeColor = new Color(childNodeColor.r, childNodeColor.g, childNodeColor.b, edgeData.PointsToMissingReference ? 0.95f : 0.9f);
             pickingMode = PickingMode.Position;
             style.position = Position.Absolute;
             style.left = 0f;
@@ -61,7 +63,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var points = GetRoutePoints();
 
             var painter = context.painter2D;
-            painter.strokeColor = GetColor(EdgeData.ReferenceKind);
+            painter.strokeColor = edgeColor;
             painter.lineWidth = EdgeData.PointsToMissingReference ? 3f : 2f;
             if (IsDottedEdge(EdgeData.ReferenceKind))
             {
@@ -126,25 +128,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private static float ClampPortY(Rect rect, float y)
         {
             return Mathf.Clamp(y, rect.yMin + 14f, rect.yMax - 14f);
-        }
-
-        private static Color GetColor(DependencyReferenceKind kind)
-        {
-            switch (kind)
-            {
-                case DependencyReferenceKind.Hierarchy:
-                    return new Color(0.49f, 0.71f, 0.86f, 0.85f);
-                case DependencyReferenceKind.Component:
-                    return new Color(0.62f, 0.83f, 0.52f, 0.9f);
-                case DependencyReferenceKind.PrefabInstance:
-                    return new Color(0.84f, 0.66f, 0.48f, 0.9f);
-                case DependencyReferenceKind.SerializedProperty:
-                    return new Color(0.56f, 0.78f, 0.64f, 0.9f);
-                case DependencyReferenceKind.Issue:
-                    return new Color(0.95f, 0.57f, 0.32f, 0.92f);
-                default:
-                    return new Color(0.72f, 0.78f, 0.85f, 0.85f);
-            }
         }
 
         private static bool IsDottedEdge(DependencyReferenceKind kind)

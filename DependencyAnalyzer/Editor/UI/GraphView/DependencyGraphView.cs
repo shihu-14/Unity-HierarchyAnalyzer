@@ -1027,7 +1027,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 var total = totalBySource[parentViewId];
                 var routeOffset = (edgeIndex - (total - 1) * 0.5f) * 22f;
                 var visualSourceRect = GetEdgeSourceRect(renderNode.Parent, sourceRect);
-                var edgeView = new CustomEdgeView(renderNode.EdgeFromParent);
+                var edgeView = new CustomEdgeView(renderNode.EdgeFromParent, IconUtility.GetNodeAccentColor(renderNode.Node));
                 var targetRenderNode = renderNode;
                 edgeView.SetCanvasSize(currentCanvasSize.x, currentCanvasSize.y);
                 edgeView.SetEndpoints(visualSourceRect, targetRect, routeOffset, edgeIndex, total);
