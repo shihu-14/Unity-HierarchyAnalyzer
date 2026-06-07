@@ -260,7 +260,7 @@
 }
 
 .dependency-zoom-step-control {
-    width: 250px;
+    width: 196px;
     flex-direction: row;
     align-items: center;
     margin-left: 4px;
@@ -276,7 +276,7 @@
 }
 
 .dependency-zoom-step-control Slider {
-    width: 162px;
+    width: 108px;
 }
 
 .dependency-graph-container {
