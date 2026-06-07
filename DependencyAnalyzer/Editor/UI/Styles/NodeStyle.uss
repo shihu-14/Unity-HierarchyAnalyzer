@@ -868,19 +868,19 @@
 }
 
 .dependency-node-menu-toggle {
-    min-width: 16px;
-    width: 16px;
-    height: 16px;
+    min-width: 18px;
+    width: 18px;
+    height: 18px;
     margin-left: 4px;
     padding-left: 0;
     padding-right: 0;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
+    border-top-left-radius: 9px;
+    border-top-right-radius: 9px;
+    border-bottom-left-radius: 9px;
+    border-bottom-right-radius: 9px;
     background-color: rgba(208, 170, 85, 0.22);
     color: #ffd66f;
-    font-size: 7px;
+    font-size: 7.875px;
     -unity-text-align: middle-center;
 }
 

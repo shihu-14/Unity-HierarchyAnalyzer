@@ -23,7 +23,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float ActionButtonMinSize = 12f;
         private const float ActionButtonFontSize = 24f;
         private const float PlusButtonFontSize = 20f;
-        private const float MenuButtonFontSize = 7f;
+        private const float MenuButtonBaseSize = 18f;
+        private const float MenuButtonMinSize = 13.5f;
+        private const float MenuButtonFontSize = 7.875f;
+        private const float MenuButtonMinFontSize = 5.9f;
         private const float StackStepOffset = 6f;
         private const float MiddleStackDepth = 0.85f;
         private const float BackStackDepth = 2f;
@@ -425,7 +428,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private Label CreateMenuToggleButton()
         {
             var button = new Label("•••");
-            var buttonSize = Mathf.Round(Mathf.Clamp(ActionButtonBaseSize * nodeScale, ActionButtonMinSize, ActionButtonBaseSize));
+            var buttonSize = Mathf.Round(Mathf.Clamp(MenuButtonBaseSize * nodeScale, MenuButtonMinSize, MenuButtonBaseSize));
             button.tooltip = isMenuExpanded ? "Hide inspector references" : "Show inspector references";
             button.AddToClassList("dependency-node-menu-toggle");
             if (isMenuExpanded)
@@ -437,7 +440,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             button.style.width = buttonSize;
             button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
-            button.style.fontSize = Mathf.Round(Mathf.Clamp(MenuButtonFontSize * nodeScale, 6f, MenuButtonFontSize));
+            button.style.fontSize = Mathf.Round(Mathf.Clamp(MenuButtonFontSize * nodeScale, MenuButtonMinFontSize, MenuButtonFontSize));
             button.RegisterCallback<MouseDownEvent>(evt =>
             {
                 if (evt.button == 0)

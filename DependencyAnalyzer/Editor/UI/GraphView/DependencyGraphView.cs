@@ -545,48 +545,88 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             renderNode.HasHiddenChildren = (renderNode.CanToggleChildren && isCollapsed)
                 || (renderNode.HasMenuChildren && !renderNode.IsMenuExpanded);
 
-            var visibleEdges = new List<DependencyEdgeData>();
-            if (!isCollapsed)
-            {
-                visibleEdges.AddRange(regularEdges);
-            }
-
-            if (renderNode.IsMenuExpanded)
-            {
-                visibleEdges.AddRange(menuEdges);
-            }
-
-            if (visibleEdges.Count == 0)
+            var visibleChildCount = (isCollapsed ? 0 : regularEdges.Count)
+                + (renderNode.IsMenuExpanded ? menuEdges.Count : 0);
+            if (visibleChildCount == 0)
             {
                 return renderNode;
             }
 
             var childIndex = 0;
-            var childSiblingScale = GetSiblingCountScale(visibleEdges.Count);
-            for (var i = 0; i < visibleEdges.Count; i++)
+            var childSiblingScale = GetSiblingCountScale(visibleChildCount);
+            if (!isCollapsed)
             {
-                var edge = visibleEdges[i];
+                AddRenderChildren(
+                    renderNode,
+                    regularEdges,
+                    "r",
+                    depth,
+                    childPath,
+                    isExpanded,
+                    childSiblingScale,
+                    minimumRegularDepths,
+                    defaultExpandedNodeIds,
+                    ref childIndex);
+            }
 
+            if (renderNode.IsMenuExpanded)
+            {
+                AddRenderChildren(
+                    renderNode,
+                    menuEdges,
+                    "m",
+                    depth,
+                    childPath,
+                    isExpanded,
+                    childSiblingScale,
+                    minimumRegularDepths,
+                    defaultExpandedNodeIds,
+                    ref childIndex);
+            }
+
+            return renderNode;
+        }
+
+        private void AddRenderChildren(
+            RenderNode renderNode,
+            IReadOnlyList<DependencyEdgeData> edges,
+            string viewIdPrefix,
+            int depth,
+            HashSet<string> childPath,
+            bool forceCollapseChildren,
+            float childSiblingScale,
+            IReadOnlyDictionary<string, int> minimumRegularDepths,
+            HashSet<string> defaultExpandedNodeIds,
+            ref int childIndex)
+        {
+            if (renderNode == null || edges == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < edges.Count; i++)
+            {
+                var edge = edges[i];
                 var child = BuildRenderNode(
                     edge.TargetNodeId,
                     renderNode,
                     edge,
                     depth + 1,
                     childIndex,
-                    viewId + "-" + childIndex,
+                    renderNode.ViewId + "-" + viewIdPrefix + i,
                     childPath,
-                    isExpanded,
+                    forceCollapseChildren,
                     childSiblingScale,
                     minimumRegularDepths,
                     defaultExpandedNodeIds);
-                if (child != null)
+                if (child == null)
                 {
-                    renderNode.Children.Add(child);
-                    childIndex++;
+                    continue;
                 }
-            }
 
-            return renderNode;
+                renderNode.Children.Add(child);
+                childIndex++;
+            }
         }
 
         private List<DependencyEdgeData> GetRenderableChildEdges(
@@ -1214,6 +1254,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     : pair.Value.position;
                 var ghost = new VisualElement();
                 ghost.AddToClassList("dependency-node-ghost");
+                ghost.AddToClassList(IconUtility.GetNodeTypeClass(snapshot.Node));
                 ghost.style.position = Position.Absolute;
                 ghost.style.left = pair.Value.x;
                 ghost.style.top = pair.Value.y;
@@ -2469,9 +2510,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             public RenderSnapshot(RenderNode node)
             {
                 ParentViewId = node.Parent == null ? string.Empty : node.Parent.ViewId;
+                Node = node.Node;
             }
 
             public string ParentViewId { get; }
+            public DependencyNodeData Node { get; }
         }
 
         private sealed class EdgeRoute
