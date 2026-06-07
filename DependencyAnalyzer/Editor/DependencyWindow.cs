@@ -40,8 +40,6 @@ namespace DependencyAnalyzer.Editor
                 BuildFallbackLayout(rootVisualElement);
             }
 
-            EnsureColorPalette(rootVisualElement);
-
             var graphContainer = rootVisualElement.Q<VisualElement>("graph-container");
             if (graphContainer == null)
             {
@@ -127,48 +125,6 @@ namespace DependencyAnalyzer.Editor
             issuePanel.Add(issueHeader);
             issuePanel.Add(issueList);
             root.Add(issuePanel);
-        }
-
-        private static void EnsureColorPalette(VisualElement root)
-        {
-            var toolbar = root.Q<VisualElement>("dependency-toolbar");
-            if (toolbar == null)
-            {
-                return;
-            }
-
-            var existing = root.Q<VisualElement>("color-palette-preview");
-            if (existing != null)
-            {
-                existing.RemoveFromHierarchy();
-            }
-
-            var palette = new VisualElement { name = "color-palette-preview" };
-            palette.AddToClassList("dependency-color-palette-preview");
-            AddColorSwatch(palette, "blue", "Blue #52A7FF");
-            AddColorSwatch(palette, "sky", "Sky #6BB8D6");
-            AddColorSwatch(palette, "teal", "Teal #45C7AE");
-            AddColorSwatch(palette, "green", "Green #69B779");
-            AddColorSwatch(palette, "lime", "Lime #9ED384");
-            AddColorSwatch(palette, "yellow", "Yellow #D9C766");
-            AddColorSwatch(palette, "amber", "Amber #F2B046");
-            AddColorSwatch(palette, "orange", "Orange #F28B60");
-            AddColorSwatch(palette, "red", "Red #EC4E4E");
-            AddColorSwatch(palette, "pink", "Pink #E268AD");
-            AddColorSwatch(palette, "purple", "Purple #B178C6");
-            AddColorSwatch(palette, "violet", "Violet #7D8CFF");
-            AddColorSwatch(palette, "brown", "Brown #C48267");
-            AddColorSwatch(palette, "neutral", "Neutral #A69B8E");
-            toolbar.Add(palette);
-        }
-
-        private static void AddColorSwatch(VisualElement palette, string className, string tooltip)
-        {
-            var swatch = new VisualElement();
-            swatch.tooltip = tooltip;
-            swatch.AddToClassList("dependency-color-swatch");
-            swatch.AddToClassList("dependency-color-swatch--" + className);
-            palette.Add(swatch);
         }
 
         private void AddStyleSheetToRoot(string fileName)

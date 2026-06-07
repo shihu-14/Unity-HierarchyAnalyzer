@@ -799,6 +799,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 if (IsCurrentSearchNode(renderNode.NodeId))
                 {
                     nodeView.AddToClassList("dependency-node--search-current");
+                    AddPersistentSearchHighlight(nodeView);
                 }
 
                 nodeViews.Add(renderNode.ViewId, nodeView);
@@ -1949,6 +1950,31 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             {
                 FlashView(renderNode.ViewId, delayUntilViewSettles);
             }
+        }
+
+        private static void AddPersistentSearchHighlight(CustomNodeView view)
+        {
+            if (view == null)
+            {
+                return;
+            }
+
+            var nodeColor = IconUtility.GetNodeAccentColor(view.Data);
+            var borderColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 0.92f);
+            var fillColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 0.08f);
+            var ring = new VisualElement();
+            ring.AddToClassList("dependency-node-search-ring");
+            ring.pickingMode = PickingMode.Ignore;
+            ring.style.left = -5f;
+            ring.style.top = -5f;
+            ring.style.right = -5f;
+            ring.style.bottom = -5f;
+            ring.style.borderTopColor = borderColor;
+            ring.style.borderRightColor = borderColor;
+            ring.style.borderBottomColor = borderColor;
+            ring.style.borderLeftColor = borderColor;
+            ring.style.backgroundColor = fillColor;
+            view.Insert(0, ring);
         }
 
         private void FlashView(string viewId, bool delayUntilViewSettles)

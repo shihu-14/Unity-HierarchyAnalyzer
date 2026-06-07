@@ -19,9 +19,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float TypeFontSize = 10f;
         private const float BadgeFontSize = 10f;
         private const float ParentJumpFontSize = 11f;
-        private const float ActionButtonBaseSize = 40f;
-        private const float ActionButtonMinSize = 24f;
-        private const float ActionButtonFontSize = 40f;
+        private const float ActionButtonBaseSize = 16f;
+        private const float ActionButtonMinSize = 12f;
+        private const float ActionButtonFontSize = 30f;
+        private const float MenuButtonFontSize = 7f;
         private const float BackStackOffset = 8f;
         private const float MiddleStackOffset = 4f;
 
@@ -191,6 +192,18 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             badgeContainer.style.marginLeft = Mathf.Round(Mathf.Clamp(6f * nodeScale, 2f, 6f));
             badgeContainer.style.flexShrink = 0f;
 
+            if (hasPropagatedMissingReference)
+            {
+                var warningIcon = new Image { image = IconUtility.GetWarningIcon() };
+                warningIcon.AddToClassList("dependency-node-warning");
+                var warningSize = Mathf.Round(Mathf.Clamp(16f * nodeScale, 11f, 16f));
+                warningIcon.style.width = warningSize;
+                warningIcon.style.height = warningSize;
+                warningIcon.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
+                warningIcon.tooltip = "Hidden child contains a missing reference";
+                badgeContainer.Add(warningIcon);
+            }
+
             badgeContainer.Add(CreateBadge(Data.DependencyCount.ToString(), "Dependencies", nodeScale));
             badgeContainer.Add(CreateBadge(Data.UsedByCount.ToString(), "Used By", nodeScale));
             if (canToggleChildren && hasMenuChildren)
@@ -226,7 +239,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var severity = Data.IssueSeverity.HasValue ? Data.IssueSeverity.Value : DependencyScanIssueSeverity.Warning;
             var marker = new Image { image = IconUtility.GetIssueIcon(severity) };
             marker.AddToClassList("dependency-node-issue-marker");
-            var markerSize = Mathf.Round(Mathf.Clamp(15f * nodeScale, 11f, 15f));
+            var markerSize = Mathf.Round(Mathf.Clamp(20f * nodeScale, 14f, 20f));
             marker.style.width = markerSize;
             marker.style.height = markerSize;
             marker.style.marginRight = Mathf.Round(Mathf.Clamp(5f * nodeScale, 2f, 5f));
@@ -238,7 +251,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         {
             return Data.HasIssue
                 || Data.HasMissingReferences
-                || hasPropagatedMissingReference
                 || Data.Kind == DependencyNodeKind.MissingReference;
         }
 
@@ -390,7 +402,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             button.style.width = buttonSize;
             button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
-            button.style.fontSize = Mathf.Round(Mathf.Clamp(12f * nodeScale, 8f, 12f));
+            button.style.fontSize = Mathf.Round(Mathf.Clamp(MenuButtonFontSize * nodeScale, 6f, MenuButtonFontSize));
             button.RegisterCallback<MouseDownEvent>(evt =>
             {
                 if (evt.button == 0)
