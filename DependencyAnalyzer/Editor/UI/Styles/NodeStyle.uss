@@ -56,14 +56,6 @@
     border-top-right-radius: 5px;
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
-    border-top-width: 1px;
-    border-right-width: 1px;
-    border-bottom-width: 1px;
-    border-left-width: 1px;
-    border-top-color: #6c7178;
-    border-right-color: #3d4249;
-    border-bottom-color: #2d3238;
-    border-left-color: #6c7178;
     background-color: #252a30;
     overflow: visible;
 }
