@@ -1961,10 +1961,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var ring = new VisualElement();
             ring.AddToClassList("dependency-node-search-ring");
             ring.pickingMode = PickingMode.Ignore;
-            ring.style.left = isCurrent ? -5f : -4f;
-            ring.style.top = isCurrent ? -5f : -4f;
-            ring.style.right = isCurrent ? -5f : -4f;
-            ring.style.bottom = isCurrent ? -5f : -4f;
+            SetHighlightRingBounds(view, ring, isCurrent ? 5f : 4f);
             var borderWidth = isCurrent ? 3f : 2f;
             ring.style.borderTopWidth = borderWidth;
             ring.style.borderRightWidth = borderWidth;
@@ -1990,6 +1987,20 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }).Every(16);
         }
 
+        private static void SetHighlightRingBounds(CustomNodeView view, VisualElement ring, float padding)
+        {
+            if (view == null || ring == null)
+            {
+                return;
+            }
+
+            var stackOffset = view.HiddenStackOffset;
+            ring.style.left = -padding;
+            ring.style.top = -padding;
+            ring.style.right = -padding - stackOffset;
+            ring.style.bottom = -padding - stackOffset;
+        }
+
         private void FlashView(string viewId, bool delayUntilViewSettles)
         {
             if (delayUntilViewSettles)
@@ -2011,10 +2022,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var ring = new VisualElement();
             ring.AddToClassList("dependency-node-flash-ring");
             ring.pickingMode = PickingMode.Ignore;
-            ring.style.left = -4f;
-            ring.style.top = -4f;
-            ring.style.right = -4f;
-            ring.style.bottom = -4f;
+            SetHighlightRingBounds(view, ring, 4f);
             ring.style.borderTopColor = borderColor;
             ring.style.borderRightColor = borderColor;
             ring.style.borderBottomColor = borderColor;

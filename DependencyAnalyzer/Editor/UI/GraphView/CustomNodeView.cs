@@ -94,6 +94,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         public string ViewId { get; }
         public DependencyNodeData Data { get; }
         public bool HasHiddenChildren { get; }
+        public float HiddenStackOffset => HasHiddenChildren ? GetHiddenStackOffset(nodeScale) : 0f;
         public bool IsExpanded => isExpanded;
         public event Action<DependencyNodeData> NodeSelected;
         public event Action<CustomNodeView, Vector2> NodeMoved;
