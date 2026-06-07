@@ -19,9 +19,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float DeepNodeGap = 12f;
         private const float DepthNodeScaleStep = 0.08f;
         private const float MinimumDepthNodeScale = 0.58f;
-        private const float AnimationDurationSeconds = 0.38f;
-        private const int MaxAnimatedLayoutNodeCount = 140;
-        private const int MaxAnimatedLayoutNodeDelta = 120;
+        private const float AnimationDurationSeconds = 0.3f;
+        private const int MaxAnimatedLayoutNodeCount = 600;
+        private const int MaxAnimatedLayoutNodeDelta = 400;
         private const int MaxSearchSuggestions = int.MaxValue;
 
         private readonly VisualElement contentLayer;
@@ -1071,8 +1071,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 }
 
                 var finalRect = pair.Value;
+                var isNewNode = !previousRects.ContainsKey(pair.Key);
                 var startRect = finalRect;
-                if (previousRects.TryGetValue(pair.Key, out var previousRect))
+                if (!isNewNode && previousRects.TryGetValue(pair.Key, out var previousRect))
                 {
                     startRect = previousRect;
                 }
@@ -1089,16 +1090,22 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     }
                 }
 
-                if ((startRect.position - finalRect.position).sqrMagnitude <= 0.5f)
+                if (isNewNode)
+                {
+                    nodeView.style.opacity = 0f;
+                }
+
+                if (!isNewNode && (startRect.position - finalRect.position).sqrMagnitude <= 0.5f)
                 {
                     nodeView.SetGraphPosition(finalRect.position);
+                    nodeView.style.opacity = 1f;
                     nodeRects[pair.Key] = finalRect;
                     continue;
                 }
 
                 nodeView.SetGraphPosition(startRect.position);
                 nodeRects[pair.Key] = new Rect(startRect.position, finalRect.size);
-                nodeAnimations.Add(new NodeAnimation(pair.Key, nodeView, startRect.position, finalRect.position));
+                nodeAnimations.Add(new NodeAnimation(pair.Key, nodeView, startRect.position, finalRect.position, isNewNode));
             }
 
             var ghostAnimations = CreateGhostAnimations(previousRects, previousSnapshots, finalRects);
@@ -1118,6 +1125,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     var animation = nodeAnimations[i];
                     var position = Vector2.Lerp(animation.StartPosition, animation.EndPosition, eased);
                     animation.View.SetGraphPosition(position);
+                    if (animation.FadeIn)
+                    {
+                        animation.View.style.opacity = eased;
+                    }
+
                     if (finalRects.TryGetValue(animation.ViewId, out var finalRect))
                     {
                         nodeRects[animation.ViewId] = new Rect(position, finalRect.size);
@@ -1145,6 +1157,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 {
                     var animation = nodeAnimations[i];
                     animation.View.SetGraphPosition(animation.EndPosition);
+                    animation.View.style.opacity = 1f;
                     if (finalRects.TryGetValue(animation.ViewId, out var finalRect))
                     {
                         nodeRects[animation.ViewId] = finalRect;
@@ -2421,18 +2434,20 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private sealed class NodeAnimation
         {
-            public NodeAnimation(string viewId, CustomNodeView view, Vector2 startPosition, Vector2 endPosition)
+            public NodeAnimation(string viewId, CustomNodeView view, Vector2 startPosition, Vector2 endPosition, bool fadeIn)
             {
                 ViewId = viewId;
                 View = view;
                 StartPosition = startPosition;
                 EndPosition = endPosition;
+                FadeIn = fadeIn;
             }
 
             public string ViewId { get; }
             public CustomNodeView View { get; }
             public Vector2 StartPosition { get; }
             public Vector2 EndPosition { get; }
+            public bool FadeIn { get; }
         }
 
         private sealed class GhostAnimation

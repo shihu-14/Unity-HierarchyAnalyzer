@@ -25,6 +25,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float PlusButtonFontSize = 20f;
         private const float MenuButtonFontSize = 7f;
         private const float StackStepOffset = 6f;
+        private const float MiddleStackDepth = 0.85f;
+        private const float BackStackDepth = 2f;
         private const float StackBorderOverlap = 1f;
 
         private readonly Func<float> zoomProvider;
@@ -131,7 +133,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         public static float GetHiddenStackOffset(float sizeScale)
         {
-            return GetStackOffset(sizeScale, 2f);
+            return GetStackOffset(sizeScale, BackStackDepth);
         }
 
         private void BuildContent()
@@ -300,7 +302,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private static float GetMiddleStackOffset(float sizeScale)
         {
-            return GetStackOffset(sizeScale, 1f);
+            return GetStackOffset(sizeScale, MiddleStackDepth);
         }
 
         private static float GetStackOffset(float sizeScale, float depth)
