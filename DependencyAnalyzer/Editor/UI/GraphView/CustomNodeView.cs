@@ -140,6 +140,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             {
                 AddStackShadow("dependency-node-stack-shadow--back", GetHiddenStackOffset(nodeScale));
                 AddStackShadow("dependency-node-stack-shadow--middle", Mathf.Round(MiddleStackOffset * nodeScale));
+                AddStackCover();
             }
 
             var accent = new VisualElement();
@@ -271,41 +272,27 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         {
             offset = Mathf.Max(1f, offset);
 
-            AddStackShadowEdge(
-                layerClass,
-                "dependency-node-stack-shadow--right",
-                nodeWidth,
-                offset,
-                offset,
-                nodeHeight);
-            AddStackShadowEdge(
-                layerClass,
-                "dependency-node-stack-shadow--bottom",
-                offset,
-                nodeHeight,
-                nodeWidth,
-                offset);
-            AddStackShadowEdge(
-                layerClass,
-                "dependency-node-stack-shadow--corner",
-                nodeWidth,
-                nodeHeight,
-                offset,
-                offset);
+            var shadow = new VisualElement();
+            shadow.pickingMode = PickingMode.Ignore;
+            shadow.AddToClassList("dependency-node-stack-shadow");
+            shadow.AddToClassList(layerClass);
+            shadow.style.left = offset;
+            shadow.style.top = offset;
+            shadow.style.width = nodeWidth;
+            shadow.style.height = nodeHeight;
+            Add(shadow);
         }
 
-        private void AddStackShadowEdge(string layerClass, string edgeClass, float left, float top, float width, float height)
+        private void AddStackCover()
         {
-            var edge = new VisualElement();
-            edge.pickingMode = PickingMode.Ignore;
-            edge.AddToClassList("dependency-node-stack-shadow");
-            edge.AddToClassList(layerClass);
-            edge.AddToClassList(edgeClass);
-            edge.style.left = left;
-            edge.style.top = top;
-            edge.style.width = width;
-            edge.style.height = height;
-            Add(edge);
+            var cover = new VisualElement();
+            cover.pickingMode = PickingMode.Ignore;
+            cover.AddToClassList("dependency-node-stack-cover");
+            cover.style.left = 0;
+            cover.style.top = 0;
+            cover.style.width = nodeWidth;
+            cover.style.height = nodeHeight;
+            Add(cover);
         }
 
         private static int GetInfluenceScore(DependencyNodeData data)

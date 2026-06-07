@@ -22,7 +22,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float AnimationDurationSeconds = 0.38f;
         private const int MaxAnimatedLayoutNodeCount = 140;
         private const int MaxAnimatedLayoutNodeDelta = 120;
-        private const int MaxSearchSuggestions = 6;
+        private const int MaxSearchSuggestions = int.MaxValue;
 
         private readonly VisualElement contentLayer;
         private readonly VisualElement edgeLayer;
@@ -791,15 +791,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 nodeView.ToggleRequested += HandleNodeToggleRequested;
                 nodeView.MenuToggleRequested += HandleMenuToggleRequested;
                 nodeView.ParentJumpRequested += HandleParentJumpRequested;
-                if (searchMatchNodeIds.Contains(renderNode.NodeId))
+                var isSearchMatch = searchMatchNodeIds.Contains(renderNode.NodeId);
+                var isSearchCurrent = IsCurrentSearchNode(renderNode.NodeId);
+                if (isSearchMatch)
                 {
-                    nodeView.AddToClassList("dependency-node--search-match");
-                }
-
-                if (IsCurrentSearchNode(renderNode.NodeId))
-                {
-                    nodeView.AddToClassList("dependency-node--search-current");
-                    AddPersistentSearchHighlight(nodeView);
+                    AddSearchPulseHighlight(nodeView, isSearchCurrent);
                 }
 
                 nodeViews.Add(renderNode.ViewId, nodeView);
@@ -1952,7 +1948,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
         }
 
-        private static void AddPersistentSearchHighlight(CustomNodeView view)
+        private static void AddSearchPulseHighlight(CustomNodeView view, bool isCurrent)
         {
             if (view == null)
             {
@@ -1965,16 +1961,33 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var ring = new VisualElement();
             ring.AddToClassList("dependency-node-search-ring");
             ring.pickingMode = PickingMode.Ignore;
-            ring.style.left = -5f;
-            ring.style.top = -5f;
-            ring.style.right = -5f;
-            ring.style.bottom = -5f;
+            ring.style.left = isCurrent ? -5f : -4f;
+            ring.style.top = isCurrent ? -5f : -4f;
+            ring.style.right = isCurrent ? -5f : -4f;
+            ring.style.bottom = isCurrent ? -5f : -4f;
+            var borderWidth = isCurrent ? 3f : 2f;
+            ring.style.borderTopWidth = borderWidth;
+            ring.style.borderRightWidth = borderWidth;
+            ring.style.borderBottomWidth = borderWidth;
+            ring.style.borderLeftWidth = borderWidth;
             ring.style.borderTopColor = borderColor;
             ring.style.borderRightColor = borderColor;
             ring.style.borderBottomColor = borderColor;
             ring.style.borderLeftColor = borderColor;
             ring.style.backgroundColor = fillColor;
+            ring.style.opacity = 1f;
             view.Insert(0, ring);
+
+            const float cycleSeconds = 1.35f;
+            const float holdSeconds = 0.18f;
+            var startTime = Time.realtimeSinceStartup;
+            ring.schedule.Execute(() =>
+            {
+                var elapsed = Time.realtimeSinceStartup - startTime;
+                var cycle = elapsed % cycleSeconds;
+                var t = Mathf.Clamp01((cycle - holdSeconds) / (cycleSeconds - holdSeconds));
+                ring.style.opacity = 1f - SmoothStep(t);
+            }).Every(16);
         }
 
         private void FlashView(string viewId, bool delayUntilViewSettles)
