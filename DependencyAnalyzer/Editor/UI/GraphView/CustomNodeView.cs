@@ -21,7 +21,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float ParentJumpFontSize = 11f;
         private const float ActionButtonBaseSize = 16f;
         private const float ActionButtonMinSize = 12f;
-        private const float ActionButtonFontSize = 30f;
+        private const float ActionButtonFontSize = 24f;
         private const float MenuButtonFontSize = 7f;
         private const float BackStackOffset = 8f;
         private const float MiddleStackOffset = 4f;
@@ -284,6 +284,13 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 nodeHeight,
                 nodeWidth,
                 offset);
+            AddStackShadowEdge(
+                layerClass,
+                "dependency-node-stack-shadow--corner",
+                nodeWidth,
+                nodeHeight,
+                offset,
+                offset);
         }
 
         private void AddStackShadowEdge(string layerClass, string edgeClass, float left, float top, float width, float height)
@@ -375,6 +382,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
             button.style.fontSize = Mathf.Round(Mathf.Clamp(ActionButtonFontSize * nodeScale, ActionButtonMinSize, ActionButtonFontSize));
+            button.style.paddingTop = 0;
+            button.style.paddingBottom = 0;
+            button.style.unityTextAlign = TextAnchor.MiddleCenter;
             button.RegisterCallback<MouseDownEvent>(evt =>
             {
                 if (evt.button == 0)
