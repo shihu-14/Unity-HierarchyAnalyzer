@@ -49,8 +49,8 @@
     flex-grow: 0;
     flex-shrink: 1;
     margin-right: 10px;
-    margin-top: 2px;
-    margin-bottom: 2px;
+    margin-top: 4px;
+    margin-bottom: 0;
     padding-left: 18px;
     padding-right: 12px;
     border-top-width: 0;
