@@ -493,8 +493,8 @@
 }
 
 .dependency-issue-severity-icon {
-    width: 14px;
-    height: 14px;
+    width: 17px;
+    height: 17px;
     margin-right: 7px;
     flex-shrink: 0;
 }
