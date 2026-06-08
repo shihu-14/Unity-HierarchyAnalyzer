@@ -727,19 +727,19 @@
 }
 
 .dependency-node--material .dependency-node-stack-shadow {
-    border-top-color: #887344;
-    border-right-color: #887344;
-    border-bottom-color: #887344;
-    border-left-color: #887344;
-    background-color: #3f3421;
+    border-top-color: #a95c32;
+    border-right-color: #a95c32;
+    border-bottom-color: #a95c32;
+    border-left-color: #a95c32;
+    background-color: #452515;
 }
 
 .dependency-node--texture .dependency-node-stack-shadow {
-    border-top-color: #416f5b;
-    border-right-color: #416f5b;
-    border-bottom-color: #416f5b;
-    border-left-color: #416f5b;
-    background-color: #243b31;
+    border-top-color: #20839b;
+    border-right-color: #20839b;
+    border-bottom-color: #20839b;
+    border-left-color: #20839b;
+    background-color: #153842;
 }
 
 .dependency-node--audio .dependency-node-stack-shadow {
@@ -751,27 +751,27 @@
 }
 
 .dependency-node--animator .dependency-node-stack-shadow {
-    border-top-color: #9c6248;
-    border-right-color: #9c6248;
-    border-bottom-color: #9c6248;
-    border-left-color: #9c6248;
-    background-color: #3f2b24;
+    border-top-color: #a8324d;
+    border-right-color: #a8324d;
+    border-bottom-color: #a8324d;
+    border-left-color: #a8324d;
+    background-color: #451b28;
 }
 
 .dependency-node--mesh .dependency-node-stack-shadow {
-    border-top-color: #6e675f;
-    border-right-color: #6e675f;
-    border-bottom-color: #6e675f;
-    border-left-color: #6e675f;
-    background-color: #36322f;
+    border-top-color: #7d8793;
+    border-right-color: #7d8793;
+    border-bottom-color: #7d8793;
+    border-left-color: #7d8793;
+    background-color: #30343a;
 }
 
 .dependency-node--scriptable-object .dependency-node-stack-shadow {
-    border-top-color: #806055;
-    border-right-color: #806055;
-    border-bottom-color: #806055;
-    border-left-color: #806055;
-    background-color: #3d2d29;
+    border-top-color: #6851b8;
+    border-right-color: #6851b8;
+    border-bottom-color: #6851b8;
+    border-left-color: #6851b8;
+    background-color: #2c2645;
 }
 
 .dependency-node--scene .dependency-node-stack-shadow {
@@ -791,11 +791,11 @@
 }
 
 .dependency-node--component .dependency-node-stack-shadow {
-    border-top-color: #64975a;
-    border-right-color: #64975a;
-    border-bottom-color: #64975a;
-    border-left-color: #64975a;
-    background-color: #293a27;
+    border-top-color: #228766;
+    border-right-color: #228766;
+    border-bottom-color: #228766;
+    border-left-color: #228766;
+    background-color: #173b32;
 }
 
 .dependency-node--csharp .dependency-node-stack-shadow {
@@ -807,11 +807,11 @@
 }
 
 .dependency-node--camera .dependency-node-stack-shadow {
-    border-top-color: #47788d;
-    border-right-color: #47788d;
-    border-bottom-color: #47788d;
-    border-left-color: #47788d;
-    background-color: #233944;
+    border-top-color: #6557aa;
+    border-right-color: #6557aa;
+    border-bottom-color: #6557aa;
+    border-left-color: #6557aa;
+    background-color: #2d2845;
 }
 
 .dependency-node--canvas .dependency-node-stack-shadow {
@@ -1038,8 +1038,8 @@
 }
 
 .dependency-node-warning {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     margin-left: 4px;
 }
 

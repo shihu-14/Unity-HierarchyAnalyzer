@@ -25,6 +25,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float MenuButtonMinSize = 13.5f;
         private const float MenuButtonFontSize = 7.875f;
         private const float MenuButtonMinFontSize = 5.9f;
+        private const float ControlVerticalOffset = -1f;
         private const float StackStepOffset = 6f;
         private const float MiddleStackDepth = 0.85f;
         private const float BackStackDepth = 2f;
@@ -212,7 +213,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     : DependencyScanIssueSeverity.Warning;
                 var warningIcon = new Image { image = IconUtility.GetIssueIcon(severity) };
                 warningIcon.AddToClassList("dependency-node-warning");
-                var warningSize = Mathf.Round(Mathf.Clamp(16f * nodeScale, 11f, 16f));
+                var warningSize = Mathf.Round(Mathf.Clamp(18f * nodeScale, 12f, 18f));
                 warningIcon.style.width = warningSize;
                 warningIcon.style.height = warningSize;
                 warningIcon.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
@@ -396,9 +397,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var stack = new VisualElement();
             stack.AddToClassList("dependency-node-control-stack");
             stack.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
+            stack.style.marginTop = Mathf.Round(Mathf.Clamp(ControlVerticalOffset * nodeScale, ControlVerticalOffset, 0f));
 
             var toggleButton = CreateToggleButton();
             toggleButton.style.marginLeft = 0;
+            toggleButton.style.marginTop = 0;
             toggleButton.style.marginBottom = Mathf.Round(Mathf.Clamp(1f * nodeScale, 0f, 1f));
             stack.Add(toggleButton);
 
@@ -420,6 +423,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             button.style.width = buttonSize;
             button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
+            button.style.marginTop = Mathf.Round(Mathf.Clamp(ControlVerticalOffset * nodeScale, ControlVerticalOffset, 0f));
             button.style.paddingTop = 0;
             button.style.paddingBottom = 0;
             button.RegisterCallback<MouseDownEvent>(evt =>
@@ -491,6 +495,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             button.style.width = buttonSize;
             button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
+            button.style.marginTop = Mathf.Round(Mathf.Clamp(ControlVerticalOffset * nodeScale, ControlVerticalOffset, 0f));
             button.style.fontSize = Mathf.Round(Mathf.Clamp(MenuButtonFontSize * nodeScale, MenuButtonMinFontSize, MenuButtonFontSize));
             button.RegisterCallback<MouseDownEvent>(evt =>
             {
