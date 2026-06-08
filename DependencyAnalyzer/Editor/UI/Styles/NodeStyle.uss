@@ -179,6 +179,7 @@
     width: 18px;
     height: 20px;
     margin-right: 0;
+    margin-top: 2px;
     background-color: rgba(0, 0, 0, 0);
     border-top-width: 0;
     border-right-width: 0;
@@ -244,6 +245,7 @@
 .dependency-search-count {
     width: 48px;
     height: 20px;
+    margin-top: 2px;
     color: #d7dae0;
     font-size: 11px;
     -unity-text-align: middle-center;
@@ -256,6 +258,7 @@
     height: 20px;
     margin-left: 5px;
     margin-right: 7px;
+    margin-top: 2px;
     background-color: #b8b8b8;
 }
 
@@ -313,10 +316,66 @@
 }
 
 .dependency-issue-title {
-    flex-grow: 1;
+    flex-grow: 0;
     color: #e6ebf2;
     -unity-font-style: bold;
     font-size: 11px;
+    -unity-text-align: middle-left;
+}
+
+.dependency-issue-filter-controls {
+    flex-direction: row;
+    align-items: center;
+    margin-left: 8px;
+    flex-grow: 1;
+}
+
+.dependency-issue-filter-button {
+    min-width: 48px;
+    width: 48px;
+    height: 24px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0;
+    margin-right: 3px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-color: #535860;
+    border-right-color: #202328;
+    border-bottom-color: #191c20;
+    border-left-color: #535860;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    background-color: #3a3e44;
+}
+
+.dependency-issue-filter-button:hover {
+    background-color: #454a51;
+}
+
+.dependency-issue-filter-button--off {
+    opacity: 0.42;
+}
+
+.dependency-issue-filter-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+    flex-shrink: 0;
+}
+
+.dependency-issue-filter-count {
+    color: #cfd3d8;
+    font-size: 18px;
     -unity-text-align: middle-left;
 }
 
@@ -334,6 +393,27 @@
     border-bottom-width: 0;
     border-left-width: 0;
     background-color: rgba(0, 0, 0, 0);
+}
+
+.dependency-issue-header .dependency-issue-filter-button {
+    min-width: 48px;
+    width: 48px;
+    height: 24px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-right: 3px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-color: #535860;
+    border-right-color: #202328;
+    border-bottom-color: #191c20;
+    border-left-color: #535860;
+    background-color: #3a3e44;
 }
 
 .dependency-issue-toggle-button {
@@ -387,6 +467,7 @@
     padding-right: 10px;
     padding-top: 5px;
     padding-bottom: 5px;
+    border-left-width: 3px;
     border-bottom-width: 1px;
     border-bottom-color: #30363e;
 }
@@ -396,18 +477,12 @@
 }
 
 .dependency-issue-row--info {
-    border-left-width: 3px;
-    border-left-color: #72a8c0;
 }
 
 .dependency-issue-row--warning {
-    border-left-width: 3px;
-    border-left-color: #d9c766;
 }
 
 .dependency-issue-row--error {
-    border-left-width: 3px;
-    border-left-color: #df6464;
 }
 
 .dependency-issue-row--disabled {

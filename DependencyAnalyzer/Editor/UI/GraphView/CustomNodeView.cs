@@ -21,8 +21,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float ParentJumpFontSize = 11f;
         private const float ActionButtonBaseSize = 18f;
         private const float ActionButtonMinSize = 13.5f;
-        private const float MinusButtonSymbolRatio = 1.5f;
-        private const float PlusButtonSymbolRatio = 1.25f;
         private const float MenuButtonBaseSize = 18f;
         private const float MenuButtonMinSize = 13.5f;
         private const float MenuButtonFontSize = 7.875f;
@@ -412,9 +410,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return stack;
         }
 
-        private Label CreateToggleButton()
+        private VisualElement CreateToggleButton()
         {
-            var button = new Label(isExpanded ? "-" : "+");
+            var button = new ToggleSymbolElement(isExpanded);
             var buttonSize = Mathf.Round(Mathf.Clamp(ActionButtonBaseSize * nodeScale, ActionButtonMinSize, ActionButtonBaseSize));
             button.tooltip = isExpanded ? "Collapse children" : "Expand children";
             button.AddToClassList("dependency-node-toggle");
@@ -422,11 +420,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             button.style.width = buttonSize;
             button.style.height = buttonSize;
             button.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * nodeScale, 2f, 4f));
-            var symbolRatio = isExpanded ? MinusButtonSymbolRatio : PlusButtonSymbolRatio;
-            button.style.fontSize = Mathf.Round(buttonSize * symbolRatio);
             button.style.paddingTop = 0;
             button.style.paddingBottom = 0;
-            button.style.unityTextAlign = TextAnchor.MiddleCenter;
             button.RegisterCallback<MouseDownEvent>(evt =>
             {
                 if (evt.button == 0)
@@ -437,6 +432,48 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 evt.StopPropagation();
             });
             return button;
+        }
+
+        private sealed class ToggleSymbolElement : VisualElement
+        {
+            private readonly bool isMinus;
+
+            public ToggleSymbolElement(bool isMinus)
+            {
+                this.isMinus = isMinus;
+                generateVisualContent += DrawSymbol;
+            }
+
+            private void DrawSymbol(MeshGenerationContext context)
+            {
+                var rect = contentRect;
+                if (rect.width <= 0f || rect.height <= 0f)
+                {
+                    return;
+                }
+
+                var center = rect.center;
+                var halfLength = Mathf.Min(rect.width, rect.height) * 0.24f;
+                var painter = context.painter2D;
+                painter.strokeColor = Color.white;
+                painter.lineWidth = Mathf.Max(1.7f, Mathf.Min(rect.width, rect.height) * 0.12f);
+                painter.lineCap = LineCap.Round;
+                painter.lineJoin = LineJoin.Round;
+                painter.BeginPath();
+                painter.MoveTo(new Vector2(center.x - halfLength, center.y));
+                painter.LineTo(new Vector2(center.x + halfLength, center.y));
+                painter.Stroke();
+
+                if (isMinus)
+                {
+                    return;
+                }
+
+                painter.BeginPath();
+                painter.MoveTo(new Vector2(center.x, center.y - halfLength));
+                painter.LineTo(new Vector2(center.x, center.y + halfLength));
+                painter.Stroke();
+            }
         }
 
         private Label CreateMenuToggleButton()

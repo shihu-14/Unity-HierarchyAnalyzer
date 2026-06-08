@@ -23,6 +23,10 @@
             <ui:VisualElement name="issue-resize-handle" class="dependency-issue-resize-handle" />
             <ui:VisualElement name="issue-panel-header" class="dependency-issue-header">
                 <ui:Label name="issue-title-label" text="Issues (0)" class="dependency-issue-title" />
+                <ui:VisualElement name="issue-filter-controls" class="dependency-issue-filter-controls">
+                    <ui:Button name="issue-warning-filter-button" text="" class="dependency-issue-filter-button" />
+                    <ui:Button name="issue-error-filter-button" text="" class="dependency-issue-filter-button" />
+                </ui:VisualElement>
                 <ui:Button name="issue-toggle-button" text="" />
             </ui:VisualElement>
             <ui:ScrollView name="issue-list" class="dependency-issue-list" />

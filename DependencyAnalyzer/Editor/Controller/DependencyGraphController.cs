@@ -43,7 +43,11 @@ namespace DependencyAnalyzer.Editor.Controller
         private readonly VisualElement issueResizeHandle;
         private readonly ScrollView issueList;
         private readonly Label issueTitleLabel;
+        private readonly Button issueWarningFilterButton;
+        private readonly Button issueErrorFilterButton;
         private readonly Button issueToggleButton;
+        private Label issueWarningCountLabel;
+        private Label issueErrorCountLabel;
 
         private CancellationTokenSource scanCancellation;
         private DependencyGraphData currentGraph;
@@ -51,6 +55,8 @@ namespace DependencyAnalyzer.Editor.Controller
         private bool hierarchyRefreshQueued;
         private bool suppressNextSelectionFocus;
         private bool issueListVisible = true;
+        private bool issueWarningsVisible = true;
+        private bool issueErrorsVisible = true;
         private bool hasCompletedLoad;
         private bool isLoading;
         private bool isResizingIssuePanel;
@@ -84,6 +90,8 @@ namespace DependencyAnalyzer.Editor.Controller
             issueResizeHandle = root.Q<VisualElement>("issue-resize-handle");
             issueList = root.Q<ScrollView>("issue-list");
             issueTitleLabel = root.Q<Label>("issue-title-label");
+            issueWarningFilterButton = root.Q<Button>("issue-warning-filter-button");
+            issueErrorFilterButton = root.Q<Button>("issue-error-filter-button");
             issueToggleButton = root.Q<Button>("issue-toggle-button");
 
             if (loadButton != null)
@@ -126,6 +134,17 @@ namespace DependencyAnalyzer.Editor.Controller
             {
                 searchFilterToggle.RegisterValueChangedCallback(HandleSearchFilterChanged);
             }
+
+            issueWarningCountLabel = ConfigureIssueFilterButton(
+                issueWarningFilterButton,
+                DependencyScanIssueSeverity.Warning,
+                "Toggle warnings",
+                ToggleIssueWarnings);
+            issueErrorCountLabel = ConfigureIssueFilterButton(
+                issueErrorFilterButton,
+                DependencyScanIssueSeverity.Error,
+                "Toggle errors",
+                ToggleIssueErrors);
 
             if (issueToggleButton != null)
             {
@@ -201,6 +220,16 @@ namespace DependencyAnalyzer.Editor.Controller
             if (searchFilterToggle != null)
             {
                 searchFilterToggle.UnregisterValueChangedCallback(HandleSearchFilterChanged);
+            }
+
+            if (issueWarningFilterButton != null)
+            {
+                issueWarningFilterButton.clicked -= ToggleIssueWarnings;
+            }
+
+            if (issueErrorFilterButton != null)
+            {
+                issueErrorFilterButton.clicked -= ToggleIssueErrors;
             }
 
             if (issueToggleButton != null)
@@ -739,9 +768,10 @@ namespace DependencyAnalyzer.Editor.Controller
 
             if (issueTitleLabel != null)
             {
-                issueTitleLabel.text = "Issues (" + errorEntries.Count + " errors, " + warningEntries.Count + " warnings)";
+                issueTitleLabel.text = "Issues";
             }
 
+            UpdateIssueFilterButtons(errorEntries.Count, warningEntries.Count);
             issueList.contentContainer.Clear();
             if (entries.Count == 0)
             {
@@ -751,8 +781,15 @@ namespace DependencyAnalyzer.Editor.Controller
                 return;
             }
 
-            AddIssueSection("Errors", DependencyScanIssueSeverity.Error, errorEntries);
-            AddIssueSection("Warnings", DependencyScanIssueSeverity.Warning, warningEntries);
+            if (issueErrorsVisible)
+            {
+                AddIssueSection("Errors", DependencyScanIssueSeverity.Error, errorEntries);
+            }
+
+            if (issueWarningsVisible)
+            {
+                AddIssueSection("Warnings", DependencyScanIssueSeverity.Warning, warningEntries);
+            }
         }
 
         private void AddIssueSection(string title, DependencyScanIssueSeverity severity, IReadOnlyList<IssuePanelEntry> entries)
@@ -807,6 +844,7 @@ namespace DependencyAnalyzer.Editor.Controller
             }
 
             row.tooltip = entry.Detail;
+            row.style.borderLeftColor = new StyleColor(entry.NodeColor);
             var severityIcon = new Image { image = IconUtility.GetIssueIcon(entry.Severity) };
             severityIcon.AddToClassList("dependency-issue-severity-icon");
 
@@ -827,6 +865,76 @@ namespace DependencyAnalyzer.Editor.Controller
             row.Add(nodeIcon);
             row.Add(text);
             return row;
+        }
+
+        private static Label ConfigureIssueFilterButton(
+            Button button,
+            DependencyScanIssueSeverity severity,
+            string tooltip,
+            Action clicked)
+        {
+            if (button == null)
+            {
+                return null;
+            }
+
+            button.text = string.Empty;
+            button.tooltip = tooltip;
+            button.clicked += clicked;
+            button.Clear();
+
+            var icon = new Image { image = IconUtility.GetIssueIcon(severity) };
+            icon.AddToClassList("dependency-issue-filter-icon");
+            var count = new Label("0");
+            count.AddToClassList("dependency-issue-filter-count");
+            button.Add(icon);
+            button.Add(count);
+            return count;
+        }
+
+        private void ToggleIssueWarnings()
+        {
+            issueWarningsVisible = !issueWarningsVisible;
+            PopulateIssuePanel(currentGraph);
+        }
+
+        private void ToggleIssueErrors()
+        {
+            issueErrorsVisible = !issueErrorsVisible;
+            PopulateIssuePanel(currentGraph);
+        }
+
+        private void UpdateIssueFilterButtons(int errorCount, int warningCount)
+        {
+            if (issueWarningCountLabel != null)
+            {
+                issueWarningCountLabel.text = warningCount.ToString();
+            }
+
+            if (issueErrorCountLabel != null)
+            {
+                issueErrorCountLabel.text = errorCount.ToString();
+            }
+
+            SetIssueFilterButtonState(issueWarningFilterButton, issueWarningsVisible);
+            SetIssueFilterButtonState(issueErrorFilterButton, issueErrorsVisible);
+        }
+
+        private static void SetIssueFilterButtonState(Button button, bool visible)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            if (visible)
+            {
+                button.RemoveFromClassList("dependency-issue-filter-button--off");
+            }
+            else
+            {
+                button.AddToClassList("dependency-issue-filter-button--off");
+            }
         }
 
         private void ToggleIssueList()
@@ -997,7 +1105,8 @@ namespace DependencyAnalyzer.Editor.Controller
                     FormatIssueDetail(string.IsNullOrEmpty(node.Path) ? node.TypeName : node.Path),
                     DependencyScanIssueSeverity.Warning,
                     node.Id,
-                    IconUtility.GetIcon(node)));
+                    IconUtility.GetIcon(node),
+                    IconUtility.GetNodeAccentColor(node)));
             }
 
             foreach (var issue in graphData.Issues)
@@ -1019,7 +1128,8 @@ namespace DependencyAnalyzer.Editor.Controller
                     FormatIssueDetail(issue.Message),
                     issue.Severity,
                     targetNodeId,
-                    IconUtility.GetIcon(targetNode)));
+                    IconUtility.GetIcon(targetNode),
+                    IconUtility.GetNodeAccentColor(targetNode)));
             }
 
             return entries
@@ -1246,13 +1356,15 @@ namespace DependencyAnalyzer.Editor.Controller
                 string detail,
                 DependencyScanIssueSeverity severity,
                 string targetNodeId,
-                Texture nodeIcon)
+                Texture nodeIcon,
+                Color nodeColor)
             {
                 Title = title ?? string.Empty;
                 Detail = detail ?? string.Empty;
                 Severity = severity;
                 TargetNodeId = targetNodeId ?? string.Empty;
                 NodeIcon = nodeIcon;
+                NodeColor = nodeColor;
             }
 
             public string Title { get; }
@@ -1260,6 +1372,7 @@ namespace DependencyAnalyzer.Editor.Controller
             public DependencyScanIssueSeverity Severity { get; }
             public string TargetNodeId { get; }
             public Texture NodeIcon { get; }
+            public Color NodeColor { get; }
         }
     }
 }
