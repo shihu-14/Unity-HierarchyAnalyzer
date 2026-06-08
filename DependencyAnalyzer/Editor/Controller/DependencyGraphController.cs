@@ -831,7 +831,7 @@ namespace DependencyAnalyzer.Editor.Controller
 
             row.tooltip = entry.Detail;
             row.style.borderLeftColor = new StyleColor(entry.NodeColor);
-            var severityIcon = new IssueIconElement(entry.Severity);
+            var severityIcon = new Image { image = IconUtility.GetIssueIcon(entry.Severity) };
             severityIcon.AddToClassList("dependency-issue-severity-icon");
 
             var nodeIcon = new Image { image = entry.NodeIcon };
@@ -869,7 +869,7 @@ namespace DependencyAnalyzer.Editor.Controller
             button.clicked += clicked;
             button.Clear();
 
-            var icon = new IssueIconElement(severity);
+            var icon = new Image { image = IconUtility.GetIssueIcon(severity) };
             icon.AddToClassList("dependency-issue-filter-icon");
             var count = new Label("0");
             count.AddToClassList("dependency-issue-filter-count");

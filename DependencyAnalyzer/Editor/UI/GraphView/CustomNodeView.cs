@@ -210,7 +210,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 var severity = hasPropagatedIssue
                     ? propagatedIssueSeverity
                     : DependencyScanIssueSeverity.Warning;
-                var warningIcon = new IssueIconElement(severity);
+                var warningIcon = new Image { image = IconUtility.GetIssueIcon(severity) };
                 warningIcon.AddToClassList("dependency-node-warning");
                 var warningSize = Mathf.Round(Mathf.Clamp(16f * nodeScale, 11f, 16f));
                 warningIcon.style.width = warningSize;
@@ -247,7 +247,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
         }
 
-        private VisualElement CreateIssueMarker()
+        private Image CreateIssueMarker()
         {
             if (!ShouldShowIssueMarker())
             {
@@ -255,7 +255,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
 
             var severity = Data.IssueSeverity.HasValue ? Data.IssueSeverity.Value : DependencyScanIssueSeverity.Warning;
-            var marker = new IssueIconElement(severity);
+            var marker = new Image { image = IconUtility.GetIssueIcon(severity) };
             marker.AddToClassList("dependency-node-issue-marker");
             var markerSize = Mathf.Round(Mathf.Clamp(20f * nodeScale, 14f, 20f));
             marker.style.width = markerSize;

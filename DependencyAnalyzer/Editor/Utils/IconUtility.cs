@@ -7,6 +7,12 @@ namespace DependencyAnalyzer.Editor.Utils
 {
     public static class IconUtility
     {
+        private const string WarningIssueIconPath = "Assets/DependencyAnalyzer/Editor/UI/Icons/issue-warning.png";
+        private const string ErrorIssueIconPath = "Assets/DependencyAnalyzer/Editor/UI/Icons/issue-error.png";
+
+        private static Texture warningIssueIcon;
+        private static Texture errorIssueIcon;
+
         public static string GetIconContentName(Type type)
         {
             if (type == null)
@@ -103,7 +109,7 @@ namespace DependencyAnalyzer.Editor.Utils
 
         public static Texture GetWarningIcon()
         {
-            return EditorGUIUtility.IconContent("console.warnicon.sml").image;
+            return GetCustomIssueIcon(WarningIssueIconPath, ref warningIssueIcon, "console.warnicon.sml");
         }
 
         public static Texture GetIssueIcon(DependencyScanIssueSeverity severity)
@@ -111,12 +117,25 @@ namespace DependencyAnalyzer.Editor.Utils
             switch (severity)
             {
                 case DependencyScanIssueSeverity.Error:
-                    return EditorGUIUtility.IconContent("console.erroricon.sml").image;
+                    return GetCustomIssueIcon(ErrorIssueIconPath, ref errorIssueIcon, "console.erroricon.sml");
                 case DependencyScanIssueSeverity.Info:
                     return EditorGUIUtility.IconContent("console.infoicon.sml").image;
                 default:
                     return GetWarningIcon();
             }
+        }
+
+        private static Texture GetCustomIssueIcon(string assetPath, ref Texture cachedIcon, string fallbackIconName)
+        {
+            if (cachedIcon != null)
+            {
+                return cachedIcon;
+            }
+
+            cachedIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath);
+            return cachedIcon != null
+                ? cachedIcon
+                : EditorGUIUtility.IconContent(fallbackIconName).image;
         }
 
         public static string GetNodeTypeClass(DependencyNodeData node)
