@@ -370,8 +370,8 @@
 .dependency-issue-filter-icon {
     width: 17px;
     height: 17px;
-    margin-left: 2px;
-    margin-right: 1px;
+    margin-left: -1px;
+    margin-right: 4px;
     flex-shrink: 0;
 }
 

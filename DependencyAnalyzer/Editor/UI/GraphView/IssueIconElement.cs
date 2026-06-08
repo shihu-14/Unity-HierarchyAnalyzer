@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DependencyAnalyzer.Editor.Core;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -39,49 +40,58 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private static void DrawWarning(Painter2D painter, Rect rect)
         {
-            var bounds = GetSquareBounds(rect, 0.09f);
+            var bounds = GetSquareBounds(rect, 0.04f);
             var center = bounds.center;
             var points = new[]
             {
-                new Vector2(center.x, bounds.yMin),
-                new Vector2(bounds.xMax, bounds.yMax),
-                new Vector2(bounds.xMin, bounds.yMax)
+                new Vector2(center.x, bounds.yMin + bounds.height * 0.03f),
+                new Vector2(bounds.xMax - bounds.width * 0.02f, bounds.yMax - bounds.height * 0.03f),
+                new Vector2(bounds.xMin + bounds.width * 0.02f, bounds.yMax - bounds.height * 0.03f)
             };
 
-            painter.fillColor = new Color(1f, 0.73f, 0.10f, 1f);
-            FillPolygon(painter, points);
+            painter.fillColor = new Color(1f, 0.72f, 0.08f, 1f);
+            FillRoundedPolygon(painter, points, bounds.width * 0.13f, 5);
             DrawExclamation(
                 painter,
                 center,
                 bounds.height,
-                new Color(0.22f, 0.17f, 0.08f, 1f),
-                0.28f,
-                0.58f,
-                0.76f);
+                new Color(0.20f, 0.23f, 0.24f, 1f),
+                0.22f,
+                0.05f,
+                0.26f,
+                0.13f,
+                0.085f);
         }
 
         private static void DrawError(Painter2D painter, Rect rect)
         {
-            var bounds = GetSquareBounds(rect, 0.07f);
+            var bounds = GetSquareBounds(rect, 0.03f);
             var center = bounds.center;
-            var radius = bounds.width * 0.5f;
-            var points = new Vector2[8];
-            for (var i = 0; i < points.Length; i++)
+            var cut = bounds.width * 0.23f;
+            var points = new[]
             {
-                var angle = Mathf.Deg2Rad * (22.5f + i * 45f);
-                points[i] = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
-            }
+                new Vector2(bounds.xMin + cut, bounds.yMin),
+                new Vector2(bounds.xMax - cut, bounds.yMin),
+                new Vector2(bounds.xMax, bounds.yMin + cut),
+                new Vector2(bounds.xMax, bounds.yMax - cut),
+                new Vector2(bounds.xMax - cut, bounds.yMax),
+                new Vector2(bounds.xMin + cut, bounds.yMax),
+                new Vector2(bounds.xMin, bounds.yMax - cut),
+                new Vector2(bounds.xMin, bounds.yMin + cut)
+            };
 
-            painter.fillColor = new Color(1f, 0.38f, 0.24f, 1f);
-            FillPolygon(painter, points);
+            painter.fillColor = new Color(1f, 0.40f, 0.25f, 1f);
+            FillRoundedPolygon(painter, points, bounds.width * 0.04f, 3);
             DrawExclamation(
                 painter,
                 center,
                 bounds.height,
-                Color.white,
-                0.25f,
-                0.57f,
-                0.76f);
+                new Color(0.20f, 0.23f, 0.24f, 1f),
+                0.24f,
+                0.07f,
+                0.27f,
+                0.13f,
+                0.085f);
         }
 
         private static void DrawInfo(Painter2D painter, Rect rect)
@@ -103,9 +113,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 center,
                 bounds.height,
                 Color.white,
-                0.34f,
-                0.61f,
-                0.25f);
+                0.24f,
+                0.07f,
+                0.27f,
+                0.13f,
+                0.085f);
         }
 
         private static Rect GetSquareBounds(Rect rect, float insetRatio)
@@ -127,24 +139,56 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             Color color,
             float topRatio,
             float bottomRatio,
-            float dotRatio)
+            float dotRatio,
+            float lineWidthRatio,
+            float dotRadiusRatio)
         {
-            var lineWidth = Mathf.Max(1.15f, size * 0.12f);
+            var lineWidth = Mathf.Max(1.15f, size * lineWidthRatio);
             painter.strokeColor = color;
             painter.lineWidth = lineWidth;
             painter.lineCap = LineCap.Round;
             painter.BeginPath();
             painter.MoveTo(new Vector2(center.x, center.y - size * topRatio));
-            painter.LineTo(new Vector2(center.x, center.y + size * bottomRatio * 0.18f));
+            painter.LineTo(new Vector2(center.x, center.y + size * bottomRatio));
             painter.Stroke();
 
             painter.fillColor = color;
             FillRegularPolygon(
                 painter,
-                new Vector2(center.x, center.y + size * dotRatio * 0.5f),
-                Mathf.Max(1.2f, size * 0.085f),
+                new Vector2(center.x, center.y + size * dotRatio),
+                Mathf.Max(1.2f, size * dotRadiusRatio),
                 8,
                 -90f);
+        }
+
+        private static void FillRoundedPolygon(Painter2D painter, Vector2[] corners, float cornerDistance, int steps)
+        {
+            if (corners == null || corners.Length == 0)
+            {
+                return;
+            }
+
+            var points = new List<Vector2>(corners.Length * Mathf.Max(2, steps));
+            for (var i = 0; i < corners.Length; i++)
+            {
+                var previous = corners[(i - 1 + corners.Length) % corners.Length];
+                var current = corners[i];
+                var next = corners[(i + 1) % corners.Length];
+                var distanceToPrevious = Mathf.Min(cornerDistance, Vector2.Distance(current, previous) * 0.45f);
+                var distanceToNext = Mathf.Min(cornerDistance, Vector2.Distance(current, next) * 0.45f);
+                var start = current + (previous - current).normalized * distanceToPrevious;
+                var end = current + (next - current).normalized * distanceToNext;
+
+                for (var step = 0; step <= steps; step++)
+                {
+                    var t = step / (float)steps;
+                    var a = Vector2.Lerp(start, current, t);
+                    var b = Vector2.Lerp(current, end, t);
+                    points.Add(Vector2.Lerp(a, b, t));
+                }
+            }
+
+            FillPolygon(painter, points.ToArray());
         }
 
         private static void FillRegularPolygon(
