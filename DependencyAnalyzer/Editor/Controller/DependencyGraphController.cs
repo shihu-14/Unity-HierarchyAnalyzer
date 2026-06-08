@@ -783,35 +783,21 @@ namespace DependencyAnalyzer.Editor.Controller
 
             if (issueErrorsVisible)
             {
-                AddIssueSection("Errors", DependencyScanIssueSeverity.Error, errorEntries);
+                AddIssueRows(errorEntries);
             }
 
             if (issueWarningsVisible)
             {
-                AddIssueSection("Warnings", DependencyScanIssueSeverity.Warning, warningEntries);
+                AddIssueRows(warningEntries);
             }
         }
 
-        private void AddIssueSection(string title, DependencyScanIssueSeverity severity, IReadOnlyList<IssuePanelEntry> entries)
+        private void AddIssueRows(IReadOnlyList<IssuePanelEntry> entries)
         {
             if (issueList == null || entries == null || entries.Count == 0)
             {
                 return;
             }
-
-            var header = new VisualElement();
-            header.AddToClassList("dependency-issue-section-header");
-            header.AddToClassList(GetIssueSeverityClass(severity));
-
-            var icon = new Image { image = IconUtility.GetIssueIcon(severity) };
-            icon.AddToClassList("dependency-issue-section-icon");
-
-            var label = new Label(title + " (" + entries.Count + ")");
-            label.AddToClassList("dependency-issue-section-label");
-
-            header.Add(icon);
-            header.Add(label);
-            issueList.Add(header);
 
             for (var i = 0; i < entries.Count; i++)
             {

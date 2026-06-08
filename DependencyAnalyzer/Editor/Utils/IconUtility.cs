@@ -223,26 +223,26 @@ namespace DependencyAnalyzer.Editor.Utils
                 case "dependency-node--prefab":
                     return new Color(0.32f, 0.65f, 1f);
                 case "dependency-node--material":
-                    return new Color(0.82f, 0.67f, 0.33f);
+                    return new Color(1f, 0.54f, 0.24f);
                 case "dependency-node--texture":
-                    return new Color(0.37f, 0.71f, 0.52f);
+                    return new Color(0.10f, 0.82f, 1f);
                 case "dependency-node--audio":
                     return new Color(0.69f, 0.47f, 0.78f);
                 case "dependency-node--animator":
-                    return new Color(0.95f, 0.55f, 0.38f);
+                    return new Color(1f, 0.30f, 0.43f);
                 case "dependency-node--mesh":
-                    return new Color(0.65f, 0.61f, 0.56f);
+                    return new Color(0.84f, 0.87f, 0.90f);
                 case "dependency-node--scriptable-object":
-                    return new Color(0.77f, 0.51f, 0.40f);
+                    return new Color(0.56f, 0.42f, 1f);
                 case "dependency-node--object":
                 case "dependency-node--scene":
                     return new Color(0.46f, 0.66f, 0.77f);
                 case "dependency-node--component":
-                    return new Color(0.62f, 0.83f, 0.52f);
+                    return new Color(0f, 0.76f, 0.54f);
                 case "dependency-node--csharp":
                     return new Color(0.41f, 0.72f, 0.47f);
                 case "dependency-node--camera":
-                    return new Color(0.42f, 0.72f, 0.84f);
+                    return new Color(0.61f, 0.55f, 1f);
                 case "dependency-node--canvas":
                     return new Color(0.89f, 0.41f, 0.68f);
                 case "dependency-node--light":

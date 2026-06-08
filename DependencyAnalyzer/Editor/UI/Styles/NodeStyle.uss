@@ -190,6 +190,7 @@
 }
 
 .dependency-search-arrow-button {
+    margin-top: 4px;
     padding-left: 0;
     padding-right: 0;
     padding-top: 0;
@@ -319,7 +320,7 @@
     flex-grow: 0;
     color: #e6ebf2;
     -unity-font-style: bold;
-    font-size: 11px;
+    font-size: 13px;
     -unity-text-align: middle-left;
 }
 
@@ -331,16 +332,16 @@
 }
 
 .dependency-issue-filter-button {
-    min-width: 48px;
-    width: 48px;
-    height: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 21px;
     flex-direction: row;
     align-items: center;
     justify-content: center;
     margin-left: 0;
-    margin-right: 3px;
-    padding-left: 5px;
-    padding-right: 5px;
+    margin-right: 0;
+    padding-left: 4px;
+    padding-right: 4px;
     padding-top: 0;
     padding-bottom: 0;
     border-top-width: 1px;
@@ -367,15 +368,15 @@
 }
 
 .dependency-issue-filter-icon {
-    width: 16px;
-    height: 16px;
-    margin-right: 5px;
+    width: 17px;
+    height: 17px;
+    margin-right: 4px;
     flex-shrink: 0;
 }
 
 .dependency-issue-filter-count {
     color: #cfd3d8;
-    font-size: 18px;
+    font-size: 13px;
     -unity-text-align: middle-left;
 }
 
@@ -396,15 +397,15 @@
 }
 
 .dependency-issue-header .dependency-issue-filter-button {
-    min-width: 48px;
-    width: 48px;
-    height: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 21px;
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    margin-right: 3px;
-    padding-left: 5px;
-    padding-right: 5px;
+    margin-right: 0;
+    padding-left: 4px;
+    padding-right: 4px;
     border-top-width: 1px;
     border-right-width: 1px;
     border-bottom-width: 1px;
@@ -1053,27 +1054,27 @@
 }
 
 .dependency-node--material .dependency-node-accent {
-    background-color: #d0aa55;
+    background-color: #ff8a3d;
 }
 
 .dependency-node--material {
-    background-color: #3f3421;
-    border-top-color: #887344;
-    border-right-color: #887344;
-    border-bottom-color: #887344;
-    border-left-color: #887344;
+    background-color: #452515;
+    border-top-color: #a95c32;
+    border-right-color: #a95c32;
+    border-bottom-color: #a95c32;
+    border-left-color: #a95c32;
 }
 
 .dependency-node--texture .dependency-node-accent {
-    background-color: #5eb684;
+    background-color: #1ad1ff;
 }
 
 .dependency-node--texture {
-    background-color: #243b31;
-    border-top-color: #416f5b;
-    border-right-color: #416f5b;
-    border-bottom-color: #416f5b;
-    border-left-color: #416f5b;
+    background-color: #153842;
+    border-top-color: #20839b;
+    border-right-color: #20839b;
+    border-bottom-color: #20839b;
+    border-left-color: #20839b;
 }
 
 .dependency-node--audio .dependency-node-accent {
@@ -1089,39 +1090,39 @@
 }
 
 .dependency-node--animator .dependency-node-accent {
-    background-color: #f28b60;
+    background-color: #ff4d6d;
 }
 
 .dependency-node--animator {
-    background-color: #3f2b24;
-    border-top-color: #9c6248;
-    border-right-color: #9c6248;
-    border-bottom-color: #9c6248;
-    border-left-color: #9c6248;
+    background-color: #451b28;
+    border-top-color: #a8324d;
+    border-right-color: #a8324d;
+    border-bottom-color: #a8324d;
+    border-left-color: #a8324d;
 }
 
 .dependency-node--mesh .dependency-node-accent {
-    background-color: #a69b8e;
+    background-color: #d6dde6;
 }
 
 .dependency-node--mesh {
-    background-color: #36322f;
-    border-top-color: #6e675f;
-    border-right-color: #6e675f;
-    border-bottom-color: #6e675f;
-    border-left-color: #6e675f;
+    background-color: #30343a;
+    border-top-color: #7d8793;
+    border-right-color: #7d8793;
+    border-bottom-color: #7d8793;
+    border-left-color: #7d8793;
 }
 
 .dependency-node--scriptable-object .dependency-node-accent {
-    background-color: #c48267;
+    background-color: #8f6cff;
 }
 
 .dependency-node--scriptable-object {
-    background-color: #3d2d29;
-    border-top-color: #806055;
-    border-right-color: #806055;
-    border-bottom-color: #806055;
-    border-left-color: #806055;
+    background-color: #2c2645;
+    border-top-color: #6851b8;
+    border-right-color: #6851b8;
+    border-bottom-color: #6851b8;
+    border-left-color: #6851b8;
 }
 
 .dependency-node--scene .dependency-node-accent {
@@ -1149,15 +1150,15 @@
 }
 
 .dependency-node--component .dependency-node-accent {
-    background-color: #9ed384;
+    background-color: #00c389;
 }
 
 .dependency-node--component {
-    background-color: #293a27;
-    border-top-color: #64975a;
-    border-right-color: #64975a;
-    border-bottom-color: #64975a;
-    border-left-color: #64975a;
+    background-color: #173b32;
+    border-top-color: #228766;
+    border-right-color: #228766;
+    border-bottom-color: #228766;
+    border-left-color: #228766;
 }
 
 .dependency-node--csharp .dependency-node-accent {
@@ -1173,15 +1174,15 @@
 }
 
 .dependency-node--camera .dependency-node-accent {
-    background-color: #6bb8d6;
+    background-color: #9b8cff;
 }
 
 .dependency-node--camera {
-    background-color: #233944;
-    border-top-color: #47788d;
-    border-right-color: #47788d;
-    border-bottom-color: #47788d;
-    border-left-color: #47788d;
+    background-color: #2d2845;
+    border-top-color: #6557aa;
+    border-right-color: #6557aa;
+    border-bottom-color: #6557aa;
+    border-left-color: #6557aa;
 }
 
 .dependency-node--canvas .dependency-node-accent {
@@ -1276,17 +1277,17 @@
 }
 
 .dependency-node--material:hover {
-    border-top-color: #d0aa55;
-    border-right-color: #d0aa55;
-    border-bottom-color: #d0aa55;
-    border-left-color: #d0aa55;
+    border-top-color: #ff8a3d;
+    border-right-color: #ff8a3d;
+    border-bottom-color: #ff8a3d;
+    border-left-color: #ff8a3d;
 }
 
 .dependency-node--texture:hover {
-    border-top-color: #5eb684;
-    border-right-color: #5eb684;
-    border-bottom-color: #5eb684;
-    border-left-color: #5eb684;
+    border-top-color: #1ad1ff;
+    border-right-color: #1ad1ff;
+    border-bottom-color: #1ad1ff;
+    border-left-color: #1ad1ff;
 }
 
 .dependency-node--audio:hover {
@@ -1297,24 +1298,24 @@
 }
 
 .dependency-node--animator:hover {
-    border-top-color: #f28b60;
-    border-right-color: #f28b60;
-    border-bottom-color: #f28b60;
-    border-left-color: #f28b60;
+    border-top-color: #ff4d6d;
+    border-right-color: #ff4d6d;
+    border-bottom-color: #ff4d6d;
+    border-left-color: #ff4d6d;
 }
 
 .dependency-node--mesh:hover {
-    border-top-color: #a69b8e;
-    border-right-color: #a69b8e;
-    border-bottom-color: #a69b8e;
-    border-left-color: #a69b8e;
+    border-top-color: #d6dde6;
+    border-right-color: #d6dde6;
+    border-bottom-color: #d6dde6;
+    border-left-color: #d6dde6;
 }
 
 .dependency-node--scriptable-object:hover {
-    border-top-color: #c48267;
-    border-right-color: #c48267;
-    border-bottom-color: #c48267;
-    border-left-color: #c48267;
+    border-top-color: #8f6cff;
+    border-right-color: #8f6cff;
+    border-bottom-color: #8f6cff;
+    border-left-color: #8f6cff;
 }
 
 .dependency-node--scene:hover {
@@ -1332,10 +1333,10 @@
 }
 
 .dependency-node--component:hover {
-    border-top-color: #9ed384;
-    border-right-color: #9ed384;
-    border-bottom-color: #9ed384;
-    border-left-color: #9ed384;
+    border-top-color: #00c389;
+    border-right-color: #00c389;
+    border-bottom-color: #00c389;
+    border-left-color: #00c389;
 }
 
 .dependency-node--csharp:hover {
@@ -1346,10 +1347,10 @@
 }
 
 .dependency-node--camera:hover {
-    border-top-color: #6bb8d6;
-    border-right-color: #6bb8d6;
-    border-bottom-color: #6bb8d6;
-    border-left-color: #6bb8d6;
+    border-top-color: #9b8cff;
+    border-right-color: #9b8cff;
+    border-bottom-color: #9b8cff;
+    border-left-color: #9b8cff;
 }
 
 .dependency-node--canvas:hover {
