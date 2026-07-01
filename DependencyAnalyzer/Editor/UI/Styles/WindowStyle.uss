@@ -1,0 +1,45 @@
+.dependency-window {
+    flex-grow: 1;
+    background-color: #1d2024;
+}
+
+.dependency-toolbar {
+    height: 34px;
+    flex-direction: row;
+    align-items: center;
+    overflow: visible;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: #343941;
+    background-color: #252a30;
+}
+
+.dependency-toolbar Button {
+    min-width: 72px;
+    height: 22px;
+    margin-right: 6px;
+}
+
+.dependency-load-progress-label {
+    width: 88px;
+    height: 22px;
+    margin-right: 28px;
+    color: #d7dae0;
+    font-size: 11px;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dependency-status-label {
+    color: #d7dae0;
+    -unity-text-align: middle-left;
+    flex-grow: 1;
+}
+
+.dependency-graph-container {
+    flex-grow: 1;
+    position: relative;
+}

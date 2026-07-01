@@ -27,6 +27,10 @@ namespace DependencyAnalyzer.Editor
             UnityTempDirectoryGuard.EnsureProjectTempDirectoryExists();
             rootVisualElement.Clear();
             rootVisualElement.AddToClassList("dependency-window");
+            AddStyleSheetToRoot("WindowStyle.uss");
+            AddStyleSheetToRoot("SearchStyle.uss");
+            AddStyleSheetToRoot("IssuePanelStyle.uss");
+            AddStyleSheetToRoot("GraphViewStyle.uss");
             AddStyleSheetToRoot("NodeStyle.uss");
             AddStyleSheetToRoot("EdgeStyle.uss");
 

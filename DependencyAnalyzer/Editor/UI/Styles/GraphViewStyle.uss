@@ -1,0 +1,57 @@
+.dependency-graph-view {
+    flex-grow: 1;
+    background-color: #191c20;
+}
+
+.dependency-graph-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.dependency-edge-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.dependency-animation-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.dependency-node-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.dependency-empty-state {
+    position: absolute;
+    left: 18px;
+    top: 18px;
+    color: #9ca6b3;
+    font-size: 12px;
+}
+
+.dependency-minimap {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    width: 184px;
+    height: 124px;
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-color: #4c5966;
+    border-right-color: #303943;
+    border-bottom-color: #242b33;
+    border-left-color: #4c5966;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    background-color: rgba(21, 25, 30, 0.86);
+}

@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using DependencyAnalyzer.Editor.Core;
+using DependencyAnalyzer.Editor.Scanners.Issues;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,8 +15,6 @@ namespace DependencyAnalyzer.Editor.Scanners
         private const string ScannerName = "Unity Console";
         private const int MaxConsoleEntries = 500;
         private const int MaxEditorLogBytes = 1024 * 1024;
-        private const int ErrorModeMask = 1 | 2 | 16 | 64 | 2048 | 8192;
-        private const int WarningModeMask = 128 | 16384 | 32768;
         private static readonly Regex AssetPathRegex = new Regex(
             @"Assets/[^\r\n\(\):]+?\.(?:cs|shader|compute|asmdef|asmref|prefab|unity|mat|asset|fbx|obj|dae|blend|png|jpg|jpeg|tga|psd|wav|mp3|ogg|anim|controller|overrideController)",
             RegexOptions.IgnoreCase);
@@ -59,7 +58,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             HashSet<string> seen,
             ConsoleLogEntry entry)
         {
-            if (!TryGetSeverity(entry, out var severity)
+            if (!ConsoleIssueParser.TryGetSeverity(entry, out var severity)
                 || IsAnalyzerGeneratedLog(entry.Condition))
             {
                 return;
@@ -162,7 +161,7 @@ namespace DependencyAnalyzer.Editor.Scanners
         {
             foreach (var line in ReadRecentEditorLogLines())
             {
-                var condition = NormalizeConsoleMessage(line);
+                var condition = ConsoleIssueParser.NormalizeConsoleMessage(line);
                 if (string.IsNullOrEmpty(condition))
                 {
                     continue;
@@ -178,10 +177,10 @@ namespace DependencyAnalyzer.Editor.Scanners
                     condition,
                     assetPath,
                     string.Empty,
-                    ExtractLineNumber(condition, assetPath),
+                    ConsoleIssueParser.ExtractLineNumber(condition, assetPath),
                     0,
                     0);
-                if (TryGetSeverity(entry, out _))
+                if (ConsoleIssueParser.TryGetSeverity(entry, out _))
                 {
                     yield return entry;
                 }
@@ -233,72 +232,6 @@ namespace DependencyAnalyzer.Editor.Scanners
         {
             return assetPath.StartsWith("Assets/DependencyAnalyzer/", StringComparison.OrdinalIgnoreCase)
                 || assetPath.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static int ExtractLineNumber(string text, string assetPath)
-        {
-            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(assetPath))
-            {
-                return 0;
-            }
-
-            var pathIndex = text.IndexOf(assetPath, StringComparison.OrdinalIgnoreCase);
-            if (pathIndex < 0)
-            {
-                return 0;
-            }
-
-            var lineStart = pathIndex + assetPath.Length;
-            if (lineStart >= text.Length || text[lineStart] != '(')
-            {
-                return 0;
-            }
-
-            lineStart++;
-            var lineEnd = lineStart;
-            while (lineEnd < text.Length && char.IsDigit(text[lineEnd]))
-            {
-                lineEnd++;
-            }
-
-            return lineEnd > lineStart && int.TryParse(text.Substring(lineStart, lineEnd - lineStart), out var line)
-                ? line
-                : 0;
-        }
-
-        private static bool TryGetSeverity(ConsoleLogEntry entry, out DependencyScanIssueSeverity severity)
-        {
-            if ((entry.Mode & ErrorModeMask) != 0)
-            {
-                severity = DependencyScanIssueSeverity.Error;
-                return true;
-            }
-
-            if ((entry.Mode & WarningModeMask) != 0)
-            {
-                severity = DependencyScanIssueSeverity.Warning;
-                return true;
-            }
-
-            var text = entry.Condition ?? string.Empty;
-            if (text.IndexOf(": error ", StringComparison.OrdinalIgnoreCase) >= 0
-                || text.IndexOf(" error CS", StringComparison.OrdinalIgnoreCase) >= 0
-                || text.IndexOf("shader error", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                severity = DependencyScanIssueSeverity.Error;
-                return true;
-            }
-
-            if (text.IndexOf(": warning ", StringComparison.OrdinalIgnoreCase) >= 0
-                || text.IndexOf(" warning CS", StringComparison.OrdinalIgnoreCase) >= 0
-                || text.IndexOf("warning", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                severity = DependencyScanIssueSeverity.Warning;
-                return true;
-            }
-
-            severity = DependencyScanIssueSeverity.Warning;
-            return false;
         }
 
         private static DependencyNodeData ResolveTargetNode(
@@ -437,7 +370,7 @@ namespace DependencyAnalyzer.Editor.Scanners
 
         private static string BuildIssueMessage(ConsoleLogEntry entry)
         {
-            var message = NormalizeConsoleMessage(entry.Condition);
+            var message = ConsoleIssueParser.NormalizeConsoleMessage(entry.Condition);
             if (!string.IsNullOrEmpty(message))
             {
                 return message;
@@ -450,13 +383,6 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             return "Console issue";
-        }
-
-        private static string NormalizeConsoleMessage(string value)
-        {
-            return string.IsNullOrEmpty(value)
-                ? string.Empty
-                : value.Replace("\r\n", "\n").Trim();
         }
 
         private static bool IsAnalyzerGeneratedLog(string condition)
@@ -519,24 +445,5 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
         }
 
-        private struct ConsoleLogEntry
-        {
-            public ConsoleLogEntry(string condition, string file, string stackTrace, int line, int mode, int instanceId)
-            {
-                Condition = condition ?? string.Empty;
-                File = file ?? string.Empty;
-                StackTrace = stackTrace ?? string.Empty;
-                Line = line;
-                Mode = mode;
-                InstanceId = instanceId;
-            }
-
-            public string Condition { get; }
-            public string File { get; }
-            public string StackTrace { get; }
-            public int Line { get; }
-            public int Mode { get; }
-            public int InstanceId { get; }
-        }
     }
 }
