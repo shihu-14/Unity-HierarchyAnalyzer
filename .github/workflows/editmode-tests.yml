@@ -1,0 +1,53 @@
+name: Edit Mode Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  editmode:
+    name: Unity ${{ matrix.unityVersion }} Edit Mode
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        unityVersion:
+          - 6000.0.77f1
+          - 6000.4.5f1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Assets-copy test project
+        run: |
+          mkdir -p TestProject/Assets
+          cp -R DependencyAnalyzer DependencyAnalyzer.meta TestProject/Assets/
+
+      - name: Run Edit Mode tests
+        id: tests
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          projectPath: TestProject
+          unityVersion: ${{ matrix.unityVersion }}
+          testMode: editmode
+          artifactsPath: artifacts/${{ matrix.unityVersion }}/editmode
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          checkName: Unity ${{ matrix.unityVersion }} Edit Mode
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editmode-results-${{ matrix.unityVersion }}
+          path: ${{ steps.tests.outputs.artifactsPath }}
+          if-no-files-found: warn
