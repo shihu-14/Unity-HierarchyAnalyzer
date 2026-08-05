@@ -144,7 +144,7 @@ Edit Mode Testは、次の一般的な依存関係事実を検証します。
 
 通常fixtureはtest中に生成して削除します。コードだけで安定再現しにくいMissing状態は、`Editor/Tests/Fixtures`の小さなPrefab YAMLと固定`.meta`で保持します。
 
-GitHub ActionsはAssets-copy導入を再現する最小`TestProject`を作り、Unity `6000.0.77f1`と`6000.4.5f1`のEdit Mode Testを実行します。CIを動かすにはrepository secret `UNITY_LICENSE`が必要です。
+GitHub ActionsはAssets-copy導入を再現する最小`TestProject`を作り、Unity `6000.0.77f1`と`6000.4.5f1`のEdit Mode Testを実行します。名前付きユーザーライセンスでCIを動かすには、repository secrets `UNITY_EMAIL`と`UNITY_PASSWORD`が必要です。`UNITY_LICENSE`と`UNITY_SERIAL`は使用しません。
 
 ## Current Limitations
 
