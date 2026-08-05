@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Scanners.Issues;
@@ -13,43 +12,59 @@ namespace DependencyAnalyzer.Editor.Scanners
     internal static class ConsoleIssueScanner
     {
         private const string ScannerName = "Unity Console";
-        private const int MaxConsoleEntries = 500;
-        private const int MaxEditorLogBytes = 1024 * 1024;
+        private const string ReaderScannerName = "Unity Console Reader";
         private static readonly Regex AssetPathRegex = new Regex(
             @"Assets/[^\r\n\(\):]+?\.(?:cs|shader|compute|asmdef|asmref|prefab|unity|mat|asset|fbx|obj|dae|blend|png|jpg|jpeg|tga|psd|wav|mp3|ogg|anim|controller|overrideController)",
             RegexOptions.IgnoreCase);
 
         public static void AddConsoleIssues(DependencyGraphData graph, DependencyCache cache)
         {
+            AddConsoleIssues(graph, cache, new UnityConsoleLogReader());
+        }
+
+        internal static void AddConsoleIssues(
+            DependencyGraphData graph,
+            DependencyCache cache,
+            IConsoleLogReader reader)
+        {
             if (graph == null || cache == null)
             {
                 return;
             }
 
-            var seen = new HashSet<string>(StringComparer.Ordinal);
+            ConsoleLogReadResult readResult;
             try
             {
-                foreach (var entry in ReadConsoleEntries())
-                {
-                    AddIssueFromEntry(graph, cache, seen, entry);
-                }
+                readResult = reader == null
+                    ? ConsoleLogReadResult.Failure("Console reader was not provided.")
+                    : reader.Read();
             }
-            catch
+            catch (Exception exception)
             {
-                // Unity's console entry API is internal and can change between editor versions.
+                readResult = ConsoleLogReadResult.Failure(exception.GetType().Name + ": " + exception.Message);
             }
 
-            try
+            if (readResult == null || !readResult.Succeeded)
             {
-                foreach (var entry in ReadEditorLogEntries())
-                {
-                    AddIssueFromEntry(graph, cache, seen, entry);
-                }
+                AddReaderFailureIssue(graph, readResult == null ? "Console reader returned no result." : readResult.ErrorMessage);
+                return;
             }
-            catch
+
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            for (var i = 0; i < readResult.Entries.Count; i++)
             {
-                // Editor.log is a fallback for compiler and shader messages that may not be exposed by LogEntries.
+                AddIssueFromEntry(graph, cache, seen, readResult.Entries[i]);
             }
+        }
+
+        private static void AddReaderFailureIssue(DependencyGraphData graph, string errorMessage)
+        {
+            graph.AddIssue(new DependencyScanIssueData(
+                ReaderScannerName,
+                string.Empty,
+                "Unable to read the current Unity Console: "
+                    + (string.IsNullOrEmpty(errorMessage) ? "Unknown reader failure." : errorMessage),
+                DependencyScanIssueSeverity.Warning));
         }
 
         private static void AddIssueFromEntry(
@@ -65,14 +80,11 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             var targetNode = ResolveTargetNode(graph, cache, entry);
-            if (targetNode == null)
-            {
-                return;
-            }
-
-            var subjectPath = string.IsNullOrEmpty(targetNode.Path) ? targetNode.Id : targetNode.Path;
+            var subjectPath = targetNode == null
+                ? string.Empty
+                : string.IsNullOrEmpty(targetNode.Path) ? targetNode.Id : targetNode.Path;
             var message = BuildIssueMessage(entry);
-            var key = severity + "\n" + subjectPath + "\n" + message;
+            var key = BuildConsoleEntryKey(entry, severity, subjectPath, message);
             if (!seen.Add(key))
             {
                 return;
@@ -82,156 +94,37 @@ namespace DependencyAnalyzer.Editor.Scanners
                 ScannerName,
                 subjectPath,
                 message,
-                severity));
+                severity,
+                entry.File,
+                entry.Line,
+                entry.Column,
+                entry.StackTrace,
+                entry.InstanceId,
+                entry.OccurrenceCount));
         }
 
-        private static IEnumerable<ConsoleLogEntry> ReadConsoleEntries()
+        private static string BuildConsoleEntryKey(
+            ConsoleLogEntry entry,
+            DependencyScanIssueSeverity severity,
+            string subjectPath,
+            string message)
         {
-            var editorAssembly = typeof(EditorWindow).Assembly;
-            var logEntriesType = editorAssembly.GetType("UnityEditor.LogEntries");
-            var logEntryType = editorAssembly.GetType("UnityEditor.LogEntry");
-            if (logEntriesType == null || logEntryType == null)
+            if (entry.GlobalLineIndex >= 0)
             {
-                yield break;
+                return "global:" + entry.GlobalLineIndex;
             }
 
-            var getCount = logEntriesType.GetMethod(
-                "GetCount",
-                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-            var getEntry = FindGetEntryMethod(logEntriesType);
-            if (getCount == null || getEntry == null)
+            if (entry.RowIndex >= 0)
             {
-                yield break;
+                return "row:" + entry.RowIndex;
             }
 
-            var start = logEntriesType.GetMethod(
-                "StartGettingEntries",
-                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-            var end = logEntriesType.GetMethod(
-                "EndGettingEntries",
-                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-
-            start?.Invoke(null, null);
-            try
-            {
-                var countObject = getCount.Invoke(null, null);
-                var count = countObject is int ? (int)countObject : 0;
-                var startIndex = Mathf.Max(0, count - MaxConsoleEntries);
-                for (var i = startIndex; i < count; i++)
-                {
-                    var entryObject = Activator.CreateInstance(logEntryType, true);
-                    var args = new[] { (object)i, entryObject };
-                    getEntry.Invoke(null, args);
-                    entryObject = args[1];
-                    yield return new ConsoleLogEntry(
-                        GetStringValue(logEntryType, entryObject, "condition"),
-                        GetStringValue(logEntryType, entryObject, "file"),
-                        GetStringValue(logEntryType, entryObject, "stackTrace"),
-                        GetIntValue(logEntryType, entryObject, "line"),
-                        GetIntValue(logEntryType, entryObject, "mode"),
-                        GetIntValue(logEntryType, entryObject, "instanceID", "instanceId"));
-                }
-            }
-            finally
-            {
-                end?.Invoke(null, null);
-            }
-        }
-
-        private static MethodInfo FindGetEntryMethod(Type logEntriesType)
-        {
-            foreach (var method in logEntriesType.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                if (method.Name != "GetEntryInternal")
-                {
-                    continue;
-                }
-
-                var parameters = method.GetParameters();
-                if (parameters.Length == 2)
-                {
-                    return method;
-                }
-            }
-
-            return null;
-        }
-
-        private static IEnumerable<ConsoleLogEntry> ReadEditorLogEntries()
-        {
-            foreach (var line in ReadRecentEditorLogLines())
-            {
-                var condition = ConsoleIssueParser.NormalizeConsoleMessage(line);
-                if (string.IsNullOrEmpty(condition))
-                {
-                    continue;
-                }
-
-                var assetPath = ExtractAssetPath(condition);
-                if (string.IsNullOrEmpty(assetPath) || IsIgnoredEditorLogAssetPath(assetPath))
-                {
-                    continue;
-                }
-
-                var entry = new ConsoleLogEntry(
-                    condition,
-                    assetPath,
-                    string.Empty,
-                    ConsoleIssueParser.ExtractLineNumber(condition, assetPath),
-                    0,
-                    0);
-                if (ConsoleIssueParser.TryGetSeverity(entry, out _))
-                {
-                    yield return entry;
-                }
-            }
-        }
-
-        private static IEnumerable<string> ReadRecentEditorLogLines()
-        {
-            var logPath = GetEditorLogPath();
-            if (string.IsNullOrEmpty(logPath) || !File.Exists(logPath))
-            {
-                yield break;
-            }
-
-            using (var stream = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
-            {
-                var start = Math.Max(0L, stream.Length - MaxEditorLogBytes);
-                stream.Seek(start, SeekOrigin.Begin);
-                using (var reader = new StreamReader(stream))
-                {
-                    if (start > 0L)
-                    {
-                        reader.ReadLine();
-                    }
-
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        yield return line;
-                    }
-                }
-            }
-        }
-
-        private static string GetEditorLogPath()
-        {
-            if (!string.IsNullOrEmpty(Application.consoleLogPath))
-            {
-                return Application.consoleLogPath;
-            }
-
-            var home = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-            return string.IsNullOrEmpty(home)
-                ? string.Empty
-                : Path.Combine(home, "Library/Logs/Unity/Editor.log");
-        }
-
-        private static bool IsIgnoredEditorLogAssetPath(string assetPath)
-        {
-            return assetPath.StartsWith("Assets/DependencyAnalyzer/", StringComparison.OrdinalIgnoreCase)
-                || assetPath.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase);
+            return severity + "\n"
+                + subjectPath + "\n"
+                + message + "\n"
+                + entry.File + "\n"
+                + entry.Line + ":" + entry.Column + "\n"
+                + entry.StackTrace;
         }
 
         private static DependencyNodeData ResolveTargetNode(
@@ -395,55 +288,5 @@ namespace DependencyAnalyzer.Editor.Scanners
             return condition.IndexOf("[Serialized Property Scanner]", StringComparison.OrdinalIgnoreCase) >= 0
                 || condition.IndexOf("[Unity Console]", StringComparison.OrdinalIgnoreCase) >= 0;
         }
-
-        private static string GetStringValue(Type type, object instance, string name)
-        {
-            var field = type.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            if (field != null)
-            {
-                return field.GetValue(instance) as string ?? string.Empty;
-            }
-
-            var property = type.GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            return property == null ? string.Empty : property.GetValue(instance, null) as string ?? string.Empty;
-        }
-
-        private static int GetIntValue(Type type, object instance, params string[] names)
-        {
-            for (var i = 0; i < names.Length; i++)
-            {
-                var field = type.GetField(names[i], BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (field != null)
-                {
-                    return ConvertToInt(field.GetValue(instance));
-                }
-
-                var property = type.GetProperty(names[i], BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (property != null)
-                {
-                    return ConvertToInt(property.GetValue(instance, null));
-                }
-            }
-
-            return 0;
-        }
-
-        private static int ConvertToInt(object value)
-        {
-            if (value == null)
-            {
-                return 0;
-            }
-
-            try
-            {
-                return Convert.ToInt32(value);
-            }
-            catch
-            {
-                return 0;
-            }
-        }
-
     }
 }

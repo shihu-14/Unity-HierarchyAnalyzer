@@ -5,8 +5,8 @@ namespace DependencyAnalyzer.Editor.Scanners.Issues
 {
     internal static class ConsoleIssueParser
     {
-        private const int ErrorModeMask = 1 | 2 | 16 | 64 | 2048 | 8192;
-        private const int WarningModeMask = 128 | 16384 | 32768;
+        private const int ErrorModeMask = 1 | 2 | 16 | 64 | 256 | 2048 | 131072 | 2097152;
+        private const int WarningModeMask = 128 | 512 | 4096;
 
         public static bool TryGetSeverity(ConsoleLogEntry entry, out DependencyScanIssueSeverity severity)
         {

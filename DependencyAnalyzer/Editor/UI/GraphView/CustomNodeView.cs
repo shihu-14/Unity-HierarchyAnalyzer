@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Utils;
 using UnityEngine;
@@ -17,7 +18,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const float MaxExtraHeight = 24f;
         private const float NameFontSize = 12f;
         private const float TypeFontSize = 10f;
-        private const float BadgeFontSize = 10f;
         private const float ParentJumpFontSize = 11f;
         private const float ActionButtonBaseSize = 18f;
         private const float ActionButtonMinSize = 13.5f;
@@ -223,8 +223,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 badgeContainer.Add(warningIcon);
             }
 
-            badgeContainer.Add(CreateBadge(Data.DependencyCount.ToString(), "Dependencies", nodeScale));
-            badgeContainer.Add(CreateBadge(Data.UsedByCount.ToString(), "Used By", nodeScale));
             if (canToggleChildren && hasMenuChildren)
             {
                 badgeContainer.Add(CreateControlStack());
@@ -238,7 +236,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 badgeContainer.Add(CreateMenuToggleButton());
             }
 
-            header.Add(badgeContainer);
+            if (badgeContainer.childCount > 0)
+            {
+                header.Add(badgeContainer);
+            }
 
             Add(header);
 
@@ -371,25 +372,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
 
             return "dependency-node--impact-low";
-        }
-
-        private static Label CreateBadge(string text, string tooltipText)
-        {
-            return CreateBadge(text, tooltipText, 1f);
-        }
-
-        private static Label CreateBadge(string text, string tooltipText, float scale)
-        {
-            var badge = new Label(text);
-            badge.tooltip = tooltipText;
-            badge.AddToClassList("dependency-node-badge");
-            badge.style.minWidth = Mathf.Round(Mathf.Clamp(20f * scale, 14f, 20f));
-            badge.style.height = Mathf.Round(Mathf.Clamp(17f * scale, 13f, 17f));
-            badge.style.paddingLeft = Mathf.Round(Mathf.Clamp(5f * scale, 2f, 5f));
-            badge.style.paddingRight = Mathf.Round(Mathf.Clamp(5f * scale, 2f, 5f));
-            badge.style.marginLeft = Mathf.Round(Mathf.Clamp(4f * scale, 2f, 4f));
-            badge.style.fontSize = BadgeFontSize;
-            return badge;
         }
 
         private VisualElement CreateControlStack()
@@ -532,34 +514,39 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private static string BuildTooltip(DependencyNodeData data)
         {
-            var tooltip = "Path: " + data.Path
-                + "\nType: " + data.NamespaceQualifiedTypeName
-                + "\nFile Size: " + FormatBytes(data.FileSizeBytes)
-                + "\nAsset Labels: " + data.LabelsText
-                + "\nDependencies: " + data.DependencyCount
-                + "\nUsed By: " + data.UsedByCount;
+            var lines = new List<string>
+            {
+                "Path: " + data.Path,
+                "Type: " + data.NamespaceQualifiedTypeName
+            };
+
+            if (data.Kind == DependencyNodeKind.Asset)
+            {
+                var labels = new List<string>();
+                for (var i = 0; i < data.AssetLabels.Count; i++)
+                {
+                    var label = data.AssetLabels[i];
+                    if (!string.IsNullOrWhiteSpace(label))
+                    {
+                        labels.Add(label.Trim());
+                    }
+                }
+
+                if (labels.Count > 0)
+                {
+                    lines.Add("Asset Labels: " + string.Join(", ", labels));
+                }
+            }
+
+            lines.Add("Dependencies: " + data.DependencyCount);
+            lines.Add("Used By: " + data.UsedByCount);
             if (data.HasIssue)
             {
-                tooltip += "\nIssue: " + data.IssueSeverity.Value
-                    + " - " + (string.IsNullOrEmpty(data.IssueMessage) ? "Issue" : data.IssueMessage);
+                lines.Add("Issue: " + data.IssueSeverity.Value
+                    + " - " + (string.IsNullOrEmpty(data.IssueMessage) ? "Issue" : data.IssueMessage));
             }
 
-            return tooltip;
-        }
-
-        private static string FormatBytes(long bytes)
-        {
-            if (bytes < 1024L)
-            {
-                return bytes + " B";
-            }
-
-            if (bytes < 1024L * 1024L)
-            {
-                return (bytes / 1024f).ToString("0.##") + " KB";
-            }
-
-            return (bytes / 1024f / 1024f).ToString("0.##") + " MB";
+            return string.Join("\n", lines);
         }
 
         private void HandleMouseDown(MouseDownEvent evt)

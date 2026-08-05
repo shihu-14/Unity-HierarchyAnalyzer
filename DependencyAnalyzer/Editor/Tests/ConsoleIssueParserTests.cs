@@ -16,6 +16,24 @@ namespace DependencyAnalyzer.Editor.Tests
         }
 
         [Test]
+        public void TryGetSeverity_DetectsUnityScriptingWarningMode()
+        {
+            var entry = new ConsoleLogEntry("Warning without keyword classification", string.Empty, string.Empty, 0, 512, 0);
+
+            Assert.IsTrue(ConsoleIssueParser.TryGetSeverity(entry, out var severity));
+            Assert.AreEqual(DependencyScanIssueSeverity.Warning, severity);
+        }
+
+        [Test]
+        public void TryGetSeverity_DetectsUnityScriptingErrorMode()
+        {
+            var entry = new ConsoleLogEntry("Failure without error keyword", string.Empty, string.Empty, 0, 256, 0);
+
+            Assert.IsTrue(ConsoleIssueParser.TryGetSeverity(entry, out var severity));
+            Assert.AreEqual(DependencyScanIssueSeverity.Error, severity);
+        }
+
+        [Test]
         public void ExtractLineNumber_ReadsUnityPathLine()
         {
             const string path = "Assets/Foo.cs";

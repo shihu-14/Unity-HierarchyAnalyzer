@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Utils;
+using UnityEngine;
 
 namespace DependencyAnalyzer.Editor.Controller.Issues
 {
@@ -52,12 +53,23 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                 if (string.IsNullOrEmpty(targetNodeId)
                     || !graphData.TryGetNode(targetNodeId, out var targetNode))
                 {
+                    if (IsConsoleIssue(issue))
+                    {
+                        entries.Add(new IssuePanelEntry(
+                            IssueTextFormatter.FormatTitle(issue.ScannerName) + " (No related node)",
+                            BuildIssueDetail(issue),
+                            issue.Severity,
+                            string.Empty,
+                            null,
+                            new Color(0.38f, 0.42f, 0.47f)));
+                    }
+
                     continue;
                 }
 
                 entries.Add(new IssuePanelEntry(
                     IssueTextFormatter.FormatTitle(targetNode.DisplayName),
-                    IssueTextFormatter.FormatDetail(issue.Message),
+                    BuildIssueDetail(issue),
                     issue.Severity,
                     targetNodeId,
                     IconUtility.GetIcon(targetNode),
@@ -69,6 +81,50 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                 .ThenBy(entry => entry.Title, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(entry => entry.Detail, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        private static string BuildIssueDetail(DependencyScanIssueData issue)
+        {
+            var parts = new List<string>();
+            var message = IssueTextFormatter.FormatDetail(issue.Message);
+            if (!string.IsNullOrEmpty(message))
+            {
+                parts.Add(message);
+            }
+
+            if (!string.IsNullOrEmpty(issue.FilePath))
+            {
+                var location = "File: " + issue.FilePath;
+                if (issue.Line > 0)
+                {
+                    location += ":" + issue.Line;
+                    if (issue.Column > 0)
+                    {
+                        location += ":" + issue.Column;
+                    }
+                }
+
+                parts.Add(location);
+            }
+
+            if (issue.OccurrenceCount > 1)
+            {
+                parts.Add("Occurrences: " + issue.OccurrenceCount);
+            }
+
+            if (!string.IsNullOrEmpty(issue.StackTrace))
+            {
+                parts.Add("Stack Trace:\n" + issue.StackTrace.Trim());
+            }
+
+            return string.Join("\n", parts);
+        }
+
+        private static bool IsConsoleIssue(DependencyScanIssueData issue)
+        {
+            return issue != null
+                && (string.Equals(issue.ScannerName, "Unity Console", StringComparison.Ordinal)
+                    || string.Equals(issue.ScannerName, "Unity Console Reader", StringComparison.Ordinal));
         }
 
         public static string GetSeverityClass(DependencyScanIssueSeverity severity)

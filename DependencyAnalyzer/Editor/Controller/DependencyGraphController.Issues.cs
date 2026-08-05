@@ -111,7 +111,10 @@ namespace DependencyAnalyzer.Editor.Controller
             text.Add(detail);
 
             row.Add(severityIcon);
-            row.Add(nodeIcon);
+            if (entry.NodeIcon != null)
+            {
+                row.Add(nodeIcon);
+            }
             row.Add(text);
             return row;
         }
