@@ -123,7 +123,7 @@ namespace DependencyAnalyzer.Editor.Scanners
 
             if (reference.State == SerializedObjectReferenceState.Valid)
             {
-                if (reference.ReferencedObject is MonoScript)
+                if (reference.ReferencedObject is UnityEditor.MonoScript)
                 {
                     return;
                 }
