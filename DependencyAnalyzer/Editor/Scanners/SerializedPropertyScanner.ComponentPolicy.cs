@@ -1,56 +1,19 @@
 using System;
-using System.Collections.Generic;
-using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Settings;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace DependencyAnalyzer.Editor.Scanners
 {
     public sealed partial class SerializedPropertyScanner
     {
-        private static void AddHiddenComponentMaterialDependencies(
-            Component component,
-            DependencyNodeData gameObjectNode,
-            DependencyGraphData graph,
-            DependencyCache cache,
-            AnalyzerSettings settings)
-        {
-            var renderer = component as Renderer;
-            if (renderer == null)
-            {
-                return;
-            }
-
-            var materials = renderer.sharedMaterials;
-            for (var i = 0; i < materials.Length; i++)
-            {
-                var material = materials[i];
-                if (material == null)
-                {
-                    continue;
-                }
-
-                var materialNode = CreateObjectReferenceNode(material, cache, settings);
-                if (materialNode == null)
-                {
-                    continue;
-                }
-
-                graph.AddOrUpdateNode(materialNode);
-                graph.AddEdge(new DependencyEdgeData(
-                    gameObjectNode.Id,
-                    materialNode.Id,
-                    "Renderer.sharedMaterials[" + i + "]",
-                    DependencyReferenceKind.SerializedProperty));
-            }
-        }
-
-        private static bool ShouldScanInspectorObjectReference(Component component, SerializedProperty property)
+        internal static bool ShouldScanInspectorObjectReference(Component component, SerializedProperty property)
         {
             if (property.propertyType != SerializedPropertyType.ObjectReference)
+            {
+                return false;
+            }
+
+            if (property.propertyPath.StartsWith("m_Children.", StringComparison.Ordinal))
             {
                 return false;
             }

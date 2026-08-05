@@ -2,7 +2,8 @@
   "name": "DependencyAnalyzer.Editor.Tests",
   "rootNamespace": "DependencyAnalyzer.Editor.Tests",
   "references": [
-    "DependencyAnalyzer.Editor"
+    "DependencyAnalyzer.Editor",
+    "DependencyAnalyzer.TestFixtures"
   ],
   "includePlatforms": [
     "Editor"

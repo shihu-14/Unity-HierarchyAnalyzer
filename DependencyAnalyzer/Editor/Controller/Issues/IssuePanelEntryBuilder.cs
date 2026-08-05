@@ -21,8 +21,13 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                 return entries;
             }
 
+            var missingTargetIds = new HashSet<string>(
+                graphData.Edges
+                    .Where(edge => edge != null && edge.PointsToMissingReference)
+                    .Select(edge => edge.TargetNodeId),
+                StringComparer.Ordinal);
             var missingNodes = graphData.Nodes
-                .Where(node => node.Kind == DependencyNodeKind.MissingReference)
+                .Where(node => node.Kind == DependencyNodeKind.MissingReference || missingTargetIds.Contains(node.Id))
                 .OrderBy(node => node.Path, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase);
             foreach (var node in missingNodes)

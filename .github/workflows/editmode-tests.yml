@@ -1,0 +1,139 @@
+name: Edit Mode Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  editmode:
+    name: Unity ${{ matrix.unityVersion }} Edit Mode
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - unityVersion: 6000.0.77f1
+            image: unityci/editor:ubuntu-6000.0.77f1-base-3
+          - unityVersion: 6000.4.5f1
+            image: unityci/editor:ubuntu-6000.4.5f1-base-3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Assets-copy test project
+        run: |
+          mkdir -p TestProject/Assets "artifacts/${{ matrix.unityVersion }}"
+          cp -R DependencyAnalyzer DependencyAnalyzer.meta TestProject/Assets/
+
+      - name: Validate named user credentials
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [[ -z "$UNITY_EMAIL" || -z "$UNITY_PASSWORD" ]]; then
+            echo "::error::UNITY_EMAIL and UNITY_PASSWORD repository secrets are required."
+            exit 1
+          fi
+
+      - name: Start Unity Editor container
+        id: container
+        run: |
+          docker pull "${{ matrix.image }}"
+          docker run --detach --name unity-editor \
+            --volume "$GITHUB_WORKSPACE:/github/workspace" \
+            --volume "$RUNNER_TEMP:/github/runner-temp" \
+            --workdir /github/workspace \
+            "${{ matrix.image }}" \
+            tail -f /dev/null
+
+      - name: Activate named user license
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          docker exec \
+            --env UNITY_EMAIL \
+            --env UNITY_PASSWORD \
+            unity-editor \
+            bash -lc 'unity-editor -quit -batchmode -nographics -serial \
+              -username "$UNITY_EMAIL" \
+              -password "$UNITY_PASSWORD" \
+              -logFile /dev/null'
+
+      - name: Run Edit Mode tests
+        run: |
+          docker exec unity-editor \
+            unity-editor -batchmode -nographics \
+              -projectPath /github/workspace/TestProject \
+              -runTests \
+              -testPlatform EditMode \
+              -testResults "/github/workspace/artifacts/${{ matrix.unityVersion }}/TestResults.xml" \
+              -logFile "/github/runner-temp/Editor-${{ matrix.unityVersion }}.log"
+
+      - name: Return named user license
+        if: ${{ always() && steps.container.outcome == 'success' }}
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          docker exec \
+            --env UNITY_EMAIL \
+            --env UNITY_PASSWORD \
+            unity-editor \
+            bash -lc 'unity-editor -quit -batchmode -nographics -returnlicense \
+              -username "$UNITY_EMAIL" \
+              -password "$UNITY_PASSWORD" \
+              -logFile /dev/null'
+
+      - name: Prepare sanitized Editor log
+        if: ${{ always() }}
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_VERSION: ${{ matrix.unityVersion }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          version = os.environ["UNITY_VERSION"]
+          runner_temp = Path(os.environ["RUNNER_TEMP"])
+          artifact_dir = Path(os.environ["GITHUB_WORKSPACE"]) / "artifacts" / version
+          artifact_dir.mkdir(parents=True, exist_ok=True)
+
+          editor_log = runner_temp / f"Editor-{version}.log"
+          if editor_log.exists():
+              content = editor_log.read_text(encoding="utf-8", errors="replace")
+          else:
+              content = "Unity did not produce an Editor log.\n"
+
+          for variable in ("UNITY_EMAIL", "UNITY_PASSWORD"):
+              secret = os.environ.get(variable, "")
+              if secret:
+                  content = content.replace(secret, "***")
+
+          (artifact_dir / "Editor.log").write_text(content, encoding="utf-8")
+
+          if editor_log.exists():
+              editor_log.unlink()
+          PY
+
+      - name: Remove Unity Editor container
+        if: ${{ always() }}
+        run: docker rm --force unity-editor || true
+
+      - name: Upload test results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: editmode-results-${{ matrix.unityVersion }}
+          path: artifacts/${{ matrix.unityVersion }}
+          if-no-files-found: warn

@@ -16,3 +16,6 @@ MemoryCaptures/
 *.pdb
 *.mdb
 sysinfo.txt
+TestProject/Assets/DependencyAnalyzer/
+TestProject/Artifacts/
+artifacts/

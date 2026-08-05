@@ -1,20 +1,26 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Settings;
-using DependencyAnalyzer.Editor.Utils;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace DependencyAnalyzer.Editor.Scanners
 {
     public sealed partial class SerializedPropertyScanner : IDependencyScanner
     {
         private const string ScannerName = "Serialized Property Scanner";
-        private const string DebugErrorObjectPrefix = "Issue_Error_";
+        private readonly ISerializedObjectReferenceReader referenceReader;
+
+        public SerializedPropertyScanner()
+            : this(new UnitySerializedObjectReferenceReader())
+        {
+        }
+
+        internal SerializedPropertyScanner(ISerializedObjectReferenceReader referenceReader)
+        {
+            this.referenceReader = referenceReader ?? throw new ArgumentNullException(nameof(referenceReader));
+        }
 
         public string Name => ScannerName;
 
@@ -39,9 +45,20 @@ namespace DependencyAnalyzer.Editor.Scanners
                 }
 
                 progress?.Report(new ScanProgress(Name, component.GetType().Name, i + 1, components.Count));
-                ScanComponent(component, graph, cache, settings);
+                try
+                {
+                    ScanComponent(component, graph, cache, settings);
+                }
+                catch (Exception exception)
+                {
+                    graph.AddIssue(new DependencyScanIssueData(
+                        ScannerName,
+                        GetSafeObjectPath(component),
+                        "Failed to inspect component " + GetSafeComponentTypeName(component) + ": " + exception.Message,
+                        DependencyScanIssueSeverity.Warning));
+                }
 
-                if (i % batchSize == 0)
+                if ((i + 1) % batchSize == 0)
                 {
                     await Task.Yield();
                 }
@@ -51,19 +68,24 @@ namespace DependencyAnalyzer.Editor.Scanners
             return graph;
         }
 
-        private static void ScanComponent(
+        private void ScanComponent(
             Component component,
             DependencyGraphData graph,
             DependencyCache cache,
             AnalyzerSettings settings)
         {
-            var sourceNode = CreateSceneObjectNode(component, cache);
+            var isVisibleComponent = ShouldVisualizeComponent(component);
+            var sourceObject = isVisibleComponent ? (UnityEngine.Object)component : component.gameObject;
+            var sourceNode = CreateSceneObjectNode(sourceObject, cache);
             graph.AddOrUpdateNode(sourceNode);
+            var memberPrefix = isVisibleComponent ? string.Empty : GetHiddenComponentMemberPrefix(component);
 
-            SerializedObject serializedObject;
             try
             {
-                serializedObject = new SerializedObject(component);
+                foreach (var reference in referenceReader.Read(component))
+                {
+                    ScanObjectReference(reference, sourceNode, memberPrefix, graph, cache, settings);
+                }
             }
             catch (Exception exception)
             {
@@ -72,62 +94,128 @@ namespace DependencyAnalyzer.Editor.Scanners
                     sourceNode.Path,
                     "Failed to inspect component " + component.GetType().FullName + ": " + exception.Message,
                     DependencyScanIssueSeverity.Warning));
+            }
+        }
+
+        private static void ScanObjectReference(
+            SerializedObjectReferenceInfo reference,
+            DependencyNodeData sourceNode,
+            string memberPrefix,
+            DependencyGraphData graph,
+            DependencyCache cache,
+            AnalyzerSettings settings)
+        {
+            var memberName = memberPrefix + reference.PropertyPath;
+            if (reference.State == SerializedObjectReferenceState.None)
+            {
                 return;
             }
 
-            var property = serializedObject.GetIterator();
-            while (property.NextVisible(true))
+            if (reference.State == SerializedObjectReferenceState.Unreadable)
             {
-                if (!ShouldScanInspectorObjectReference(component, property))
+                graph.AddIssue(new DependencyScanIssueData(
+                    ScannerName,
+                    sourceNode.Path,
+                    "Failed to read " + memberName + ": " + reference.ErrorMessage,
+                    DependencyScanIssueSeverity.Warning));
+                return;
+            }
+
+            if (reference.State == SerializedObjectReferenceState.Valid)
+            {
+                if (reference.ReferencedObject is UnityEditor.MonoScript)
                 {
-                    continue;
+                    return;
                 }
 
-                var referencedObject = property.objectReferenceValue;
-                if (referencedObject != null)
+                try
                 {
-                    if (referencedObject is MonoScript)
-                    {
-                        continue;
-                    }
-
-                    var targetNode = CreateObjectReferenceNode(referencedObject, cache, settings);
+                    var targetNode = CreateObjectReferenceNode(reference.ReferencedObject, cache, settings);
                     if (targetNode == null)
                     {
-                        continue;
+                        return;
                     }
 
                     graph.AddOrUpdateNode(targetNode);
                     graph.AddEdge(new DependencyEdgeData(
                         sourceNode.Id,
                         targetNode.Id,
-                        property.propertyPath,
+                        memberName,
                         DependencyReferenceKind.SerializedProperty));
-                    continue;
+                }
+                catch (Exception exception)
+                {
+                    graph.AddIssue(new DependencyScanIssueData(
+                        ScannerName,
+                        sourceNode.Path,
+                        "Failed to resolve " + memberName + ": " + exception.Message,
+                        DependencyScanIssueSeverity.Warning));
                 }
 
-                if (property.objectReferenceInstanceIDValue != 0)
+                return;
+            }
+
+            var missingReferenceType = GetMissingReferenceTypeName(reference.SerializedTypeName);
+            var missingNode = AssetScanner.CreateMissingNode(
+                "missing:property:" + sourceNode.Id + ":" + memberName + ":" + reference.MissingInstanceId,
+                sourceNode.Path,
+                memberName,
+                missingReferenceType,
+                GetMissingReferenceNamespaceQualifiedTypeName(missingReferenceType),
+                GetMissingReferenceIconContentName(missingReferenceType),
+                GetMissingReferenceKind(missingReferenceType));
+            sourceNode.MarkMissingReferences();
+            graph.AddOrUpdateNode(missingNode);
+            graph.AddEdge(new DependencyEdgeData(
+                sourceNode.Id,
+                missingNode.Id,
+                memberName,
+                DependencyReferenceKind.SerializedProperty,
+                true));
+        }
+
+        private static string GetHiddenComponentMemberPrefix(Component component)
+        {
+            var typeName = GetSafeComponentTypeName(component);
+            var sameTypeComponents = component.gameObject.GetComponents(component.GetType());
+            if (sameTypeComponents.Length <= 1)
+            {
+                return typeName + ".";
+            }
+
+            for (var i = 0; i < sameTypeComponents.Length; i++)
+            {
+                if (sameTypeComponents[i] == component)
                 {
-                    var missingReferenceType = GetMissingReferenceTypeName(property);
-                    var missingNode = AssetScanner.CreateMissingNode(
-                        "missing:property:" + sourceNode.Id + ":" + property.propertyPath + ":" + property.objectReferenceInstanceIDValue,
-                        sourceNode.Path,
-                        property.propertyPath,
-                        missingReferenceType,
-                        GetMissingReferenceNamespaceQualifiedTypeName(missingReferenceType),
-                        GetMissingReferenceIconContentName(missingReferenceType),
-                        GetMissingReferenceKind(missingReferenceType));
-                    sourceNode.MarkMissingReferences();
-                    graph.AddOrUpdateNode(missingNode);
-                    graph.AddEdge(new DependencyEdgeData(
-                        sourceNode.Id,
-                        missingNode.Id,
-                        property.propertyPath,
-                        DependencyReferenceKind.SerializedProperty,
-                        true));
+                    return typeName + "[" + i + "].";
                 }
+            }
+
+            return typeName + ".";
+        }
+
+        private static string GetSafeComponentTypeName(Component component)
+        {
+            try
+            {
+                return component == null ? "Unknown Component" : component.GetType().FullName;
+            }
+            catch (Exception)
+            {
+                return "Unknown Component";
             }
         }
 
+        private static string GetSafeObjectPath(UnityEngine.Object unityObject)
+        {
+            try
+            {
+                return unityObject == null ? string.Empty : GetObjectPath(unityObject);
+            }
+            catch (Exception)
+            {
+                return string.Empty;
+            }
+        }
     }
 }
