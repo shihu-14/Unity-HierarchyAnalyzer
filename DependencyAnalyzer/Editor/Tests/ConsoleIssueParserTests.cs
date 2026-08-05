@@ -33,6 +33,50 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.AreEqual(DependencyScanIssueSeverity.Error, severity);
         }
 
+        [TestCase(1 << 0, TestName = "TryGetSeverity_ErrorMode")]
+        [TestCase(1 << 1, TestName = "TryGetSeverity_AssertMode")]
+        [TestCase(1 << 4, TestName = "TryGetSeverity_FatalMode")]
+        [TestCase(1 << 6, TestName = "TryGetSeverity_AssetImportErrorMode")]
+        [TestCase(1 << 8, TestName = "TryGetSeverity_ScriptingErrorMode")]
+        [TestCase(1 << 11, TestName = "TryGetSeverity_ScriptCompileErrorMode")]
+        [TestCase(1 << 17, TestName = "TryGetSeverity_ScriptingExceptionMode")]
+        [TestCase(1 << 20, TestName = "TryGetSeverity_GraphCompileErrorMode")]
+        [TestCase(1 << 21, TestName = "TryGetSeverity_ScriptingAssertionMode")]
+        public void TryGetSeverity_DetectsUnityConsoleErrorModes(int mode)
+        {
+            var entry = new ConsoleLogEntry("Mode-only entry", string.Empty, string.Empty, 0, mode, 0);
+
+            Assert.IsTrue(ConsoleIssueParser.TryGetSeverity(entry, out var severity));
+            Assert.AreEqual(DependencyScanIssueSeverity.Error, severity);
+        }
+
+        [TestCase(1 << 7, TestName = "TryGetSeverity_AssetImportWarningMode")]
+        [TestCase(1 << 9, TestName = "TryGetSeverity_ScriptingWarningMode")]
+        [TestCase(1 << 12, TestName = "TryGetSeverity_ScriptCompileWarningMode")]
+        public void TryGetSeverity_DetectsUnityConsoleWarningModes(int mode)
+        {
+            var entry = new ConsoleLogEntry("Mode-only entry", string.Empty, string.Empty, 0, mode, 0);
+
+            Assert.IsTrue(ConsoleIssueParser.TryGetSeverity(entry, out var severity));
+            Assert.AreEqual(DependencyScanIssueSeverity.Warning, severity);
+        }
+
+        [Test]
+        public void TryGetSeverity_DoesNotTreatVisualScriptingErrorBitAsError()
+        {
+            var entry = new ConsoleLogEntry("Mode-only entry", string.Empty, string.Empty, 0, 1 << 22, 0);
+
+            Assert.IsFalse(ConsoleIssueParser.TryGetSeverity(entry, out _));
+        }
+
+        [Test]
+        public void TryGetSeverity_DoesNotTreatRegularLogAsIssue()
+        {
+            var entry = new ConsoleLogEntry("Regular log", string.Empty, string.Empty, 0, 1 << 2, 0);
+
+            Assert.IsFalse(ConsoleIssueParser.TryGetSeverity(entry, out _));
+        }
+
         [Test]
         public void ExtractLineNumber_ReadsUnityPathLine()
         {

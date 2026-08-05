@@ -146,6 +146,23 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.IsEmpty(panelEntries[0].TargetNodeId);
         }
 
+        [Test]
+        public void AddConsoleIssues_DoesNotRegisterRegularLog()
+        {
+            var graph = new DependencyGraphData();
+            var entry = CreateEntry("Regular log", string.Empty, string.Empty, 0, 0, 1 << 2, 0, 60, 0, 1);
+
+            ConsoleIssueScanner.AddConsoleIssues(
+                graph,
+                new DependencyCache(),
+                new FixedConsoleLogReader(ConsoleLogReadResult.Success(new[] { entry })));
+
+            Assert.AreEqual(0, graph.Issues.Count);
+            var counts = IssuePanelEntryBuilder.CountByOrigin(IssuePanelEntryBuilder.Build(graph));
+            Assert.AreEqual(0, counts.ConsoleErrors);
+            Assert.AreEqual(0, counts.ConsoleWarnings);
+        }
+
         private static ConsoleLogEntry CreateEntry(
             string message,
             string file,
@@ -181,7 +198,6 @@ namespace DependencyAnalyzer.Editor.Tests
                 "Source",
                 "GameObject",
                 "UnityEngine.GameObject",
-                0L,
                 Array.Empty<string>(),
                 "GameObject Icon",
                 DependencyNodeKind.SceneObject,

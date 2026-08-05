@@ -9,5 +9,7 @@
 - Remove project-specific component health guesses from production analysis.
 - Read Console issues only from the current Unity Console snapshot instead of Editor.log.
 - Preserve unlinked Console issues and available file, line, stack trace, context, and occurrence metadata.
-- Remove file size and dependency count badges from node presentation while retaining reference counts in tooltips.
+- Match Unity Console error and warning mode classification, including graph compile errors.
+- Separate current Console row counts from Analyzer issue counts in the Issues header.
+- Remove obsolete asset-size metadata and dependency count badges while retaining reference counts in tooltips.
 - Show asset labels in node tooltips only when an Asset has non-empty labels.

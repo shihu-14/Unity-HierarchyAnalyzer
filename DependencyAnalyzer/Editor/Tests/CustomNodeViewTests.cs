@@ -9,15 +9,13 @@ namespace DependencyAnalyzer.Editor.Tests
     public sealed class CustomNodeViewTests
     {
         [Test]
-        public void Tooltip_OmitsFileSizeAndKeepsReferenceCounts()
+        public void Tooltip_KeepsReferenceCounts()
         {
             var node = CreateNode(DependencyNodeKind.Asset, Array.Empty<string>());
             node.SetReferenceCounts(3, 4);
 
             var view = CreateView(node);
 
-            StringAssert.DoesNotContain("File Size", view.tooltip);
-            StringAssert.DoesNotContain("0 bytes", view.tooltip);
             StringAssert.Contains("Dependencies: 3", view.tooltip);
             StringAssert.Contains("Used By: 4", view.tooltip);
         }
@@ -77,7 +75,6 @@ namespace DependencyAnalyzer.Editor.Tests
                 "Test Node",
                 kind.ToString(),
                 "Test." + kind,
-                1024L,
                 labels,
                 "DefaultAsset Icon",
                 kind);

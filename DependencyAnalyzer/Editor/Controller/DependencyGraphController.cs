@@ -139,12 +139,12 @@ namespace DependencyAnalyzer.Editor.Controller
             issueWarningCountLabel = ConfigureIssueFilterButton(
                 issueWarningFilterButton,
                 DependencyScanIssueSeverity.Warning,
-                "Toggle warnings",
+                "Toggle all Console and Analyzer warnings",
                 ToggleIssueWarnings);
             issueErrorCountLabel = ConfigureIssueFilterButton(
                 issueErrorFilterButton,
                 DependencyScanIssueSeverity.Error,
-                "Toggle errors",
+                "Toggle all Console and Analyzer errors",
                 ToggleIssueErrors);
 
             if (issueToggleButton != null)

@@ -39,7 +39,8 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                     DependencyScanIssueSeverity.Warning,
                     node.Id,
                     IconUtility.GetIcon(node),
-                    IconUtility.GetNodeAccentColor(node)));
+                    IconUtility.GetNodeAccentColor(node),
+                    IssuePanelEntryOrigin.Analyzer));
             }
 
             foreach (var issue in graphData.Issues)
@@ -53,7 +54,7 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                 if (string.IsNullOrEmpty(targetNodeId)
                     || !graphData.TryGetNode(targetNodeId, out var targetNode))
                 {
-                    if (IsConsoleIssue(issue))
+                    if (ShouldDisplayWithoutTarget(issue))
                     {
                         entries.Add(new IssuePanelEntry(
                             IssueTextFormatter.FormatTitle(issue.ScannerName) + " (No related node)",
@@ -61,7 +62,8 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                             issue.Severity,
                             string.Empty,
                             null,
-                            new Color(0.38f, 0.42f, 0.47f)));
+                            new Color(0.38f, 0.42f, 0.47f),
+                            GetOrigin(issue)));
                     }
 
                     continue;
@@ -73,7 +75,8 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                     issue.Severity,
                     targetNodeId,
                     IconUtility.GetIcon(targetNode),
-                    IconUtility.GetNodeAccentColor(targetNode)));
+                    IconUtility.GetNodeAccentColor(targetNode),
+                    GetOrigin(issue)));
             }
 
             return entries
@@ -81,6 +84,47 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                 .ThenBy(entry => entry.Title, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(entry => entry.Detail, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        public static IssuePanelCounts CountByOrigin(IReadOnlyList<IssuePanelEntry> entries)
+        {
+            var consoleErrors = 0;
+            var consoleWarnings = 0;
+            var analyzerErrors = 0;
+            var analyzerWarnings = 0;
+            if (entries != null)
+            {
+                for (var i = 0; i < entries.Count; i++)
+                {
+                    var entry = entries[i];
+                    var isError = entry.Severity == DependencyScanIssueSeverity.Error;
+                    if (entry.Origin == IssuePanelEntryOrigin.Console)
+                    {
+                        if (isError)
+                        {
+                            consoleErrors++;
+                        }
+                        else
+                        {
+                            consoleWarnings++;
+                        }
+                    }
+                    else if (isError)
+                    {
+                        analyzerErrors++;
+                    }
+                    else
+                    {
+                        analyzerWarnings++;
+                    }
+                }
+            }
+
+            return new IssuePanelCounts(
+                consoleErrors,
+                consoleWarnings,
+                analyzerErrors,
+                analyzerWarnings);
         }
 
         private static string BuildIssueDetail(DependencyScanIssueData issue)
@@ -120,7 +164,20 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
             return string.Join("\n", parts);
         }
 
-        private static bool IsConsoleIssue(DependencyScanIssueData issue)
+        private static IssuePanelEntryOrigin GetOrigin(DependencyScanIssueData issue)
+        {
+            return IsConsoleSnapshotIssue(issue)
+                ? IssuePanelEntryOrigin.Console
+                : IssuePanelEntryOrigin.Analyzer;
+        }
+
+        private static bool IsConsoleSnapshotIssue(DependencyScanIssueData issue)
+        {
+            return issue != null
+                && string.Equals(issue.ScannerName, "Unity Console", StringComparison.Ordinal);
+        }
+
+        private static bool ShouldDisplayWithoutTarget(DependencyScanIssueData issue)
         {
             return issue != null
                 && (string.Equals(issue.ScannerName, "Unity Console", StringComparison.Ordinal)

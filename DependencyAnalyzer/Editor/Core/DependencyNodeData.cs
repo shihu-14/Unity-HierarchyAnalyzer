@@ -25,7 +25,6 @@ namespace DependencyAnalyzer.Editor.Core
             string displayName,
             string typeName,
             string namespaceQualifiedTypeName,
-            long fileSizeBytes,
             IEnumerable<string> labels,
             string iconContentName,
             DependencyNodeKind kind,
@@ -39,7 +38,6 @@ namespace DependencyAnalyzer.Editor.Core
             DisplayName = string.IsNullOrEmpty(displayName) ? "(Unnamed)" : displayName;
             TypeName = string.IsNullOrEmpty(typeName) ? "Unknown" : typeName;
             NamespaceQualifiedTypeName = string.IsNullOrEmpty(namespaceQualifiedTypeName) ? TypeName : namespaceQualifiedTypeName;
-            FileSizeBytes = Math.Max(0L, fileSizeBytes);
             assetLabels = labels == null ? new List<string>() : new List<string>(labels);
             IconContentName = string.IsNullOrEmpty(iconContentName) ? "DefaultAsset Icon" : iconContentName;
             Kind = kind;
@@ -54,7 +52,6 @@ namespace DependencyAnalyzer.Editor.Core
         public string DisplayName { get; }
         public string TypeName { get; }
         public string NamespaceQualifiedTypeName { get; }
-        public long FileSizeBytes { get; }
         public IReadOnlyList<string> AssetLabels => assetLabels;
         public string IconContentName { get; }
         public DependencyNodeKind Kind { get; }

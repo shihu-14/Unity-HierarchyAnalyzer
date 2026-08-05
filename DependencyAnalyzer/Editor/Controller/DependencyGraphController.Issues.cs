@@ -28,13 +28,15 @@ namespace DependencyAnalyzer.Editor.Controller
             var warningEntries = entries
                 .Where(entry => entry.Severity == DependencyScanIssueSeverity.Warning)
                 .ToList();
+            var counts = IssuePanelEntryBuilder.CountByOrigin(entries);
 
             if (issueTitleLabel != null)
             {
-                issueTitleLabel.text = "Issues";
+                issueTitleLabel.text = counts.DisplayText;
+                issueTitleLabel.tooltip = "Console counts current Console rows. Analyzer counts Missing References and scanner issues.";
             }
 
-            UpdateIssueFilterButtons(errorEntries.Count, warningEntries.Count);
+            UpdateIssueFilterButtons(counts.ErrorCount, counts.WarningCount);
             issueList.contentContainer.Clear();
             if (entries.Count == 0)
             {

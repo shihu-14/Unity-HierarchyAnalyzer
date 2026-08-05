@@ -28,6 +28,7 @@ Unity 6向けのEditor専用依存関係ビューアーです。現在ロード�
   - context objectやAsset pathから特定できるlogはgraph nodeへ関連付ける
   - nodeを特定できないlogも、クリック不能な`No related node`行としてIssues panelへ保持
   - `Editor.log`は解析対象にしない
+  - Issues headerでConsole由来とAnalyzer独自のerror/warning件数を分けて表示
 
 このツールが判定するのはserialized referenceとして確認できる一般的な事実です。「このAudioSourceにはAudioClipが必要」など、プロジェクト固有の用途や正しさは診断しません。
 
@@ -147,7 +148,7 @@ Edit Mode Testは、次の一般的な依存関係事実を検証します。
 - component/scanner失敗後の継続と部分結果保持
 - Missing nodeのIssues panel登録
 - 現在のUnity Console snapshot、Console Clear後の再解析、node未特定log、重複log
-- node tooltipのFile Size非表示、Asset Labels表示条件、count badge非表示
+- node tooltipのAsset Labels表示条件、reference count維持、count badge非表示
 
 通常fixtureはtest中に生成して削除します。コードだけで安定再現しにくいMissing状態は、`Editor/Tests/Fixtures`の小さなPrefab YAMLと固定`.meta`で保持します。
 
@@ -161,7 +162,7 @@ GitHub ActionsはAssets-copy導入を再現する最小`TestProject`を作り、
 - Addressables、`Resources.Load`、独自文字列IDなどの非serialized参照は対象外です。
 - Package内scriptなど、表示policyから外れるComponentはnodeを省略する場合があります。serialized参照自体は所有GameObjectをsourceとして解析します。
 - Console連携はUnity内部APIをreflectionで読み取ります。内部API取得に失敗した場合は、原因を`Unity Console Reader` Issueとして表示します。
-- ConsoleのCollapseが有効な場合、同一logはIssues panelでも1行になり、発生回数を詳細へ保持します。Console toolbarの発生数とIssues panelの行数は一致しない場合があります。
+- Console件数は現在のConsole snapshotに含まれるwarning/error行数です。Collapseが有効な場合は1表示行を1件とし、発生回数は`Occurrences`として詳細へ保持します。Missing Reference、scanner issue、Console Reader failureはAnalyzer件数へ含めます。
 - 検索`Filter` toggleとscanのCancel buttonはUI未提供です。
 - UPM package化と`package.json`追加は行っていません。配布方式はAssets folder copyです。
 
