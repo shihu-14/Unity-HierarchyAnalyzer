@@ -49,6 +49,28 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.AreEqual(missing.Id, entries[0].TargetNodeId);
         }
 
+        [Test]
+        public void IssuePanelEntryBuilder_IncludesTypedMissingTargetsFromEdges()
+        {
+            var graph = new DependencyGraphData();
+            var source = CreateNode("source", "Scene/Object", "Object", "Object", DependencyNodeKind.SceneObject);
+            var missing = CreateNode("missing-material", "Scene/Object", "material", "Material", DependencyNodeKind.Asset);
+            missing.MarkMissingReferences();
+            graph.AddOrUpdateNode(source);
+            graph.AddOrUpdateNode(missing);
+            graph.AddEdge(new DependencyEdgeData(
+                source.Id,
+                missing.Id,
+                "m_Materials.Array.data[0]",
+                DependencyReferenceKind.SerializedProperty,
+                true));
+
+            var entries = IssuePanelEntryBuilder.Build(graph);
+
+            Assert.AreEqual(1, entries.Count);
+            Assert.AreEqual(missing.Id, entries[0].TargetNodeId);
+        }
+
         private static DependencyNodeData CreateNode(string id, string path, string name, string type, DependencyNodeKind kind)
         {
             return new DependencyNodeData(

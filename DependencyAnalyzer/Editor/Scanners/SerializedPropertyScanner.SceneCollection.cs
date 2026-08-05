@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Settings;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -19,70 +18,159 @@ namespace DependencyAnalyzer.Editor.Scanners
             var components = new List<Component>();
             for (var sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
             {
-                var scene = SceneManager.GetSceneAt(sceneIndex);
+                Scene scene;
+                try
+                {
+                    scene = SceneManager.GetSceneAt(sceneIndex);
+                }
+                catch (Exception exception)
+                {
+                    graph.AddIssue(new DependencyScanIssueData(
+                        ScannerName,
+                        "Scene [" + sceneIndex + "]",
+                        "Failed to access scene: " + exception.Message,
+                        DependencyScanIssueSeverity.Warning));
+                    continue;
+                }
+
                 if (!scene.isLoaded)
                 {
                     continue;
                 }
 
-                var roots = scene.GetRootGameObjects();
+                GameObject[] roots;
+                try
+                {
+                    roots = scene.GetRootGameObjects();
+                }
+                catch (Exception exception)
+                {
+                    graph.AddIssue(new DependencyScanIssueData(
+                        ScannerName,
+                        scene.path,
+                        "Failed to read scene roots: " + exception.Message,
+                        DependencyScanIssueSeverity.Warning));
+                    continue;
+                }
+
                 for (var i = 0; i < roots.Length; i++)
                 {
-                    foreach (var gameObject in Traverse(roots[i]))
+                    try
                     {
-                        var gameObjectNode = CreateSceneObjectNode(gameObject, cache);
-                        graph.AddOrUpdateNode(gameObjectNode);
-                        AddHierarchyEdge(gameObject, gameObjectNode, graph, cache);
-                        AddPrefabSourceDependency(gameObject, gameObjectNode, graph, cache, settings);
-                        AddGameObjectHealthIssues(gameObject, gameObjectNode, graph);
-
-                        var attachedComponents = gameObject.GetComponents<Component>();
-                        for (var componentIndex = 0; componentIndex < attachedComponents.Length; componentIndex++)
+                        foreach (var gameObject in Traverse(roots[i]))
                         {
-                            var component = attachedComponents[componentIndex];
-                            if (component == null)
+                            try
                             {
-                                var missingNode = AssetScanner.CreateMissingNode(
-                                    "missing:component:" + gameObjectNode.Id + ":" + componentIndex,
-                                    gameObjectNode.Path,
-                                    "Missing MonoBehaviour",
-                                    "Script",
-                                    "UnityEngine.MonoBehaviour",
-                                    "cs Script Icon",
-                                    DependencyNodeKind.Component);
-                                gameObjectNode.MarkMissingReferences();
-                                graph.AddOrUpdateNode(missingNode);
-                                graph.AddEdge(new DependencyEdgeData(
-                                    gameObjectNode.Id,
-                                    missingNode.Id,
-                                    "Missing Component",
-                                    DependencyReferenceKind.Hierarchy,
-                                    true));
-                                continue;
+                                CollectGameObject(
+                                    gameObject,
+                                    components,
+                                    graph,
+                                    cache,
+                                    settings);
                             }
-
-                            AddComponentHealthIssues(component, gameObjectNode, graph);
-
-                            if (!ShouldVisualizeComponent(component))
+                            catch (Exception exception)
                             {
-                                AddHiddenComponentMaterialDependencies(component, gameObjectNode, graph, cache, settings);
-                                continue;
+                                graph.AddIssue(new DependencyScanIssueData(
+                                    ScannerName,
+                                    GetSafeObjectPath(gameObject),
+                                    "Failed to collect object " + GetSafeObjectName(gameObject) + ": " + exception.Message,
+                                    DependencyScanIssueSeverity.Warning));
                             }
-
-                            components.Add(component);
-                            var componentNode = CreateSceneObjectNode(component, cache);
-                            graph.AddOrUpdateNode(componentNode);
-                            graph.AddEdge(new DependencyEdgeData(
-                                gameObjectNode.Id,
-                                componentNode.Id,
-                                string.Empty,
-                                DependencyReferenceKind.Component));
                         }
+                    }
+                    catch (Exception exception)
+                    {
+                        graph.AddIssue(new DependencyScanIssueData(
+                            ScannerName,
+                            scene.path,
+                            "Failed to traverse root " + GetSafeObjectName(roots[i]) + ": " + exception.Message,
+                            DependencyScanIssueSeverity.Warning));
                     }
                 }
             }
 
             return components;
+        }
+
+        private static void CollectGameObject(
+            GameObject gameObject,
+            List<Component> components,
+            DependencyGraphData graph,
+            DependencyCache cache,
+            AnalyzerSettings settings)
+        {
+            var gameObjectNode = CreateSceneObjectNode(gameObject, cache);
+            graph.AddOrUpdateNode(gameObjectNode);
+            AddHierarchyEdge(gameObject, gameObjectNode, graph, cache);
+            AddPrefabSourceDependency(gameObject, gameObjectNode, graph, cache, settings);
+
+            var attachedComponents = gameObject.GetComponents<Component>();
+            for (var componentIndex = 0; componentIndex < attachedComponents.Length; componentIndex++)
+            {
+                var component = attachedComponents[componentIndex];
+                try
+                {
+                    CollectComponent(
+                        component,
+                        componentIndex,
+                        gameObjectNode,
+                        components,
+                        graph,
+                        cache);
+                }
+                catch (Exception exception)
+                {
+                    graph.AddIssue(new DependencyScanIssueData(
+                        ScannerName,
+                        gameObjectNode.Path,
+                        "Failed to collect component " + GetSafeComponentTypeName(component) + ": " + exception.Message,
+                        DependencyScanIssueSeverity.Warning));
+                }
+            }
+        }
+
+        private static void CollectComponent(
+            Component component,
+            int componentIndex,
+            DependencyNodeData gameObjectNode,
+            List<Component> components,
+            DependencyGraphData graph,
+            DependencyCache cache)
+        {
+            if (component == null)
+            {
+                var missingNode = AssetScanner.CreateMissingNode(
+                    "missing:component:" + gameObjectNode.Id + ":" + componentIndex,
+                    gameObjectNode.Path,
+                    "Missing MonoBehaviour",
+                    "Script",
+                    "UnityEngine.MonoBehaviour",
+                    "cs Script Icon",
+                    DependencyNodeKind.Component);
+                gameObjectNode.MarkMissingReferences();
+                graph.AddOrUpdateNode(missingNode);
+                graph.AddEdge(new DependencyEdgeData(
+                    gameObjectNode.Id,
+                    missingNode.Id,
+                    "Missing Component [" + componentIndex + "]",
+                    DependencyReferenceKind.Component,
+                    true));
+                return;
+            }
+
+            components.Add(component);
+            if (!ShouldVisualizeComponent(component))
+            {
+                return;
+            }
+
+            var componentNode = CreateSceneObjectNode(component, cache);
+            graph.AddOrUpdateNode(componentNode);
+            graph.AddEdge(new DependencyEdgeData(
+                gameObjectNode.Id,
+                componentNode.Id,
+                string.Empty,
+                DependencyReferenceKind.Component));
         }
 
         private static void AddHierarchyEdge(
@@ -146,6 +234,20 @@ namespace DependencyAnalyzer.Editor.Scanners
                 {
                     yield return child;
                 }
+            }
+        }
+
+        private static string GetSafeObjectName(UnityEngine.Object unityObject)
+        {
+            try
+            {
+                return unityObject == null || string.IsNullOrEmpty(unityObject.name)
+                    ? "(Unknown)"
+                    : unityObject.name;
+            }
+            catch (Exception)
+            {
+                return "(Unknown)";
             }
         }
     }

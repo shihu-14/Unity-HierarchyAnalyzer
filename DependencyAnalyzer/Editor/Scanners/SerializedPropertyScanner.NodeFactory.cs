@@ -29,7 +29,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                     return null;
                 }
 
-                return AssetScanner.CreateAssetNode(assetPath, cache);
+                return AssetScanner.CreateAssetNode(unityObject, cache);
             }
 
             if (unityObject is GameObject || unityObject is Component)
@@ -133,15 +133,15 @@ namespace DependencyAnalyzer.Editor.Scanners
             return type.Name;
         }
 
-        private static string GetMissingReferenceTypeName(SerializedProperty property)
+        private static string GetMissingReferenceTypeName(string serializedPropertyType)
         {
-            if (property == null || string.IsNullOrEmpty(property.type))
+            if (string.IsNullOrEmpty(serializedPropertyType))
             {
                 return "Missing Reference";
             }
 
-            const string pointerPrefix = "PPtr<$";
-            var type = property.type;
+            const string pointerPrefix = "PPtr<";
+            var type = serializedPropertyType;
             var start = type.IndexOf(pointerPrefix, StringComparison.Ordinal);
             if (start >= 0)
             {
@@ -149,7 +149,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 var end = type.IndexOf('>', start);
                 if (end > start)
                 {
-                    return NormalizeMissingReferenceTypeName(type.Substring(start, end - start));
+                    return NormalizeMissingReferenceTypeName(type.Substring(start, end - start).TrimStart('$'));
                 }
             }
 
@@ -296,10 +296,9 @@ namespace DependencyAnalyzer.Editor.Scanners
 
         private static string BuildObjectId(string prefix, UnityEngine.Object unityObject, GlobalObjectId globalObjectId)
         {
-            var globalObjectIdText = globalObjectId.ToString();
-            if (!string.IsNullOrEmpty(globalObjectIdText))
+            if (globalObjectId.identifierType != 0)
             {
-                return prefix + ":" + globalObjectIdText + ":" + unityObject.GetInstanceID();
+                return prefix + ":" + globalObjectId;
             }
 
             return prefix + ":instance:" + unityObject.GetInstanceID();

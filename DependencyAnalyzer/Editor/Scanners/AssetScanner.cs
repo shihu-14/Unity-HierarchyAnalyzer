@@ -12,10 +12,16 @@ namespace DependencyAnalyzer.Editor.Scanners
         internal static DependencyNodeData CreateAssetNode(string assetPath, DependencyCache cache)
         {
             var mainAsset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-            var type = mainAsset != null ? mainAsset.GetType() : AssetDatabase.GetMainAssetTypeAtPath(assetPath);
-            var globalObjectId = mainAsset != null ? GlobalObjectId.GetGlobalObjectIdSlow(mainAsset) : default;
-            var id = mainAsset != null ? globalObjectId.ToString() : "asset:" + assetPath;
-            var labels = mainAsset != null ? AssetDatabase.GetLabels(mainAsset) : Array.Empty<string>();
+            if (mainAsset != null)
+            {
+                return CreateAssetNode(mainAsset, cache);
+            }
+
+            var type = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
+            var globalObjectId = default(GlobalObjectId);
+            var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
+            var id = string.IsNullOrEmpty(assetGuid) ? "asset:path:" + assetPath : "asset:" + assetGuid + ":0";
+            var labels = Array.Empty<string>();
             var typeName = type != null ? type.Name : Path.GetExtension(assetPath).TrimStart('.');
             var typeFullName = type != null ? type.FullName : typeName;
             var displayTypeName = GetDisplayTypeName(assetPath, typeName);
@@ -31,7 +37,45 @@ namespace DependencyAnalyzer.Editor.Scanners
                 labels,
                 GetIconContentName(assetPath, type),
                 DependencyNodeKind.Asset,
-                mainAsset != null ? mainAsset.GetInstanceID() : 0);
+                0);
+
+            return cache.Store(node);
+        }
+
+        internal static DependencyNodeData CreateAssetNode(UnityEngine.Object assetObject, DependencyCache cache)
+        {
+            if (assetObject == null)
+            {
+                throw new ArgumentNullException(nameof(assetObject));
+            }
+
+            var assetPath = AssetDatabase.GetAssetPath(assetObject);
+            if (string.IsNullOrEmpty(assetPath))
+            {
+                throw new ArgumentException("Object is not a project asset.", nameof(assetObject));
+            }
+
+            var type = assetObject.GetType();
+            var globalObjectId = GlobalObjectId.GetGlobalObjectIdSlow(assetObject);
+            var id = BuildStableAssetId(assetObject, assetPath, globalObjectId);
+            var labels = AssetDatabase.GetLabels(assetObject);
+            var typeName = type.Name;
+            var typeFullName = type.FullName;
+            var isMainAsset = AssetDatabase.IsMainAsset(assetObject);
+            var displayTypeName = isMainAsset ? GetDisplayTypeName(assetPath, typeName) : typeName;
+            var displayTypeFullName = isMainAsset ? GetDisplayTypeFullName(assetPath, typeFullName) : typeFullName;
+            var node = new DependencyNodeData(
+                id,
+                globalObjectId,
+                assetPath,
+                GetDisplayName(assetPath, assetObject),
+                displayTypeName,
+                displayTypeFullName,
+                GetFileSize(assetPath),
+                labels,
+                isMainAsset ? GetIconContentName(assetPath, type) : IconUtility.GetIconContentName(type),
+                DependencyNodeKind.Asset,
+                assetObject.GetInstanceID());
 
             return cache.Store(node);
         }
@@ -113,6 +157,18 @@ namespace DependencyAnalyzer.Editor.Scanners
             return assetPath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
                 ? Path.GetFileName(assetPath)
                 : Path.GetFileNameWithoutExtension(assetPath);
+        }
+
+        private static string GetDisplayName(string assetPath, UnityEngine.Object assetObject)
+        {
+            if (AssetDatabase.IsMainAsset(assetObject)
+                || assetPath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
+                || string.IsNullOrEmpty(assetObject.name))
+            {
+                return GetDisplayName(assetPath);
+            }
+
+            return assetObject.name;
         }
 
         private static long GetFileSize(string assetPath)
@@ -209,6 +265,25 @@ namespace DependencyAnalyzer.Editor.Scanners
 
                 return hash.ToString("x8");
             }
+        }
+
+        private static string BuildStableAssetId(
+            UnityEngine.Object assetObject,
+            string assetPath,
+            GlobalObjectId globalObjectId)
+        {
+            if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(assetObject, out string guid, out long localId)
+                && !string.IsNullOrEmpty(guid))
+            {
+                return "asset:" + guid + ":" + localId;
+            }
+
+            if (globalObjectId.identifierType != 0)
+            {
+                return "asset:" + globalObjectId;
+            }
+
+            return "asset:path:" + assetPath;
         }
     }
 }

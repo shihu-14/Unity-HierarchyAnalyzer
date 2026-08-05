@@ -1,13 +1,8 @@
 {
-  "name": "DependencyAnalyzer.Editor.Tests",
+  "name": "DependencyAnalyzer.TestFixtures",
   "rootNamespace": "DependencyAnalyzer.Editor.Tests",
-  "references": [
-    "DependencyAnalyzer.Editor",
-    "DependencyAnalyzer.TestFixtures"
-  ],
-  "includePlatforms": [
-    "Editor"
-  ],
+  "references": [],
+  "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
   "overrideReferences": false,
