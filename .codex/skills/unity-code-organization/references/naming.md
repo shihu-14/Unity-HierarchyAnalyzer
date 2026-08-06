@@ -83,14 +83,13 @@ For `MonoBehaviour` scripts, preserve Unity's official file/type naming requirem
 
 Use BEM-style USS class names where they match existing UI Toolkit conventions. Prefer semantic roles and relationships over visual details. Omit `Button` or `Label` only when the remaining UXML/USS name stays clear. Keep UXML names, USS classes, and C# queries synchronized and searchable.
 
-## Candidate Example: `DependencyNodeData`
+## Candidate Example: `DependencyNode`
 
 Do not use this example as a predetermined rename. Inspect the current type and all usages first.
 
 | Candidate | Strength | Risk to investigate |
 |---|---|---|
-| `DependencyNodeData` | Explicitly identifies dependency-domain node data | `Data` may be redundant if the type owns meaningful behavior or invariants |
-| `DependencyNode` | Retains domain precision and removes a generic suffix | May imply the domain entity rather than its stored representation |
+| `DependencyNode` | Identifies the dependency-domain node entity without a generic suffix | Confirm that the type owns the domain entity rather than a transport snapshot |
 | `GraphNode` | Communicates graph membership | May collide conceptually with UI render nodes or other graphs |
 | `NodeModel` | Signals a representation | Generic `Node` and ambiguous `Model` reduce search precision |
 | `Node` | Short | Too generic and collision-prone; reject unless a narrowly scoped context proves otherwise |

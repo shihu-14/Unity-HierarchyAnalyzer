@@ -35,7 +35,7 @@ Inspect contents and usages before changing any folder. The current intended rol
 | `Editor/Settings` | Store analyzer configuration and expose Project Settings UI |
 | `Editor/Tests` | Edit Mode Tests and fixed broken-data fixtures |
 | `Tests/Runtime` | Test-only components that must compile outside the Editor assembly to attach to GameObjects |
-| `Editor/Utils` | Current cross-cutting utilities; evaluate each type's actual consumers before proposing a replacement |
+| Editor root | EditorWindow and assembly-lifecycle guards |
 
 The production assembly is Editor-only. The runtime test-fixture assembly is not production runtime functionality.
 

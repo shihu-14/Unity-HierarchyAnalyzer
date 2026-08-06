@@ -13,3 +13,6 @@
 - Separate current Console row counts from Analyzer issue counts in the Issues header.
 - Remove obsolete asset-size metadata and dependency count badges while retaining reference counts in tooltips.
 - Show asset labels in node tooltips only when an Asset has non-empty labels.
+- Rename public graph, node, edge, issue, cache, window, and graph-view element types to reflect their domain responsibilities.
+- Split asset and diagnostic node creation, serialized-reference reading policies, icon loading, and node styling into focused types.
+- Remove the mixed-responsibility `Editor/Utils` folder and organize Edit Mode Tests by production responsibility.
