@@ -106,7 +106,8 @@ Project Settings > Dependency Analyzer
 DependencyAnalyzer/
 ├── Editor/
 │   ├── DependencyAnalyzer.Editor.asmdef
-│   ├── DependencyWindow.cs
+│   ├── DependencyGraphWindow.cs
+│   ├── UnityTempDirectoryGuard.cs
 │   ├── Controller/
 │   │   └── Issues/
 │   ├── Core/
@@ -114,22 +115,26 @@ DependencyAnalyzer/
 │   │   └── Issues/
 │   ├── Settings/
 │   ├── Tests/
-│   │   └── Fixtures/
+│   │   ├── Controller/
+│   │   ├── Core/
+│   │   ├── Fixtures/
+│   │   ├── Scanners/
+│   │   └── UI/
 │   ├── UI/
 │   │   ├── Controls/
 │   │   ├── GraphView/
 │   │   ├── Icons/
+│   │   ├── Issues/
 │   │   └── Styles/
-│   └── Utils/
 └── Tests/
     └── Runtime/
 ```
 
-- `Core`: graph/node/edge/issue/cache data
-- `Scanners`: Scene、serialized reference、Asset、Console issueの収集
+- `Core`: dependency graph/node/edge/issueとnode cache
+- `Scanners`: Scene、serialized reference、Asset、Console issueの収集とnode生成
 - `Controller`: scan orchestration、状態、検索、selection sync、Issues panel
 - `UI`: UI Toolkitによるgraph/node/edge/toolbar/panel
-- `Editor/Tests`: Edit Mode Testと壊れたPrefab Fixture
+- `Editor/Tests`: production責務別のEdit Mode Testと壊れたPrefab Fixture
 - `Tests/Runtime`: GameObjectへattachするテスト専用Component assembly
 
 production codeは`DependencyAnalyzer.Editor.asmdef`に分離され、Runtime buildには含まれません。`DependencyAnalyzer.TestFixtures`はUnity Test FrameworkのTest Assemblyとしてのみ利用します。

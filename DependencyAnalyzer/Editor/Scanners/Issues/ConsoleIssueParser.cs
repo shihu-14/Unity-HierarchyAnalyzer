@@ -20,6 +20,9 @@ namespace DependencyAnalyzer.Editor.Scanners.Issues
             (1 << 7)  // AssetImportWarning
             | (1 << 9)  // ScriptingWarning
             | (1 << 12); // ScriptCompileWarning
+        private const int LogModeMask =
+            (1 << 2)  // Log
+            | (1 << 10); // ScriptingLog
 
         public static bool TryGetSeverity(ConsoleLogEntry entry, out DependencyScanIssueSeverity severity)
         {
@@ -33,6 +36,12 @@ namespace DependencyAnalyzer.Editor.Scanners.Issues
             {
                 severity = DependencyScanIssueSeverity.Warning;
                 return true;
+            }
+
+            if ((entry.Mode & LogModeMask) != 0)
+            {
+                severity = DependencyScanIssueSeverity.Warning;
+                return false;
             }
 
             var text = entry.Condition ?? string.Empty;

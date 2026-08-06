@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -11,14 +10,14 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
     public sealed partial class DependencyGraphView
     {
 
-        private void HandleNodeSelected(DependencyNodeData node)
+        private void HandleNodeSelected(DependencyNode node)
         {
             focusedNodeId = node.Id;
             focusedViewId = null;
             NodeSelected?.Invoke(node);
         }
 
-        private void HandleNodeToggleRequested(CustomNodeView nodeView)
+        private void HandleNodeToggleRequested(DependencyNodeView nodeView)
         {
             if (nodeView == null || string.IsNullOrEmpty(nodeView.Data.Id))
             {
@@ -39,7 +38,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             EnsureViewVisible(nodeView.ViewId);
         }
 
-        private void HandleMenuToggleRequested(CustomNodeView nodeView)
+        private void HandleMenuToggleRequested(DependencyNodeView nodeView)
         {
             if (nodeView == null || string.IsNullOrEmpty(nodeView.ViewId))
             {
@@ -60,7 +59,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             EnsureViewVisible(nodeView.ViewId);
         }
 
-        private void HandleParentJumpRequested(CustomNodeView nodeView)
+        private void HandleParentJumpRequested(DependencyNodeView nodeView)
         {
             if (nodeView == null)
             {
@@ -95,7 +94,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             FlashView(renderNode.ViewId, movedView);
         }
 
-        private void HandleNodeMoved(CustomNodeView nodeView, Vector2 nextPosition)
+        private void HandleNodeMoved(DependencyNodeView nodeView, Vector2 nextPosition)
         {
             if (nodeView == null || !nodeRects.ContainsKey(nodeView.ViewId))
             {
@@ -273,10 +272,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
         }
 
-        private DependencyEdgeData GetPrimaryIncomingEdge(string nodeId)
+        private DependencyEdge GetPrimaryIncomingEdge(string nodeId)
         {
             var incomingEdges = GetIncomingEdges(nodeId);
-            DependencyEdgeData bestEdge = null;
+            DependencyEdge bestEdge = null;
             var bestPriority = int.MaxValue;
             for (var i = 0; i < incomingEdges.Count; i++)
             {
@@ -427,14 +426,14 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
         }
 
-        private static void AddSearchPulseHighlight(CustomNodeView view, bool isCurrent)
+        private static void AddSearchPulseHighlight(DependencyNodeView view, bool isCurrent)
         {
             if (view == null)
             {
                 return;
             }
 
-            var nodeColor = IconUtility.GetNodeAccentColor(view.Data);
+            var nodeColor = DependencyNodeStyleResolver.GetNodeAccentColor(view.Data);
             var borderColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 0.92f);
             var fillColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 0.08f);
             var ring = new VisualElement();
@@ -466,7 +465,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }).Every(16);
         }
 
-        private static void SetHighlightRingBounds(CustomNodeView view, VisualElement ring, float padding)
+        private static void SetHighlightRingBounds(DependencyNodeView view, VisualElement ring, float padding)
         {
             if (view == null || ring == null)
             {
@@ -495,7 +494,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             const float durationSeconds = 0.95f;
             const float holdSeconds = 0.16f;
-            var nodeColor = IconUtility.GetNodeAccentColor(view.Data);
+            var nodeColor = DependencyNodeStyleResolver.GetNodeAccentColor(view.Data);
             var borderColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 1f);
             var fillColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 0.10f);
             var ring = new VisualElement();

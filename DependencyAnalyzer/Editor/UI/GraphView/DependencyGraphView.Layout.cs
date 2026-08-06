@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -41,7 +40,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             for (var i = 0; i < renderNodes.Count; i++)
             {
                 var renderNode = renderNodes[i];
-                renderNode.Size = CustomNodeView.GetPreferredSize(renderNode.Node, renderNode.SizeScale);
+                renderNode.Size = DependencyNodeView.GetPreferredSize(renderNode.Node, renderNode.SizeScale);
                 var layoutPosition = new Vector2(CanvasPadding + renderNode.Depth * ColumnSpacing, CanvasPadding + renderNode.Row);
                 var position = layoutPosition;
 
@@ -62,7 +61,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     position = FindOpenPosition(layoutPosition, renderNode.Size, occupiedRects);
                 }
 
-                var nodeView = new CustomNodeView(
+                var nodeView = new DependencyNodeView(
                     renderNode.ViewId,
                     renderNode.Node,
                     renderNode.HasHiddenChildren,

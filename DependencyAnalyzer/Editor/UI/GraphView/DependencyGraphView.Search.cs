@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -59,7 +58,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             currentSearchResultIndex = Mathf.Clamp(currentSearchResultIndex, 0, searchResultNodeIds.Count - 1);
         }
 
-        private static bool MatchesSearchQuery(DependencyNodeData node, string query)
+        private static bool MatchesSearchQuery(DependencyNode node, string query)
         {
             if (node == null || string.IsNullOrWhiteSpace(query))
             {
@@ -83,7 +82,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return true;
         }
 
-        private static bool MatchesSearchTerm(DependencyNodeData node, string term)
+        private static bool MatchesSearchTerm(DependencyNode node, string term)
         {
             var separatorIndex = term.IndexOf(':');
             if (separatorIndex > 0 && separatorIndex < term.Length - 1)
@@ -125,7 +124,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return ContainsSearchText(BuildSearchText(node), term);
         }
 
-        private static bool MatchesMissingFilter(DependencyNodeData node, string value)
+        private static bool MatchesMissingFilter(DependencyNode node, string value)
         {
             var hasMissing = node.Kind == DependencyNodeKind.MissingReference || node.HasMissingReferences;
             if (string.IsNullOrWhiteSpace(value))
@@ -150,7 +149,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return ContainsSearchText(hasMissing ? "missing true" : "missing false", value);
         }
 
-        private static string BuildSearchText(DependencyNodeData node)
+        private static string BuildSearchText(DependencyNode node)
         {
             return node.DisplayName
                 + "\n" + node.Path
@@ -270,7 +269,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return suggestions;
         }
 
-        private static string BuildSuggestionDetail(DependencyNodeData node)
+        private static string BuildSuggestionDetail(DependencyNode node)
         {
             var typeName = string.IsNullOrEmpty(node.TypeName) ? node.Kind.ToString() : node.TypeName;
             if (string.IsNullOrEmpty(node.Path))

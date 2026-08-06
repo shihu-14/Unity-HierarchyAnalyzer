@@ -81,9 +81,10 @@ Reject `Manager` when one of these roles or a domain noun identifies the respons
 
 Place types with peers that share their responsibility and abstraction level. Preserve the repository direction:
 
-- UI depends on Controller and Core.
-- Controller depends on Core and Scanners.
-- Scanners depend on Core and Unity Editor APIs.
-- Core does not depend on Controller, UI, or Scanners.
+- The Editor root composition (`DependencyGraphWindow`) creates and connects the Controller and UI.
+- Controller depends on Core, Scanners, Settings, and UI to coordinate application flow and user intent.
+- UI depends on Core and Unity Editor/UI Toolkit APIs. UI presentation types must not depend on Controller; pass required resolution results or callbacks into presentation builders instead.
+- Scanners depend on Core, Settings, and Unity Editor APIs.
+- Core does not depend on Controller, UI, Scanners, or Settings.
 
-Treat this as the current repository architecture, not a universal Unity requirement. Use `unity-editor-extension` when the architecture itself is in scope.
+This direction is an observation of the current composition root and namespace usages, recorded as `Project policy`; it is not a universal Unity requirement. Reinspect the actual composition and consumers before changing it. Use `unity-editor-extension` when the architecture itself is in scope.

@@ -11,8 +11,8 @@ namespace DependencyAnalyzer.Editor.Scanners
     public sealed partial class SerializedPropertyScanner
     {
         private static List<Component> CollectOpenSceneComponents(
-            DependencyGraphData graph,
-            DependencyCache cache,
+            DependencyGraph graph,
+            DependencyNodeCache cache,
             AnalyzerSettings settings)
         {
             var components = new List<Component>();
@@ -25,7 +25,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 }
                 catch (Exception exception)
                 {
-                    graph.AddIssue(new DependencyScanIssueData(
+                    graph.AddIssue(new DependencyScanIssue(
                         ScannerName,
                         "Scene [" + sceneIndex + "]",
                         "Failed to access scene: " + exception.Message,
@@ -45,7 +45,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 }
                 catch (Exception exception)
                 {
-                    graph.AddIssue(new DependencyScanIssueData(
+                    graph.AddIssue(new DependencyScanIssue(
                         ScannerName,
                         scene.path,
                         "Failed to read scene roots: " + exception.Message,
@@ -70,7 +70,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                             }
                             catch (Exception exception)
                             {
-                                graph.AddIssue(new DependencyScanIssueData(
+                                graph.AddIssue(new DependencyScanIssue(
                                     ScannerName,
                                     GetSafeObjectPath(gameObject),
                                     "Failed to collect object " + GetSafeObjectName(gameObject) + ": " + exception.Message,
@@ -80,7 +80,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                     }
                     catch (Exception exception)
                     {
-                        graph.AddIssue(new DependencyScanIssueData(
+                        graph.AddIssue(new DependencyScanIssue(
                             ScannerName,
                             scene.path,
                             "Failed to traverse root " + GetSafeObjectName(roots[i]) + ": " + exception.Message,
@@ -95,8 +95,8 @@ namespace DependencyAnalyzer.Editor.Scanners
         private static void CollectGameObject(
             GameObject gameObject,
             List<Component> components,
-            DependencyGraphData graph,
-            DependencyCache cache,
+            DependencyGraph graph,
+            DependencyNodeCache cache,
             AnalyzerSettings settings)
         {
             var gameObjectNode = CreateSceneObjectNode(gameObject, cache);
@@ -120,7 +120,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 }
                 catch (Exception exception)
                 {
-                    graph.AddIssue(new DependencyScanIssueData(
+                    graph.AddIssue(new DependencyScanIssue(
                         ScannerName,
                         gameObjectNode.Path,
                         "Failed to collect component " + GetSafeComponentTypeName(component) + ": " + exception.Message,
@@ -132,14 +132,14 @@ namespace DependencyAnalyzer.Editor.Scanners
         private static void CollectComponent(
             Component component,
             int componentIndex,
-            DependencyNodeData gameObjectNode,
+            DependencyNode gameObjectNode,
             List<Component> components,
-            DependencyGraphData graph,
-            DependencyCache cache)
+            DependencyGraph graph,
+            DependencyNodeCache cache)
         {
             if (component == null)
             {
-                var missingNode = AssetScanner.CreateMissingNode(
+                var missingNode = DiagnosticNodeFactory.CreateMissingNode(
                     "missing:component:" + gameObjectNode.Id + ":" + componentIndex,
                     gameObjectNode.Path,
                     "Missing MonoBehaviour",
@@ -149,7 +149,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                     DependencyNodeKind.Component);
                 gameObjectNode.MarkMissingReferences();
                 graph.AddOrUpdateNode(missingNode);
-                graph.AddEdge(new DependencyEdgeData(
+                graph.AddEdge(new DependencyEdge(
                     gameObjectNode.Id,
                     missingNode.Id,
                     "Missing Component [" + componentIndex + "]",
@@ -159,14 +159,14 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             components.Add(component);
-            if (!ShouldVisualizeComponent(component))
+            if (!ComponentScanPolicy.ShouldVisualizeComponent(component))
             {
                 return;
             }
 
             var componentNode = CreateSceneObjectNode(component, cache);
             graph.AddOrUpdateNode(componentNode);
-            graph.AddEdge(new DependencyEdgeData(
+            graph.AddEdge(new DependencyEdge(
                 gameObjectNode.Id,
                 componentNode.Id,
                 string.Empty,
@@ -175,9 +175,9 @@ namespace DependencyAnalyzer.Editor.Scanners
 
         private static void AddHierarchyEdge(
             GameObject gameObject,
-            DependencyNodeData gameObjectNode,
-            DependencyGraphData graph,
-            DependencyCache cache)
+            DependencyNode gameObjectNode,
+            DependencyGraph graph,
+            DependencyNodeCache cache)
         {
             var parent = gameObject.transform.parent;
             if (parent == null)
@@ -187,7 +187,7 @@ namespace DependencyAnalyzer.Editor.Scanners
 
             var parentNode = CreateSceneObjectNode(parent.gameObject, cache);
             graph.AddOrUpdateNode(parentNode);
-            graph.AddEdge(new DependencyEdgeData(
+            graph.AddEdge(new DependencyEdge(
                 parentNode.Id,
                 gameObjectNode.Id,
                 "Child",
@@ -196,9 +196,9 @@ namespace DependencyAnalyzer.Editor.Scanners
 
         private static void AddPrefabSourceDependency(
             GameObject gameObject,
-            DependencyNodeData gameObjectNode,
-            DependencyGraphData graph,
-            DependencyCache cache,
+            DependencyNode gameObjectNode,
+            DependencyGraph graph,
+            DependencyNodeCache cache,
             AnalyzerSettings settings)
         {
             if (PrefabUtility.GetNearestPrefabInstanceRoot(gameObject) != gameObject)
@@ -214,9 +214,9 @@ namespace DependencyAnalyzer.Editor.Scanners
                 return;
             }
 
-            var prefabNode = AssetScanner.CreateAssetNode(prefabAssetPath, cache);
+            var prefabNode = AssetNodeFactory.CreateAssetNode(prefabAssetPath, cache);
             graph.AddOrUpdateNode(prefabNode);
-            graph.AddEdge(new DependencyEdgeData(
+            graph.AddEdge(new DependencyEdge(
                 gameObjectNode.Id,
                 prefabNode.Id,
                 "Prefab Source",

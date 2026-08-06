@@ -6,7 +6,7 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
 {
     internal static class IssueTargetResolver
     {
-        public static string FindIssueEntryTargetNodeId(DependencyGraphData graphData, DependencyScanIssueData issue)
+        public static string FindIssueEntryTargetNodeId(DependencyGraph graphData, DependencyScanIssue issue)
         {
             if (graphData == null || issue == null)
             {
@@ -29,7 +29,7 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
             return FindIssueTargetNodeId(graphData, issue.SubjectPath);
         }
 
-        private static DependencyNodeData FindIssueNode(DependencyGraphData graphData, DependencyScanIssueData issue)
+        private static DependencyNode FindIssueNode(DependencyGraph graphData, DependencyScanIssue issue)
         {
             if (graphData == null || issue == null)
             {
@@ -48,7 +48,7 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                     && string.Equals(edge.TargetNodeId, node.Id, StringComparison.Ordinal)));
         }
 
-        private static bool MatchesIssueSubject(DependencyNodeData node, string subjectPath)
+        private static bool MatchesIssueSubject(DependencyNode node, string subjectPath)
         {
             if (node == null || string.IsNullOrEmpty(subjectPath))
             {
@@ -59,7 +59,7 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                 || string.Equals(node.Path, subjectPath, StringComparison.OrdinalIgnoreCase);
         }
 
-        private static string FindIssueTargetNodeId(DependencyGraphData graphData, string subjectPath)
+        private static string FindIssueTargetNodeId(DependencyGraph graphData, string subjectPath)
         {
             if (graphData == null || string.IsNullOrEmpty(subjectPath))
             {

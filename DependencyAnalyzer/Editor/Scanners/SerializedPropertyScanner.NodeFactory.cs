@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Settings;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -11,9 +10,9 @@ namespace DependencyAnalyzer.Editor.Scanners
 {
     public sealed partial class SerializedPropertyScanner
     {
-        private static DependencyNodeData CreateObjectReferenceNode(
+        private static DependencyNode CreateObjectReferenceNode(
             UnityEngine.Object unityObject,
-            DependencyCache cache,
+            DependencyNodeCache cache,
             AnalyzerSettings settings)
         {
             var assetPath = AssetDatabase.GetAssetPath(unityObject);
@@ -29,13 +28,13 @@ namespace DependencyAnalyzer.Editor.Scanners
                     return null;
                 }
 
-                return AssetScanner.CreateAssetNode(unityObject, cache);
+                return AssetNodeFactory.CreateAssetNode(unityObject, cache);
             }
 
             if (unityObject is GameObject || unityObject is Component)
             {
                 var component = unityObject as Component;
-                if (component != null && !ShouldVisualizeComponent(component))
+                if (component != null && !ComponentScanPolicy.ShouldVisualizeComponent(component))
                 {
                     return CreateSceneObjectNode(component.gameObject, cache);
                 }
@@ -45,7 +44,7 @@ namespace DependencyAnalyzer.Editor.Scanners
 
             var type = unityObject.GetType();
             var globalObjectId = GetGlobalObjectId(unityObject);
-            var node = new DependencyNodeData(
+            var node = new DependencyNode(
                 BuildObjectId("object", unityObject, globalObjectId),
                 globalObjectId,
                 unityObject.name,
@@ -53,18 +52,18 @@ namespace DependencyAnalyzer.Editor.Scanners
                 type.Name,
                 type.FullName,
                 Array.Empty<string>(),
-                IconUtility.GetIconContentName(type),
+                UnityObjectIconNameResolver.GetIconContentName(type),
                 DependencyNodeKind.SceneObject,
                 unityObject.GetInstanceID());
             return cache.Store(node);
         }
 
-        private static DependencyNodeData CreateSceneObjectNode(UnityEngine.Object unityObject, DependencyCache cache)
+        private static DependencyNode CreateSceneObjectNode(UnityEngine.Object unityObject, DependencyNodeCache cache)
         {
             var type = unityObject.GetType();
             var globalObjectId = GetGlobalObjectId(unityObject);
             var path = GetObjectPath(unityObject);
-            var node = new DependencyNodeData(
+            var node = new DependencyNode(
                 BuildObjectId("scene", unityObject, globalObjectId),
                 globalObjectId,
                 path,
@@ -277,7 +276,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 }
             }
 
-            return IconUtility.GetIconContentName(type);
+            return UnityObjectIconNameResolver.GetIconContentName(type);
         }
 
         private static GlobalObjectId GetGlobalObjectId(UnityEngine.Object unityObject)

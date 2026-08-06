@@ -35,9 +35,22 @@ Inspect contents and usages before changing any folder. The current intended rol
 | `Editor/Settings` | Store analyzer configuration and expose Project Settings UI |
 | `Editor/Tests` | Edit Mode Tests and fixed broken-data fixtures |
 | `Tests/Runtime` | Test-only components that must compile outside the Editor assembly to attach to GameObjects |
-| `Editor/Utils` | Current cross-cutting utilities; evaluate each type's actual consumers before proposing a replacement |
+| Editor root | EditorWindow and assembly-lifecycle guards |
 
 The production assembly is Editor-only. The runtime test-fixture assembly is not production runtime functionality.
+
+## Observed Dependency Direction
+
+The current composition root is `DependencyGraphWindow` in the Editor root. It constructs `DependencyGraphView` and `DependencyGraphController`, then passes the view into the controller. The resulting production dependency direction is:
+
+- Editor root -> Controller, UI, Settings
+- Controller -> Core, Scanners, Settings, UI
+- UI -> Core, Unity Editor, UI Toolkit
+- Scanners -> Core, Settings, Unity Editor APIs
+- Settings -> Unity Editor and UI Toolkit APIs
+- Core -> BCL and the minimal Unity identity types it stores
+
+`Project policy`: Keep UI presentation models independent of Controller implementation types. When UI construction needs controller-owned resolution rules, supply the resolved value or a narrow callback from the composition/coordinator side. Do not reverse the observed dependency direction merely to justify a file move.
 
 ## Folder Classification
 

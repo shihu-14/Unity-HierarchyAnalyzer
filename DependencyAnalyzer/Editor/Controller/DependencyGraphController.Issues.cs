@@ -6,7 +6,8 @@ using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Settings;
 using DependencyAnalyzer.Editor.UI.Controls;
 using DependencyAnalyzer.Editor.UI.GraphView;
-using DependencyAnalyzer.Editor.Utils;
+using DependencyAnalyzer.Editor.UI.Icons;
+using DependencyAnalyzer.Editor.UI.Issues;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -14,14 +15,14 @@ namespace DependencyAnalyzer.Editor.Controller
 {
     public sealed partial class DependencyGraphController
     {
-        private void PopulateIssuePanel(DependencyGraphData graphData)
+        private void PopulateIssuePanel(DependencyGraph graphData)
         {
             if (issueList == null)
             {
                 return;
             }
 
-            var entries = IssuePanelEntryBuilder.Build(graphData);
+            var entries = IssuePanelEntryBuilder.Build(graphData, IssueTargetResolver.FindIssueEntryTargetNodeId);
             var errorEntries = entries
                 .Where(entry => entry.Severity == DependencyScanIssueSeverity.Error)
                 .ToList();
@@ -75,7 +76,7 @@ namespace DependencyAnalyzer.Editor.Controller
             var row = new VisualElement();
             row.AddToClassList("dependency-issue-row");
             row.AddToClassList(IssuePanelEntryBuilder.GetSeverityClass(entry.Severity));
-            if (string.IsNullOrEmpty(entry.TargetNodeId))
+            if (!entry.HasRelatedNode)
             {
                 row.AddToClassList("dependency-issue-row--disabled");
             }
@@ -96,7 +97,7 @@ namespace DependencyAnalyzer.Editor.Controller
 
             row.tooltip = entry.Detail;
             row.style.borderLeftColor = new StyleColor(entry.NodeColor);
-            var severityIcon = new Image { image = IconUtility.GetIssueIcon(entry.Severity) };
+            var severityIcon = new Image { image = DependencyIconProvider.GetIssueIcon(entry.Severity) };
             severityIcon.AddToClassList("dependency-issue-severity-icon");
 
             var nodeIcon = new Image { image = entry.NodeIcon };
@@ -137,7 +138,7 @@ namespace DependencyAnalyzer.Editor.Controller
             button.clicked += clicked;
             button.Clear();
 
-            var icon = new Image { image = IconUtility.GetIssueIcon(severity) };
+            var icon = new Image { image = DependencyIconProvider.GetIssueIcon(severity) };
             icon.AddToClassList("dependency-issue-filter-icon");
             var count = new Label("0");
             count.AddToClassList("dependency-issue-filter-count");

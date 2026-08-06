@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -173,7 +172,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     : pair.Value.position;
                 var ghost = new VisualElement();
                 ghost.AddToClassList("dependency-node-ghost");
-                ghost.AddToClassList(IconUtility.GetNodeTypeClass(snapshot.Node));
+                ghost.AddToClassList(DependencyNodeStyleResolver.GetNodeTypeClass(snapshot.Node));
                 ghost.style.position = Position.Absolute;
                 ghost.style.left = pair.Value.x;
                 ghost.style.top = pair.Value.y;

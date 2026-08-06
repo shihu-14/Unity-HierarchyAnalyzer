@@ -2,13 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using DependencyAnalyzer.Editor.Controller.Issues;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Scanners;
 using DependencyAnalyzer.Editor.Settings;
 using DependencyAnalyzer.Editor.UI.Controls;
 using DependencyAnalyzer.Editor.UI.GraphView;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEngine;
 using UnityEngine.UIElements;
 

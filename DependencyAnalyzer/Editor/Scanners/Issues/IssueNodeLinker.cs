@@ -5,7 +5,7 @@ namespace DependencyAnalyzer.Editor.Scanners.Issues
 {
     internal static class IssueNodeLinker
     {
-        public static void AddIssueNodes(DependencyGraphData graph, DependencyCache cache)
+        public static void AddIssueNodes(DependencyGraph graph, DependencyNodeCache cache)
         {
             if (graph == null || graph.Issues.Count == 0)
             {
@@ -27,10 +27,10 @@ namespace DependencyAnalyzer.Editor.Scanners.Issues
                 }
 
                 graph.TryGetNode(sourceNodeId, out var sourceNode);
-                var issueNode = AssetScanner.CreateIssueNode(issue, cache, sourceNode);
+                var issueNode = DiagnosticNodeFactory.CreateIssueNode(issue, cache, sourceNode);
                 graph.AddOrUpdateNode(issueNode);
 
-                graph.AddEdge(new DependencyEdgeData(
+                graph.AddEdge(new DependencyEdge(
                     sourceNodeId,
                     issueNode.Id,
                     issue.Severity + " Issue",
@@ -38,7 +38,7 @@ namespace DependencyAnalyzer.Editor.Scanners.Issues
             }
         }
 
-        private static string FindIssueSourceNodeId(DependencyGraphData graph, string subjectPath)
+        private static string FindIssueSourceNodeId(DependencyGraph graph, string subjectPath)
         {
             if (graph == null || string.IsNullOrEmpty(subjectPath))
             {

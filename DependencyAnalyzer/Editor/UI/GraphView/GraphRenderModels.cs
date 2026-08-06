@@ -19,7 +19,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
     internal sealed class NodeAnimation
     {
-        public NodeAnimation(string viewId, CustomNodeView view, Vector2 startPosition, Vector2 endPosition, bool fadeIn)
+        public NodeAnimation(string viewId, DependencyNodeView view, Vector2 startPosition, Vector2 endPosition, bool fadeIn)
         {
             ViewId = viewId;
             View = view;
@@ -29,7 +29,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         }
 
         public string ViewId { get; }
-        public CustomNodeView View { get; }
+        public DependencyNodeView View { get; }
         public Vector2 StartPosition { get; }
         public Vector2 EndPosition { get; }
         public bool FadeIn { get; }
@@ -58,7 +58,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         }
 
         public string ParentViewId { get; }
-        public DependencyNodeData Node { get; }
+        public DependencyNode Node { get; }
     }
 
     internal sealed class EdgeRoute
@@ -94,8 +94,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         public RenderNode(
             string viewId,
             string nodeId,
-            DependencyNodeData node,
-            DependencyEdgeData edgeFromParent,
+            DependencyNode node,
+            DependencyEdge edgeFromParent,
             int depth,
             int siblingIndex,
             RenderNode parent,
@@ -113,8 +113,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         public string ViewId { get; }
         public string NodeId { get; }
-        public DependencyNodeData Node { get; }
-        public DependencyEdgeData EdgeFromParent { get; }
+        public DependencyNode Node { get; }
+        public DependencyEdge EdgeFromParent { get; }
         public int Depth { get; }
         public int SiblingIndex { get; }
         public RenderNode Parent { get; }

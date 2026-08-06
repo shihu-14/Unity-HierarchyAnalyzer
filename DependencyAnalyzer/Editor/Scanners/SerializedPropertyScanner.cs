@@ -24,13 +24,13 @@ namespace DependencyAnalyzer.Editor.Scanners
 
         public string Name => ScannerName;
 
-        public async Task<DependencyGraphData> ScanAsync(
+        public async Task<DependencyGraph> ScanAsync(
             AnalyzerSettings settings,
-            DependencyCache cache,
+            DependencyNodeCache cache,
             IProgress<ScanProgress> progress,
             CancellationToken cancellationToken)
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var components = CollectOpenSceneComponents(graph, cache, settings);
             var batchSize = settings.ScanYieldBatchSize;
 
@@ -51,7 +51,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 }
                 catch (Exception exception)
                 {
-                    graph.AddIssue(new DependencyScanIssueData(
+                    graph.AddIssue(new DependencyScanIssue(
                         ScannerName,
                         GetSafeObjectPath(component),
                         "Failed to inspect component " + GetSafeComponentTypeName(component) + ": " + exception.Message,
@@ -70,11 +70,11 @@ namespace DependencyAnalyzer.Editor.Scanners
 
         private void ScanComponent(
             Component component,
-            DependencyGraphData graph,
-            DependencyCache cache,
+            DependencyGraph graph,
+            DependencyNodeCache cache,
             AnalyzerSettings settings)
         {
-            var isVisibleComponent = ShouldVisualizeComponent(component);
+            var isVisibleComponent = ComponentScanPolicy.ShouldVisualizeComponent(component);
             var sourceObject = isVisibleComponent ? (UnityEngine.Object)component : component.gameObject;
             var sourceNode = CreateSceneObjectNode(sourceObject, cache);
             graph.AddOrUpdateNode(sourceNode);
@@ -89,7 +89,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
             catch (Exception exception)
             {
-                graph.AddIssue(new DependencyScanIssueData(
+                graph.AddIssue(new DependencyScanIssue(
                     ScannerName,
                     sourceNode.Path,
                     "Failed to inspect component " + component.GetType().FullName + ": " + exception.Message,
@@ -99,10 +99,10 @@ namespace DependencyAnalyzer.Editor.Scanners
 
         private static void ScanObjectReference(
             SerializedObjectReferenceInfo reference,
-            DependencyNodeData sourceNode,
+            DependencyNode sourceNode,
             string memberPrefix,
-            DependencyGraphData graph,
-            DependencyCache cache,
+            DependencyGraph graph,
+            DependencyNodeCache cache,
             AnalyzerSettings settings)
         {
             var memberName = memberPrefix + reference.PropertyPath;
@@ -113,7 +113,7 @@ namespace DependencyAnalyzer.Editor.Scanners
 
             if (reference.State == SerializedObjectReferenceState.Unreadable)
             {
-                graph.AddIssue(new DependencyScanIssueData(
+                graph.AddIssue(new DependencyScanIssue(
                     ScannerName,
                     sourceNode.Path,
                     "Failed to read " + memberName + ": " + reference.ErrorMessage,
@@ -137,7 +137,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                     }
 
                     graph.AddOrUpdateNode(targetNode);
-                    graph.AddEdge(new DependencyEdgeData(
+                    graph.AddEdge(new DependencyEdge(
                         sourceNode.Id,
                         targetNode.Id,
                         memberName,
@@ -145,7 +145,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 }
                 catch (Exception exception)
                 {
-                    graph.AddIssue(new DependencyScanIssueData(
+                    graph.AddIssue(new DependencyScanIssue(
                         ScannerName,
                         sourceNode.Path,
                         "Failed to resolve " + memberName + ": " + exception.Message,
@@ -156,7 +156,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             var missingReferenceType = GetMissingReferenceTypeName(reference.SerializedTypeName);
-            var missingNode = AssetScanner.CreateMissingNode(
+            var missingNode = DiagnosticNodeFactory.CreateMissingNode(
                 "missing:property:" + sourceNode.Id + ":" + memberName + ":" + reference.MissingInstanceId,
                 sourceNode.Path,
                 memberName,
@@ -166,7 +166,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 GetMissingReferenceKind(missingReferenceType));
             sourceNode.MarkMissingReferences();
             graph.AddOrUpdateNode(missingNode);
-            graph.AddEdge(new DependencyEdgeData(
+            graph.AddEdge(new DependencyEdge(
                 sourceNode.Id,
                 missingNode.Id,
                 memberName,
