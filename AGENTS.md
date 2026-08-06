@@ -42,6 +42,7 @@
 
 ## Skill Routing
 
+- Naming, file/folder organization, responsibility, and safe structural refactoring: `.codex/skills/unity-code-organization/SKILL.md`
 - Unity Editor extension structure: `.codex/skills/unity-editor-extension/SKILL.md`
 - Serialized reference internals: `.codex/skills/unity-reference-analysis/SKILL.md`
 - UI Toolkit graph rendering: `.codex/skills/unity-ui-toolkit-graph/SKILL.md`

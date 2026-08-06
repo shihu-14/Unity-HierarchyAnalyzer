@@ -1,6 +1,6 @@
 ---
 name: unity-editor-extension
-description: Use for Unity Editor-only extension architecture, file layout, asmdef boundaries, EditorWindow, SettingsProvider, AssetDatabase, SerializedObject, and Unity-specific C# coding guidance.
+description: Use for Unity Editor-only extension architecture, Editor/runtime and asmdef boundaries, EditorWindow, SettingsProvider, AssetDatabase, SerializedObject, and Unity-specific C# implementation guidance. Use unity-code-organization for repository-wide naming, file/folder responsibility, and behavior-preserving structural refactoring.
 ---
 
 # unity-editor-extension
@@ -11,8 +11,8 @@ Use this skill for Unity Editor extension architecture and implementation.
 
 - Adding or changing Editor-only Unity tooling.
 - Working with `EditorWindow`, `SettingsProvider`, `AssetDatabase`, `SerializedObject`, or `SerializedProperty`.
-- Choosing where code belongs in an Editor assembly.
-- Reviewing Unity-specific coding style and file layout.
+- Choosing Editor/runtime placement or an asmdef boundary.
+- Reviewing Unity-specific implementation and lifecycle constraints.
 
 ## Workflow
 
@@ -30,3 +30,7 @@ Use this skill for Unity Editor extension architecture and implementation.
 - Prefer explicit data models over passing Unity objects through UI state.
 - Prefer incremental Editor work over full-project refresh or blocking scans.
 - Prefer existing project folder roles before introducing new directories.
+
+## Related Skills
+
+- Use `unity-code-organization` for naming, folder and file responsibility, type granularity, partial classes, and safe rename or move work.
