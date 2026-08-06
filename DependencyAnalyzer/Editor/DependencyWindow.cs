@@ -118,7 +118,7 @@ namespace DependencyAnalyzer.Editor
             issueResizeHandle.AddToClassList("dependency-issue-resize-handle");
             var issueHeader = new VisualElement { name = "issue-panel-header" };
             issueHeader.AddToClassList("dependency-issue-header");
-            var issueTitleLabel = new Label("Issues (0)") { name = "issue-title-label" };
+            var issueTitleLabel = new Label("Issues | Console E: 0 W: 0 | Analyzer E: 0 W: 0") { name = "issue-title-label" };
             issueTitleLabel.AddToClassList("dependency-issue-title");
             var issueFilterControls = new VisualElement { name = "issue-filter-controls" };
             issueFilterControls.AddToClassList("dependency-issue-filter-controls");

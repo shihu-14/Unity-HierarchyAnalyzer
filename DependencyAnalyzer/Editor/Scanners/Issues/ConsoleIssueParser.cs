@@ -5,8 +5,21 @@ namespace DependencyAnalyzer.Editor.Scanners.Issues
 {
     internal static class ConsoleIssueParser
     {
-        private const int ErrorModeMask = 1 | 2 | 16 | 64 | 2048 | 8192;
-        private const int WarningModeMask = 128 | 16384 | 32768;
+        // ConsoleWindow excludes bit 22 from its error styles; LogMessageFlags also uses it for postprocessed stack traces.
+        private const int ErrorModeMask =
+            (1 << 0)  // Error
+            | (1 << 1)  // Assert
+            | (1 << 4)  // Fatal
+            | (1 << 6)  // AssetImportError
+            | (1 << 8)  // ScriptingError
+            | (1 << 11) // ScriptCompileError
+            | (1 << 17) // ScriptingException
+            | (1 << 20) // GraphCompileError
+            | (1 << 21); // ScriptingAssertion
+        private const int WarningModeMask =
+            (1 << 7)  // AssetImportWarning
+            | (1 << 9)  // ScriptingWarning
+            | (1 << 12); // ScriptCompileWarning
 
         public static bool TryGetSeverity(ConsoleLogEntry entry, out DependencyScanIssueSeverity severity)
         {

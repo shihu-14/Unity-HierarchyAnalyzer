@@ -33,7 +33,6 @@ namespace DependencyAnalyzer.Editor.Scanners
                 GetDisplayName(assetPath),
                 displayTypeName,
                 displayTypeFullName,
-                GetFileSize(assetPath),
                 labels,
                 GetIconContentName(assetPath, type),
                 DependencyNodeKind.Asset,
@@ -71,7 +70,6 @@ namespace DependencyAnalyzer.Editor.Scanners
                 GetDisplayName(assetPath, assetObject),
                 displayTypeName,
                 displayTypeFullName,
-                GetFileSize(assetPath),
                 labels,
                 isMainAsset ? GetIconContentName(assetPath, type) : IconUtility.GetIconContentName(type),
                 DependencyNodeKind.Asset,
@@ -96,7 +94,6 @@ namespace DependencyAnalyzer.Editor.Scanners
                 displayName,
                 typeName,
                 namespaceQualifiedTypeName,
-                0L,
                 Array.Empty<string>(),
                 iconContentName,
                 kind,
@@ -125,7 +122,6 @@ namespace DependencyAnalyzer.Editor.Scanners
                     sourceNode.DisplayName,
                     sourceNode.TypeName,
                     sourceNode.NamespaceQualifiedTypeName,
-                    sourceNode.FileSizeBytes,
                     sourceNode.AssetLabels,
                     sourceNode.IconContentName,
                     sourceNode.Kind,
@@ -142,7 +138,6 @@ namespace DependencyAnalyzer.Editor.Scanners
                 severity + ": " + (string.IsNullOrEmpty(message) ? "Issue" : message),
                 severity + " Issue",
                 "DependencyAnalyzer.Issue",
-                0L,
                 Array.Empty<string>(),
                 GetIssueIconContentName(severity),
                 DependencyNodeKind.Issue,
@@ -169,22 +164,6 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             return assetObject.name;
-        }
-
-        private static long GetFileSize(string assetPath)
-        {
-            var absolutePath = ToAbsolutePath(assetPath);
-            if (!File.Exists(absolutePath))
-            {
-                return 0L;
-            }
-
-            return new FileInfo(absolutePath).Length;
-        }
-
-        private static string ToAbsolutePath(string assetPath)
-        {
-            return Path.GetFullPath(Path.Combine(Application.dataPath, "..", assetPath));
         }
 
         private static bool IsModelMeshPath(string assetPath)

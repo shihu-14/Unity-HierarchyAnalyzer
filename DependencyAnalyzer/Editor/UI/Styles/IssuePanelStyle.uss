@@ -30,7 +30,7 @@
     flex-grow: 0;
     color: #e6ebf2;
     -unity-font-style: bold;
-    font-size: 13px;
+    font-size: 11px;
     -unity-text-align: middle-left;
 }
 

@@ -23,7 +23,12 @@ Unity 6向けのEditor専用依存関係ビューアーです。現在ロード�
   - Missing Object Reference（Material、Meshなど）
   - 未設定の`None`はMissingとして扱わない
   - Component/property/追加scanner単位の失敗をIssue化し、取得済みの部分graphを保持して続行
-- Unity Consoleのwarning/errorとgraph nodeの既存連携
+- 現在のUnity Consoleに表示されるwarning/errorとの連携
+  - ConsoleをClearして再解析すると、Consoleから消えたlogはIssues panelにも残らない
+  - context objectやAsset pathから特定できるlogはgraph nodeへ関連付ける
+  - nodeを特定できないlogも、クリック不能な`No related node`行としてIssues panelへ保持
+  - `Editor.log`は解析対象にしない
+  - Issues headerでConsole由来とAnalyzer独自のerror/warning件数を分けて表示
 
 このツールが判定するのはserialized referenceとして確認できる一般的な事実です。「このAudioSourceにはAudioClipが必要」など、プロジェクト固有の用途や正しさは診断しません。
 
@@ -38,6 +43,7 @@ Unity 6向けのEditor専用依存関係ビューアーです。現在ロード�
 - `Command + F` / `Ctrl + F`、Enter / Shift + Enter、arrow buttonによる検索移動
 - node name、path、type、asset label、node kind、Missing状態を検索
 - 下部`Issues` panelにMissing Referenceとscanner issueを表示
+- node tooltipにはDependencies / Used Byを表示し、Asset Labelsはlabelを持つAssetだけに表示
 
 toolbarの操作は次のとおりです。
 
@@ -141,6 +147,8 @@ Edit Mode Testは、次の一般的な依存関係事実を検証します。
 - Missing Script、Missing Object、Missing Material
 - component/scanner失敗後の継続と部分結果保持
 - Missing nodeのIssues panel登録
+- 現在のUnity Console snapshot、Console Clear後の再解析、node未特定log、重複log
+- node tooltipのAsset Labels表示条件、reference count維持、count badge非表示
 
 通常fixtureはtest中に生成して削除します。コードだけで安定再現しにくいMissing状態は、`Editor/Tests/Fixtures`の小さなPrefab YAMLと固定`.meta`で保持します。
 
@@ -153,6 +161,8 @@ GitHub ActionsはAssets-copy導入を再現する最小`TestProject`を作り、
 - Prefab source componentとのproperty単位の対応表は作りません。
 - Addressables、`Resources.Load`、独自文字列IDなどの非serialized参照は対象外です。
 - Package内scriptなど、表示policyから外れるComponentはnodeを省略する場合があります。serialized参照自体は所有GameObjectをsourceとして解析します。
+- Console連携はUnity内部APIをreflectionで読み取ります。内部API取得に失敗した場合は、原因を`Unity Console Reader` Issueとして表示します。
+- Console件数は現在のConsole snapshotに含まれるwarning/error行数です。Collapseが有効な場合は1表示行を1件とし、発生回数は`Occurrences`として詳細へ保持します。Missing Reference、scanner issue、Console Reader failureはAnalyzer件数へ含めます。
 - 検索`Filter` toggleとscanのCancel buttonはUI未提供です。
 - UPM package化と`package.json`追加は行っていません。配布方式はAssets folder copyです。
 

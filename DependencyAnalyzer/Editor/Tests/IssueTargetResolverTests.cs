@@ -20,7 +20,6 @@ namespace DependencyAnalyzer.Editor.Tests
                 "Foo.cs",
                 "Script",
                 "Script",
-                0L,
                 Array.Empty<string>(),
                 "cs Script Icon",
                 DependencyNodeKind.Asset,
@@ -71,6 +70,93 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.AreEqual(missing.Id, entries[0].TargetNodeId);
         }
 
+        [Test]
+        public void IssuePanelEntryBuilder_CountsConsoleAndAnalyzerIssuesSeparately()
+        {
+            var graph = new DependencyGraphData();
+            var source = CreateNode("source", "Scene/Object", "Object", "Object", DependencyNodeKind.SceneObject);
+            var missing = CreateNode("missing", "Scene/Object", "Missing Field", "Missing", DependencyNodeKind.MissingReference);
+            graph.AddOrUpdateNode(source);
+            graph.AddOrUpdateNode(missing);
+            graph.AddIssue(new DependencyScanIssueData(
+                "Unity Console",
+                source.Path,
+                "Console error",
+                DependencyScanIssueSeverity.Error));
+            graph.AddIssue(new DependencyScanIssueData(
+                "Unity Console",
+                string.Empty,
+                "Unlinked Console warning",
+                DependencyScanIssueSeverity.Warning));
+            graph.AddIssue(new DependencyScanIssueData(
+                "SerializedPropertyScanner",
+                source.Path,
+                "Scanner warning",
+                DependencyScanIssueSeverity.Warning));
+            graph.AddIssue(new DependencyScanIssueData(
+                "ScannerOrchestrator",
+                source.Path,
+                "Scanner error",
+                DependencyScanIssueSeverity.Error));
+            graph.AddIssue(new DependencyScanIssueData(
+                "Unity Console Reader",
+                string.Empty,
+                "Reader warning",
+                DependencyScanIssueSeverity.Warning));
+
+            var counts = IssuePanelEntryBuilder.CountByOrigin(IssuePanelEntryBuilder.Build(graph));
+
+            Assert.AreEqual(1, counts.ConsoleErrors);
+            Assert.AreEqual(1, counts.ConsoleWarnings);
+            Assert.AreEqual(1, counts.AnalyzerErrors);
+            Assert.AreEqual(3, counts.AnalyzerWarnings);
+            Assert.AreEqual("Issues | Console E: 1 W: 1 | Analyzer E: 1 W: 3", counts.DisplayText);
+        }
+
+        [Test]
+        public void IssuePanelEntryBuilder_DoesNotAddOccurrencesToConsoleRowCount()
+        {
+            var graph = new DependencyGraphData();
+            graph.AddIssue(new DependencyScanIssueData(
+                "Unity Console",
+                string.Empty,
+                "Collapsed warning",
+                DependencyScanIssueSeverity.Warning,
+                string.Empty,
+                0,
+                0,
+                string.Empty,
+                0,
+                7));
+
+            var counts = IssuePanelEntryBuilder.CountByOrigin(IssuePanelEntryBuilder.Build(graph));
+
+            Assert.AreEqual(1, counts.ConsoleWarnings);
+            Assert.AreEqual(0, counts.AnalyzerWarnings);
+        }
+
+        [Test]
+        public void IssuePanelEntryBuilder_EmptyConsoleKeepsAnalyzerCounts()
+        {
+            var graph = new DependencyGraphData();
+            var source = CreateNode("source", "Scene/Object", "Object", "Object", DependencyNodeKind.SceneObject);
+            var missing = CreateNode("missing", "Scene/Object", "Missing Field", "Missing", DependencyNodeKind.MissingReference);
+            graph.AddOrUpdateNode(source);
+            graph.AddOrUpdateNode(missing);
+            graph.AddIssue(new DependencyScanIssueData(
+                "SerializedPropertyScanner",
+                source.Path,
+                "Scanner warning",
+                DependencyScanIssueSeverity.Warning));
+
+            var counts = IssuePanelEntryBuilder.CountByOrigin(IssuePanelEntryBuilder.Build(graph));
+
+            Assert.AreEqual(0, counts.ConsoleErrors);
+            Assert.AreEqual(0, counts.ConsoleWarnings);
+            Assert.AreEqual(0, counts.AnalyzerErrors);
+            Assert.AreEqual(2, counts.AnalyzerWarnings);
+        }
+
         private static DependencyNodeData CreateNode(string id, string path, string name, string type, DependencyNodeKind kind)
         {
             return new DependencyNodeData(
@@ -80,7 +166,6 @@ namespace DependencyAnalyzer.Editor.Tests
                 name,
                 type,
                 type,
-                0L,
                 Array.Empty<string>(),
                 "DefaultAsset Icon",
                 kind);
