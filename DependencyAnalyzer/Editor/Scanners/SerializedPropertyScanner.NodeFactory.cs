@@ -11,9 +11,9 @@ namespace DependencyAnalyzer.Editor.Scanners
 {
     public sealed partial class SerializedPropertyScanner
     {
-        private static DependencyNodeData CreateObjectReferenceNode(
+        private static DependencyNode CreateObjectReferenceNode(
             UnityEngine.Object unityObject,
-            DependencyCache cache,
+            DependencyNodeCache cache,
             AnalyzerSettings settings)
         {
             var assetPath = AssetDatabase.GetAssetPath(unityObject);
@@ -45,7 +45,7 @@ namespace DependencyAnalyzer.Editor.Scanners
 
             var type = unityObject.GetType();
             var globalObjectId = GetGlobalObjectId(unityObject);
-            var node = new DependencyNodeData(
+            var node = new DependencyNode(
                 BuildObjectId("object", unityObject, globalObjectId),
                 globalObjectId,
                 unityObject.name,
@@ -59,12 +59,12 @@ namespace DependencyAnalyzer.Editor.Scanners
             return cache.Store(node);
         }
 
-        private static DependencyNodeData CreateSceneObjectNode(UnityEngine.Object unityObject, DependencyCache cache)
+        private static DependencyNode CreateSceneObjectNode(UnityEngine.Object unityObject, DependencyNodeCache cache)
         {
             var type = unityObject.GetType();
             var globalObjectId = GetGlobalObjectId(unityObject);
             var path = GetObjectPath(unityObject);
-            var node = new DependencyNodeData(
+            var node = new DependencyNode(
                 BuildObjectId("scene", unityObject, globalObjectId),
                 globalObjectId,
                 path,

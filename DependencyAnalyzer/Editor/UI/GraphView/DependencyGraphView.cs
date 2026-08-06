@@ -47,19 +47,19 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private readonly HashSet<string> searchVisibleNodeIds = new HashSet<string>();
         private readonly HashSet<string> forcedVisibleNodeIds = new HashSet<string>();
         private readonly List<string> searchResultNodeIds = new List<string>();
-        private readonly Dictionary<string, List<DependencyEdgeData>> outgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdgeData>>();
-        private readonly Dictionary<string, List<DependencyEdgeData>> incomingEdgesByNodeId = new Dictionary<string, List<DependencyEdgeData>>();
-        private readonly Dictionary<string, List<DependencyEdgeData>> treeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdgeData>>();
-        private readonly Dictionary<string, List<DependencyEdgeData>> regularTreeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdgeData>>();
-        private readonly Dictionary<string, List<DependencyEdgeData>> menuTreeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdgeData>>();
-        private readonly Dictionary<int, DependencyNodeData> nodeByInstanceId = new Dictionary<int, DependencyNodeData>();
+        private readonly Dictionary<string, List<DependencyEdge>> outgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
+        private readonly Dictionary<string, List<DependencyEdge>> incomingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
+        private readonly Dictionary<string, List<DependencyEdge>> treeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
+        private readonly Dictionary<string, List<DependencyEdge>> regularTreeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
+        private readonly Dictionary<string, List<DependencyEdge>> menuTreeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
+        private readonly Dictionary<int, DependencyNode> nodeByInstanceId = new Dictionary<int, DependencyNode>();
         private readonly Dictionary<string, bool> missingReferenceSubtreeCache = new Dictionary<string, bool>();
         private readonly Dictionary<string, SubtreeIssueState> issueSubtreeCache = new Dictionary<string, SubtreeIssueState>();
         private readonly Dictionary<string, int> minimumRegularDepths = new Dictionary<string, int>();
-        private readonly List<DependencyNodeData> rootNodes = new List<DependencyNodeData>();
-        private static readonly List<DependencyEdgeData> EmptyEdges = new List<DependencyEdgeData>();
+        private readonly List<DependencyNode> rootNodes = new List<DependencyNode>();
+        private static readonly List<DependencyEdge> EmptyEdges = new List<DependencyEdge>();
 
-        private DependencyGraphData graph;
+        private DependencyGraph graph;
         private Vector2 currentCanvasSize = Vector2.one;
         private Vector2 pan = new Vector2(24f, 24f);
         private Vector2 lastMousePosition;
@@ -120,7 +120,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             RegisterCallback<MouseLeaveEvent>(_ => StopPanning());
         }
 
-        public event Action<DependencyNodeData> NodeSelected;
+        public event Action<DependencyNode> NodeSelected;
 
         public void ConfigureZoom(float minimum, float maximum, float step)
         {
@@ -178,7 +178,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return GetSearchResultState();
         }
 
-        public void Populate(DependencyGraphData graphData, int depth)
+        public void Populate(DependencyGraph graphData, int depth)
         {
             if (!ReferenceEquals(graph, graphData))
             {

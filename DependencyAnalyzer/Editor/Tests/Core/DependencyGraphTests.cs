@@ -9,7 +9,7 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void AddOrUpdateNode_ReturnsExistingNodeAndMergesMissingState()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var existing = CreateNode("node");
             var duplicate = CreateNode("node");
             duplicate.MarkMissingReferences();
@@ -25,17 +25,17 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void AddEdge_DeduplicatesStableRelationship()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             graph.AddOrUpdateNode(CreateNode("source"));
             graph.AddOrUpdateNode(CreateNode("target"));
-            var edge = new DependencyEdgeData(
+            var edge = new DependencyEdge(
                 "source",
                 "target",
                 "reference",
                 DependencyReferenceKind.SerializedProperty);
 
             Assert.IsTrue(graph.AddEdge(edge));
-            Assert.IsFalse(graph.AddEdge(new DependencyEdgeData(
+            Assert.IsFalse(graph.AddEdge(new DependencyEdge(
                 "source",
                 "target",
                 "reference",
@@ -46,12 +46,12 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void AddEdge_MarksSourceWhenTargetIsMissing()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var source = CreateNode("source");
             graph.AddOrUpdateNode(source);
             graph.AddOrUpdateNode(CreateNode("missing"));
 
-            graph.AddEdge(new DependencyEdgeData(
+            graph.AddEdge(new DependencyEdge(
                 source.Id,
                 "missing",
                 "reference",
@@ -64,16 +64,16 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void RecalculateReferenceCounts_CountsDistinctConnectedNodes()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var source = CreateNode("source");
             var firstTarget = CreateNode("first-target");
             var secondTarget = CreateNode("second-target");
             graph.AddOrUpdateNode(source);
             graph.AddOrUpdateNode(firstTarget);
             graph.AddOrUpdateNode(secondTarget);
-            graph.AddEdge(new DependencyEdgeData(source.Id, firstTarget.Id, "first", DependencyReferenceKind.SerializedProperty));
-            graph.AddEdge(new DependencyEdgeData(source.Id, firstTarget.Id, "second", DependencyReferenceKind.SerializedProperty));
-            graph.AddEdge(new DependencyEdgeData(source.Id, secondTarget.Id, "third", DependencyReferenceKind.SerializedProperty));
+            graph.AddEdge(new DependencyEdge(source.Id, firstTarget.Id, "first", DependencyReferenceKind.SerializedProperty));
+            graph.AddEdge(new DependencyEdge(source.Id, firstTarget.Id, "second", DependencyReferenceKind.SerializedProperty));
+            graph.AddEdge(new DependencyEdge(source.Id, secondTarget.Id, "third", DependencyReferenceKind.SerializedProperty));
 
             graph.RecalculateReferenceCounts();
 
@@ -85,12 +85,12 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void MergeFrom_DeduplicatesNodesAndEdgesAndPreservesIssues()
         {
-            var destination = new DependencyGraphData();
-            var source = new DependencyGraphData();
+            var destination = new DependencyGraph();
+            var source = new DependencyGraph();
             source.AddOrUpdateNode(CreateNode("source"));
             source.AddOrUpdateNode(CreateNode("target"));
-            source.AddEdge(new DependencyEdgeData("source", "target", "reference", DependencyReferenceKind.StaticAsset));
-            source.AddIssue(new DependencyScanIssueData(
+            source.AddEdge(new DependencyEdge("source", "target", "reference", DependencyReferenceKind.StaticAsset));
+            source.AddIssue(new DependencyScanIssue(
                 "TestScanner",
                 "Assets/Test.asset",
                 "Test issue",
@@ -104,9 +104,9 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.AreEqual(2, destination.Issues.Count);
         }
 
-        private static DependencyNodeData CreateNode(string id)
+        private static DependencyNode CreateNode(string id)
         {
-            return new DependencyNodeData(
+            return new DependencyNode(
                 id,
                 default,
                 "Assets/" + id + ".asset",

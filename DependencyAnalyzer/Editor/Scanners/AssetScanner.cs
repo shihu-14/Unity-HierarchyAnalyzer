@@ -9,7 +9,7 @@ namespace DependencyAnalyzer.Editor.Scanners
 {
     public static class AssetScanner
     {
-        internal static DependencyNodeData CreateAssetNode(string assetPath, DependencyCache cache)
+        internal static DependencyNode CreateAssetNode(string assetPath, DependencyNodeCache cache)
         {
             var mainAsset = AssetDatabase.LoadMainAssetAtPath(assetPath);
             if (mainAsset != null)
@@ -26,7 +26,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             var typeFullName = type != null ? type.FullName : typeName;
             var displayTypeName = GetDisplayTypeName(assetPath, typeName);
             var displayTypeFullName = GetDisplayTypeFullName(assetPath, typeFullName);
-            var node = new DependencyNodeData(
+            var node = new DependencyNode(
                 id,
                 globalObjectId,
                 assetPath,
@@ -41,7 +41,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             return cache.Store(node);
         }
 
-        internal static DependencyNodeData CreateAssetNode(UnityEngine.Object assetObject, DependencyCache cache)
+        internal static DependencyNode CreateAssetNode(UnityEngine.Object assetObject, DependencyNodeCache cache)
         {
             if (assetObject == null)
             {
@@ -63,7 +63,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             var isMainAsset = AssetDatabase.IsMainAsset(assetObject);
             var displayTypeName = isMainAsset ? GetDisplayTypeName(assetPath, typeName) : typeName;
             var displayTypeFullName = isMainAsset ? GetDisplayTypeFullName(assetPath, typeFullName) : typeFullName;
-            var node = new DependencyNodeData(
+            var node = new DependencyNode(
                 id,
                 globalObjectId,
                 assetPath,
@@ -78,7 +78,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             return cache.Store(node);
         }
 
-        internal static DependencyNodeData CreateMissingNode(
+        internal static DependencyNode CreateMissingNode(
             string id,
             string path,
             string displayName,
@@ -87,7 +87,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             string iconContentName = "console.warnicon.sml",
             DependencyNodeKind kind = DependencyNodeKind.MissingReference)
         {
-            var node = new DependencyNodeData(
+            var node = new DependencyNode(
                 id,
                 default,
                 path,
@@ -104,10 +104,10 @@ namespace DependencyAnalyzer.Editor.Scanners
             return node;
         }
 
-        internal static DependencyNodeData CreateIssueNode(
-            DependencyScanIssueData issue,
-            DependencyCache cache,
-            DependencyNodeData sourceNode)
+        internal static DependencyNode CreateIssueNode(
+            DependencyScanIssue issue,
+            DependencyNodeCache cache,
+            DependencyNode sourceNode)
         {
             var severity = issue == null ? DependencyScanIssueSeverity.Warning : issue.Severity;
             var subjectPath = issue == null ? string.Empty : issue.SubjectPath;
@@ -115,7 +115,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             var scannerName = issue == null ? string.Empty : issue.ScannerName;
             if (sourceNode != null)
             {
-                var sourceIssueNode = new DependencyNodeData(
+                var sourceIssueNode = new DependencyNode(
                     "issue:" + severity + ":" + GetStableHash(scannerName + "\n" + subjectPath + "\n" + message),
                     sourceNode.GlobalObjectId,
                     string.IsNullOrEmpty(subjectPath) ? sourceNode.Path : subjectPath,
@@ -131,7 +131,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 return cache.Store(sourceIssueNode);
             }
 
-            var node = new DependencyNodeData(
+            var node = new DependencyNode(
                 "issue:" + severity + ":" + GetStableHash(scannerName + "\n" + subjectPath + "\n" + message),
                 default,
                 subjectPath,

@@ -26,7 +26,7 @@ namespace DependencyAnalyzer.Editor.Controller
         private readonly DependencyGraphView graphView;
         private readonly VisualElement root;
         private readonly ScannerOrchestrator scannerOrchestrator;
-        private readonly DependencyCache cache;
+        private readonly DependencyNodeCache cache;
         private readonly EditorSelectionSync selectionSync;
         private readonly Button loadButton;
         private readonly Label loadProgressLabel;
@@ -51,7 +51,7 @@ namespace DependencyAnalyzer.Editor.Controller
         private Label issueErrorCountLabel;
 
         private CancellationTokenSource scanCancellation;
-        private DependencyGraphData currentGraph;
+        private DependencyGraph currentGraph;
         private bool disposed;
         private bool hierarchyRefreshQueued;
         private bool suppressNextSelectionFocus;
@@ -72,7 +72,7 @@ namespace DependencyAnalyzer.Editor.Controller
             this.root = root;
             this.graphView = graphView;
             scannerOrchestrator = new ScannerOrchestrator();
-            cache = new DependencyCache();
+            cache = new DependencyNodeCache();
             selectionSync = new EditorSelectionSync();
 
             loadButton = root.Q<Button>("load-button") ?? root.Q<Button>("scan-button");
@@ -344,7 +344,7 @@ namespace DependencyAnalyzer.Editor.Controller
             }
         }
 
-        private void HandleNodeSelected(DependencyNodeData node)
+        private void HandleNodeSelected(DependencyNode node)
         {
             var target = selectionSync.ResolveObject(node);
             if (target == null)

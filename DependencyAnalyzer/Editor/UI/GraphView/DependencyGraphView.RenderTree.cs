@@ -89,7 +89,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
                 if (!outgoingEdgesByNodeId.TryGetValue(edge.SourceNodeId, out var outgoingEdges))
                 {
-                    outgoingEdges = new List<DependencyEdgeData>();
+                    outgoingEdges = new List<DependencyEdge>();
                     outgoingEdgesByNodeId.Add(edge.SourceNodeId, outgoingEdges);
                 }
 
@@ -97,7 +97,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
                 if (!incomingEdgesByNodeId.TryGetValue(edge.TargetNodeId, out var incomingEdges))
                 {
-                    incomingEdges = new List<DependencyEdgeData>();
+                    incomingEdges = new List<DependencyEdge>();
                     incomingEdgesByNodeId.Add(edge.TargetNodeId, incomingEdges);
                 }
 
@@ -120,8 +120,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     .ThenBy(edge => edge.TargetNodeId, StringComparer.OrdinalIgnoreCase)
                     .ToList();
                 treeOutgoingEdgesByNodeId[pair.Key] = treeEdges;
-                var regularEdges = new List<DependencyEdgeData>();
-                var menuEdges = new List<DependencyEdgeData>();
+                var regularEdges = new List<DependencyEdge>();
+                var menuEdges = new List<DependencyEdge>();
                 for (var i = 0; i < treeEdges.Count; i++)
                 {
                     var edge = treeEdges[i];
@@ -163,7 +163,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
         }
 
-        private bool IsRootNodeFromCache(DependencyNodeData node)
+        private bool IsRootNodeFromCache(DependencyNode node)
         {
             if (node.Kind != DependencyNodeKind.SceneObject)
             {
@@ -191,7 +191,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             var rootIds = new HashSet<string>(rootNodes.Select(node => node.Id), StringComparer.Ordinal);
             var reachableNodeIds = GetReachableNodeIds(rootNodes);
-            var additionalRoots = new List<DependencyNodeData>();
+            var additionalRoots = new List<DependencyNode>();
             for (var i = 0; i < graph.Edges.Count; i++)
             {
                 var edge = graph.Edges[i];
@@ -216,7 +216,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 .ThenBy(node => node.Path, StringComparer.OrdinalIgnoreCase));
         }
 
-        private HashSet<string> GetReachableNodeIds(IReadOnlyList<DependencyNodeData> roots)
+        private HashSet<string> GetReachableNodeIds(IReadOnlyList<DependencyNode> roots)
         {
             var reachableNodeIds = new HashSet<string>(StringComparer.Ordinal);
             var stack = new Stack<string>();
@@ -278,7 +278,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private RenderNode BuildRenderNode(
             string nodeId,
             RenderNode parent,
-            DependencyEdgeData edgeFromParent,
+            DependencyEdge edgeFromParent,
             int depth,
             int siblingIndex,
             string viewId,
@@ -382,7 +382,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private void AddRenderChildren(
             RenderNode renderNode,
-            IReadOnlyList<DependencyEdgeData> edges,
+            IReadOnlyList<DependencyEdge> edges,
             string viewIdPrefix,
             int depth,
             HashSet<string> childPath,
@@ -422,8 +422,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
         }
 
-        private List<DependencyEdgeData> GetRenderableChildEdges(
-            IReadOnlyList<DependencyEdgeData> sourceEdges,
+        private List<DependencyEdge> GetRenderableChildEdges(
+            IReadOnlyList<DependencyEdge> sourceEdges,
             HashSet<string> childPath,
             bool isSearchFiltering)
         {
@@ -432,7 +432,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return EmptyEdges;
             }
 
-            var edges = new List<DependencyEdgeData>();
+            var edges = new List<DependencyEdge>();
             for (var i = 0; i < sourceEdges.Count; i++)
             {
                 var edge = sourceEdges[i];
@@ -464,18 +464,18 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return Mathf.Max(MinimumDepthNodeScale, 1f - (childCount - 1) * 0.04f);
         }
 
-        private static bool IsScriptNode(DependencyNodeData node)
+        private static bool IsScriptNode(DependencyNode node)
         {
             return string.Equals(node.IconContentName, "cs Script Icon", StringComparison.Ordinal)
                 || node.Path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
         }
 
-        private bool IsMenuEdge(DependencyEdgeData edge)
+        private bool IsMenuEdge(DependencyEdge edge)
         {
             return edge != null && edge.ReferenceKind == DependencyReferenceKind.SerializedProperty;
         }
 
-        private Dictionary<string, int> ComputeMinimumRegularDepths(IReadOnlyList<DependencyNodeData> roots)
+        private Dictionary<string, int> ComputeMinimumRegularDepths(IReadOnlyList<DependencyNode> roots)
         {
             var minimumDepths = new Dictionary<string, int>();
             var queue = new Queue<NodeDepth>();
@@ -527,7 +527,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return defaultExpandedNodeIds != null && !defaultExpandedNodeIds.Add(nodeId);
         }
 
-        private bool ShouldCollapseNode(DependencyNodeData node, string nodeId, int depth)
+        private bool ShouldCollapseNode(DependencyNode node, string nodeId, int depth)
         {
             return depth >= initialDepth
                 || node.IsHeavyLeafType
@@ -549,7 +549,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return false;
         }
 
-        private static bool IsPrefabAssetNode(DependencyNodeData node)
+        private static bool IsPrefabAssetNode(DependencyNode node)
         {
             return node.Kind == DependencyNodeKind.Asset
                 && (node.TypeName.Contains("Prefab") || node.Path.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase));

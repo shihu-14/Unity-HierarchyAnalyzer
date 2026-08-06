@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace DependencyAnalyzer.Editor.Core
 {
-    public sealed class DependencyCache
+    public sealed class DependencyNodeCache
     {
-        private readonly Dictionary<string, DependencyNodeData> nodeLookup = new Dictionary<string, DependencyNodeData>();
+        private readonly Dictionary<string, DependencyNode> nodeLookup = new Dictionary<string, DependencyNode>();
 
         public int Count => nodeLookup.Count;
 
@@ -14,19 +14,19 @@ namespace DependencyAnalyzer.Editor.Core
             nodeLookup.Clear();
         }
 
-        public bool TryGetNode(string nodeId, out DependencyNodeData node)
+        public bool TryGetNode(string nodeId, out DependencyNode node)
         {
             return nodeLookup.TryGetValue(nodeId, out node);
         }
 
-        public DependencyNodeData Store(DependencyNodeData node)
+        public DependencyNode Store(DependencyNode node)
         {
             if (node == null)
             {
                 throw new ArgumentNullException(nameof(node));
             }
 
-            DependencyNodeData existing;
+            DependencyNode existing;
             if (nodeLookup.TryGetValue(node.Id, out existing))
             {
                 if (node.HasMissingReferences)

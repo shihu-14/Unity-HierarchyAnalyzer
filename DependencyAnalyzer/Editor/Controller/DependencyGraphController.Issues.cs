@@ -14,7 +14,7 @@ namespace DependencyAnalyzer.Editor.Controller
 {
     public sealed partial class DependencyGraphController
     {
-        private void PopulateIssuePanel(DependencyGraphData graphData)
+        private void PopulateIssuePanel(DependencyGraph graphData)
         {
             if (issueList == null)
             {

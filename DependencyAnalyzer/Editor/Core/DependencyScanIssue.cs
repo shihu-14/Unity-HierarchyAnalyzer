@@ -10,9 +10,9 @@ namespace DependencyAnalyzer.Editor.Core
     }
 
     [Serializable]
-    public sealed class DependencyScanIssueData
+    public sealed class DependencyScanIssue
     {
-        public DependencyScanIssueData(
+        public DependencyScanIssue(
             string scannerName,
             string subjectPath,
             string message,
@@ -21,7 +21,7 @@ namespace DependencyAnalyzer.Editor.Core
         {
         }
 
-        public DependencyScanIssueData(
+        public DependencyScanIssue(
             string scannerName,
             string subjectPath,
             string message,

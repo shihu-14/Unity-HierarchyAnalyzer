@@ -339,7 +339,7 @@ namespace DependencyAnalyzer.Editor.Tests
 
             var graph = await orchestrator.ScanAsync(
                 settings,
-                new DependencyCache(),
+                new DependencyNodeCache(),
                 null,
                 CancellationToken.None);
 
@@ -401,7 +401,7 @@ namespace DependencyAnalyzer.Editor.Tests
             return settings;
         }
 
-        private async Task<DependencyGraphData> ScanAsync(
+        private async Task<DependencyGraph> ScanAsync(
             SerializedPropertyScanner scanner = null,
             AnalyzerSettings settings = null)
         {
@@ -411,12 +411,12 @@ namespace DependencyAnalyzer.Editor.Tests
 
             return await scanner.ScanAsync(
                 settings,
-                new DependencyCache(),
+                new DependencyNodeCache(),
                 null,
                 CancellationToken.None);
         }
 
-        private static DependencyNodeData FindNode(DependencyGraphData graph, UnityEngine.Object unityObject)
+        private static DependencyNode FindNode(DependencyGraph graph, UnityEngine.Object unityObject)
         {
             var node = graph.Nodes.FirstOrDefault(candidate => candidate.InstanceId == unityObject.GetInstanceID());
             Assert.NotNull(node, "Node was not found for " + unityObject.name + " (" + unityObject.GetType().Name + ")");
@@ -424,9 +424,9 @@ namespace DependencyAnalyzer.Editor.Tests
         }
 
         private static void AssertEdge(
-            DependencyGraphData graph,
-            DependencyNodeData source,
-            DependencyNodeData target,
+            DependencyGraph graph,
+            DependencyNode source,
+            DependencyNode target,
             DependencyReferenceKind kind,
             string memberName)
         {
@@ -476,9 +476,9 @@ namespace DependencyAnalyzer.Editor.Tests
             public const string ScannerName = "Throwing Test Scanner";
             public string Name => ScannerName;
 
-            public Task<DependencyGraphData> ScanAsync(
+            public Task<DependencyGraph> ScanAsync(
                 AnalyzerSettings settings,
-                DependencyCache cache,
+                DependencyNodeCache cache,
                 IProgress<ScanProgress> progress,
                 CancellationToken cancellationToken)
             {

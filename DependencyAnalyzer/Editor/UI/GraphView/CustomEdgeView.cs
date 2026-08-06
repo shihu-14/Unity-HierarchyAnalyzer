@@ -16,7 +16,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private readonly Color parentEdgeColor;
         private readonly Color childEdgeColor;
 
-        public CustomEdgeView(DependencyEdgeData edgeData, Color parentNodeColor, Color childNodeColor)
+        public CustomEdgeView(DependencyEdge edgeData, Color parentNodeColor, Color childNodeColor)
         {
             EdgeData = edgeData;
             var alpha = edgeData.PointsToMissingReference ? 0.95f : 0.9f;
@@ -35,7 +35,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             RegisterCallback<MouseDownEvent>(HandleMouseDown);
         }
 
-        public DependencyEdgeData EdgeData { get; }
+        public DependencyEdge EdgeData { get; }
         public event Action<CustomEdgeView> ChildJumpRequested;
 
         public override bool ContainsPoint(Vector2 localPoint)
@@ -159,7 +159,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
         }
 
-        private static string BuildTooltip(DependencyEdgeData edgeData)
+        private static string BuildTooltip(DependencyEdge edgeData)
         {
             return "Reference: " + edgeData.MemberName
                 + "\nKind: " + edgeData.ReferenceKind

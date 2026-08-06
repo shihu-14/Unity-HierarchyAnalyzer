@@ -52,7 +52,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         public CustomNodeView(
             string viewId,
-            DependencyNodeData data,
+            DependencyNode data,
             bool hasHiddenChildren,
             bool canToggleChildren,
             bool isExpanded,
@@ -105,11 +105,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         }
 
         public string ViewId { get; }
-        public DependencyNodeData Data { get; }
+        public DependencyNode Data { get; }
         public bool HasHiddenChildren { get; }
         public float HiddenStackOffset => HasHiddenChildren ? GetHiddenStackOffset(nodeScale) : 0f;
         public bool IsExpanded => isExpanded;
-        public event Action<DependencyNodeData> NodeSelected;
+        public event Action<DependencyNode> NodeSelected;
         public event Action<CustomNodeView, Vector2> NodeMoved;
         public event Action<CustomNodeView> ToggleRequested;
         public event Action<CustomNodeView> MenuToggleRequested;
@@ -127,12 +127,12 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return new Rect(graphPosition.x, graphPosition.y, nodeWidth, nodeHeight);
         }
 
-        public static Vector2 GetPreferredSize(DependencyNodeData data)
+        public static Vector2 GetPreferredSize(DependencyNode data)
         {
             return GetPreferredSize(data, 1f);
         }
 
-        public static Vector2 GetPreferredSize(DependencyNodeData data, float sizeScale)
+        public static Vector2 GetPreferredSize(DependencyNode data, float sizeScale)
         {
             var score = GetInfluenceScore(data);
             var ratio = Mathf.Clamp01(score / 18f);
@@ -348,7 +348,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             Add(part);
         }
 
-        private static int GetInfluenceScore(DependencyNodeData data)
+        private static int GetInfluenceScore(DependencyNode data)
         {
             if (data == null)
             {
@@ -358,7 +358,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return data.DependencyCount + data.UsedByCount * 2;
         }
 
-        private static string GetImpactClass(DependencyNodeData data)
+        private static string GetImpactClass(DependencyNode data)
         {
             var score = GetInfluenceScore(data);
             if (score >= 12)
@@ -512,7 +512,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return button;
         }
 
-        private static string BuildTooltip(DependencyNodeData data)
+        private static string BuildTooltip(DependencyNode data)
         {
             var lines = new List<string>
             {

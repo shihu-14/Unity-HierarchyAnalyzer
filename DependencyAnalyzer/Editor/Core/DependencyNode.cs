@@ -14,11 +14,11 @@ namespace DependencyAnalyzer.Editor.Core
     }
 
     [Serializable]
-    public sealed class DependencyNodeData
+    public sealed class DependencyNode
     {
         private readonly List<string> assetLabels;
 
-        public DependencyNodeData(
+        public DependencyNode(
             string id,
             GlobalObjectId globalObjectId,
             string path,

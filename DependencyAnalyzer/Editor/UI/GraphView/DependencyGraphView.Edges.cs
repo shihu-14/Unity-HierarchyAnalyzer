@@ -79,35 +79,35 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 sourceRect.height);
         }
 
-        private List<DependencyEdgeData> GetTreeOutgoingEdges(string nodeId)
+        private List<DependencyEdge> GetTreeOutgoingEdges(string nodeId)
         {
             return !string.IsNullOrEmpty(nodeId) && treeOutgoingEdgesByNodeId.TryGetValue(nodeId, out var edges)
                 ? edges
                 : EmptyEdges;
         }
 
-        private List<DependencyEdgeData> GetRegularTreeOutgoingEdges(string nodeId)
+        private List<DependencyEdge> GetRegularTreeOutgoingEdges(string nodeId)
         {
             return !string.IsNullOrEmpty(nodeId) && regularTreeOutgoingEdgesByNodeId.TryGetValue(nodeId, out var edges)
                 ? edges
                 : EmptyEdges;
         }
 
-        private List<DependencyEdgeData> GetMenuTreeOutgoingEdges(string nodeId)
+        private List<DependencyEdge> GetMenuTreeOutgoingEdges(string nodeId)
         {
             return !string.IsNullOrEmpty(nodeId) && menuTreeOutgoingEdgesByNodeId.TryGetValue(nodeId, out var edges)
                 ? edges
                 : EmptyEdges;
         }
 
-        private List<DependencyEdgeData> GetOutgoingEdges(string nodeId)
+        private List<DependencyEdge> GetOutgoingEdges(string nodeId)
         {
             return !string.IsNullOrEmpty(nodeId) && outgoingEdgesByNodeId.TryGetValue(nodeId, out var edges)
                 ? edges
                 : EmptyEdges;
         }
 
-        private List<DependencyEdgeData> GetIncomingEdges(string nodeId)
+        private List<DependencyEdge> GetIncomingEdges(string nodeId)
         {
             return !string.IsNullOrEmpty(nodeId) && incomingEdgesByNodeId.TryGetValue(nodeId, out var edges)
                 ? edges

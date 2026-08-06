@@ -83,7 +83,7 @@ namespace DependencyAnalyzer.Editor.Utils
             return "DefaultAsset Icon";
         }
 
-        public static Texture GetIcon(DependencyNodeData node)
+        public static Texture GetIcon(DependencyNode node)
         {
             if (node == null)
             {
@@ -138,7 +138,7 @@ namespace DependencyAnalyzer.Editor.Utils
                 : EditorGUIUtility.IconContent(fallbackIconName).image;
         }
 
-        public static string GetNodeTypeClass(DependencyNodeData node)
+        public static string GetNodeTypeClass(DependencyNode node)
         {
             if (node == null)
             {
@@ -234,7 +234,7 @@ namespace DependencyAnalyzer.Editor.Utils
             return "dependency-node--default";
         }
 
-        public static Color GetNodeAccentColor(DependencyNodeData node)
+        public static Color GetNodeAccentColor(DependencyNode node)
         {
             var className = GetNodeTypeClass(node);
             switch (className)
@@ -279,7 +279,7 @@ namespace DependencyAnalyzer.Editor.Utils
             }
         }
 
-        private static string GetIssueNodeTypeClass(DependencyNodeData node)
+        private static string GetIssueNodeTypeClass(DependencyNode node)
         {
             if (node.TypeName.IndexOf("Error", StringComparison.OrdinalIgnoreCase) >= 0)
             {

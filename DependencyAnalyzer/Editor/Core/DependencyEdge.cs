@@ -13,9 +13,9 @@ namespace DependencyAnalyzer.Editor.Core
     }
 
     [Serializable]
-    public sealed class DependencyEdgeData
+    public sealed class DependencyEdge
     {
-        public DependencyEdgeData(
+        public DependencyEdge(
             string sourceNodeId,
             string targetNodeId,
             string memberName,

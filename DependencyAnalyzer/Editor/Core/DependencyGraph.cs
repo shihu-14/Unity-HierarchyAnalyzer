@@ -5,26 +5,26 @@ using System.Linq;
 namespace DependencyAnalyzer.Editor.Core
 {
     [Serializable]
-    public sealed class DependencyGraphData
+    public sealed class DependencyGraph
     {
-        private readonly List<DependencyNodeData> nodes = new List<DependencyNodeData>();
-        private readonly List<DependencyEdgeData> edges = new List<DependencyEdgeData>();
-        private readonly List<DependencyScanIssueData> issues = new List<DependencyScanIssueData>();
-        private readonly Dictionary<string, DependencyNodeData> nodeLookup = new Dictionary<string, DependencyNodeData>();
+        private readonly List<DependencyNode> nodes = new List<DependencyNode>();
+        private readonly List<DependencyEdge> edges = new List<DependencyEdge>();
+        private readonly List<DependencyScanIssue> issues = new List<DependencyScanIssue>();
+        private readonly Dictionary<string, DependencyNode> nodeLookup = new Dictionary<string, DependencyNode>();
         private readonly HashSet<string> edgeKeys = new HashSet<string>();
 
-        public IReadOnlyList<DependencyNodeData> Nodes => nodes;
-        public IReadOnlyList<DependencyEdgeData> Edges => edges;
-        public IReadOnlyList<DependencyScanIssueData> Issues => issues;
+        public IReadOnlyList<DependencyNode> Nodes => nodes;
+        public IReadOnlyList<DependencyEdge> Edges => edges;
+        public IReadOnlyList<DependencyScanIssue> Issues => issues;
 
-        public DependencyNodeData AddOrUpdateNode(DependencyNodeData node)
+        public DependencyNode AddOrUpdateNode(DependencyNode node)
         {
             if (node == null)
             {
                 throw new ArgumentNullException(nameof(node));
             }
 
-            DependencyNodeData existing;
+            DependencyNode existing;
             if (nodeLookup.TryGetValue(node.Id, out existing))
             {
                 if (node.HasMissingReferences)
@@ -40,12 +40,12 @@ namespace DependencyAnalyzer.Editor.Core
             return node;
         }
 
-        public bool TryGetNode(string nodeId, out DependencyNodeData node)
+        public bool TryGetNode(string nodeId, out DependencyNode node)
         {
             return nodeLookup.TryGetValue(nodeId, out node);
         }
 
-        public bool AddEdge(DependencyEdgeData edge)
+        public bool AddEdge(DependencyEdge edge)
         {
             if (edge == null || string.IsNullOrEmpty(edge.SourceNodeId) || string.IsNullOrEmpty(edge.TargetNodeId))
             {
@@ -66,7 +66,7 @@ namespace DependencyAnalyzer.Editor.Core
             return true;
         }
 
-        public void AddIssue(DependencyScanIssueData issue)
+        public void AddIssue(DependencyScanIssue issue)
         {
             if (issue != null)
             {
@@ -74,17 +74,17 @@ namespace DependencyAnalyzer.Editor.Core
             }
         }
 
-        public IEnumerable<DependencyEdgeData> GetOutgoingEdges(string nodeId)
+        public IEnumerable<DependencyEdge> GetOutgoingEdges(string nodeId)
         {
             return edges.Where(edge => edge.SourceNodeId == nodeId);
         }
 
-        public IEnumerable<DependencyEdgeData> GetIncomingEdges(string nodeId)
+        public IEnumerable<DependencyEdge> GetIncomingEdges(string nodeId)
         {
             return edges.Where(edge => edge.TargetNodeId == nodeId);
         }
 
-        public void MergeFrom(DependencyGraphData other)
+        public void MergeFrom(DependencyGraph other)
         {
             if (other == null)
             {

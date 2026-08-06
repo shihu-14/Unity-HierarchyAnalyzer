@@ -9,12 +9,12 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
 {
     internal static class IssuePanelEntryBuilder
     {
-        public static int Count(DependencyGraphData graphData)
+        public static int Count(DependencyGraph graphData)
         {
             return Build(graphData).Count;
         }
 
-        public static List<IssuePanelEntry> Build(DependencyGraphData graphData)
+        public static List<IssuePanelEntry> Build(DependencyGraph graphData)
         {
             var entries = new List<IssuePanelEntry>();
             if (graphData == null)
@@ -127,7 +127,7 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                 analyzerWarnings);
         }
 
-        private static string BuildIssueDetail(DependencyScanIssueData issue)
+        private static string BuildIssueDetail(DependencyScanIssue issue)
         {
             var parts = new List<string>();
             var message = IssueTextFormatter.FormatDetail(issue.Message);
@@ -164,20 +164,20 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
             return string.Join("\n", parts);
         }
 
-        private static IssuePanelEntryOrigin GetOrigin(DependencyScanIssueData issue)
+        private static IssuePanelEntryOrigin GetOrigin(DependencyScanIssue issue)
         {
             return IsConsoleSnapshotIssue(issue)
                 ? IssuePanelEntryOrigin.Console
                 : IssuePanelEntryOrigin.Analyzer;
         }
 
-        private static bool IsConsoleSnapshotIssue(DependencyScanIssueData issue)
+        private static bool IsConsoleSnapshotIssue(DependencyScanIssue issue)
         {
             return issue != null
                 && string.Equals(issue.ScannerName, "Unity Console", StringComparison.Ordinal);
         }
 
-        private static bool ShouldDisplayWithoutTarget(DependencyScanIssueData issue)
+        private static bool ShouldDisplayWithoutTarget(DependencyScanIssue issue)
         {
             return issue != null
                 && (string.Equals(issue.ScannerName, "Unity Console", StringComparison.Ordinal)

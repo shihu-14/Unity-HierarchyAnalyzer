@@ -17,14 +17,14 @@ namespace DependencyAnalyzer.Editor.Scanners
             @"Assets/[^\r\n\(\):]+?\.(?:cs|shader|compute|asmdef|asmref|prefab|unity|mat|asset|fbx|obj|dae|blend|png|jpg|jpeg|tga|psd|wav|mp3|ogg|anim|controller|overrideController)",
             RegexOptions.IgnoreCase);
 
-        public static void AddConsoleIssues(DependencyGraphData graph, DependencyCache cache)
+        public static void AddConsoleIssues(DependencyGraph graph, DependencyNodeCache cache)
         {
             AddConsoleIssues(graph, cache, new UnityConsoleLogReader());
         }
 
         internal static void AddConsoleIssues(
-            DependencyGraphData graph,
-            DependencyCache cache,
+            DependencyGraph graph,
+            DependencyNodeCache cache,
             IConsoleLogReader reader)
         {
             if (graph == null || cache == null)
@@ -57,9 +57,9 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
         }
 
-        private static void AddReaderFailureIssue(DependencyGraphData graph, string errorMessage)
+        private static void AddReaderFailureIssue(DependencyGraph graph, string errorMessage)
         {
-            graph.AddIssue(new DependencyScanIssueData(
+            graph.AddIssue(new DependencyScanIssue(
                 ReaderScannerName,
                 string.Empty,
                 "Unable to read the current Unity Console: "
@@ -68,8 +68,8 @@ namespace DependencyAnalyzer.Editor.Scanners
         }
 
         private static void AddIssueFromEntry(
-            DependencyGraphData graph,
-            DependencyCache cache,
+            DependencyGraph graph,
+            DependencyNodeCache cache,
             HashSet<string> seen,
             ConsoleLogEntry entry)
         {
@@ -90,7 +90,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 return;
             }
 
-            graph.AddIssue(new DependencyScanIssueData(
+            graph.AddIssue(new DependencyScanIssue(
                 ScannerName,
                 subjectPath,
                 message,
@@ -127,9 +127,9 @@ namespace DependencyAnalyzer.Editor.Scanners
                 + entry.StackTrace;
         }
 
-        private static DependencyNodeData ResolveTargetNode(
-            DependencyGraphData graph,
-            DependencyCache cache,
+        private static DependencyNode ResolveTargetNode(
+            DependencyGraph graph,
+            DependencyNodeCache cache,
             ConsoleLogEntry entry)
         {
             var node = FindNodeByInstanceId(graph, entry.InstanceId);
@@ -158,7 +158,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             return graph.AddOrUpdateNode(AssetScanner.CreateAssetNode(assetPath, cache));
         }
 
-        private static DependencyNodeData FindNodeByInstanceId(DependencyGraphData graph, int instanceId)
+        private static DependencyNode FindNodeByInstanceId(DependencyGraph graph, int instanceId)
         {
             if (instanceId == 0)
             {
@@ -179,7 +179,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             return string.IsNullOrEmpty(assetPath) ? null : FindNodeByPath(graph, assetPath);
         }
 
-        private static DependencyNodeData FindNodeByPath(DependencyGraphData graph, string assetPath)
+        private static DependencyNode FindNodeByPath(DependencyGraph graph, string assetPath)
         {
             for (var i = 0; i < graph.Nodes.Count; i++)
             {

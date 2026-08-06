@@ -27,9 +27,9 @@ namespace DependencyAnalyzer.Editor.Scanners
     {
         string Name { get; }
 
-        Task<DependencyGraphData> ScanAsync(
+        Task<DependencyGraph> ScanAsync(
             AnalyzerSettings settings,
-            DependencyCache cache,
+            DependencyNodeCache cache,
             IProgress<ScanProgress> progress,
             CancellationToken cancellationToken);
     }

@@ -66,9 +66,9 @@ namespace DependencyAnalyzer.Editor.Tests
             StringAssert.Contains("Used By: 9", view.tooltip);
         }
 
-        private static DependencyNodeData CreateNode(DependencyNodeKind kind, string[] labels)
+        private static DependencyNode CreateNode(DependencyNodeKind kind, string[] labels)
         {
-            return new DependencyNodeData(
+            return new DependencyNode(
                 "node",
                 default,
                 kind == DependencyNodeKind.Asset ? "Assets/Test.asset" : "Scene/Object/Component",
@@ -80,7 +80,7 @@ namespace DependencyAnalyzer.Editor.Tests
                 kind);
         }
 
-        private static CustomNodeView CreateView(DependencyNodeData node)
+        private static CustomNodeView CreateView(DependencyNode node)
         {
             return new CustomNodeView(
                 "view",

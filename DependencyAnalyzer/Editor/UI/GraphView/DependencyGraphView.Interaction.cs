@@ -11,7 +11,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
     public sealed partial class DependencyGraphView
     {
 
-        private void HandleNodeSelected(DependencyNodeData node)
+        private void HandleNodeSelected(DependencyNode node)
         {
             focusedNodeId = node.Id;
             focusedViewId = null;
@@ -273,10 +273,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
         }
 
-        private DependencyEdgeData GetPrimaryIncomingEdge(string nodeId)
+        private DependencyEdge GetPrimaryIncomingEdge(string nodeId)
         {
             var incomingEdges = GetIncomingEdges(nodeId);
-            DependencyEdgeData bestEdge = null;
+            DependencyEdge bestEdge = null;
             var bestPriority = int.MaxValue;
             for (var i = 0; i < incomingEdges.Count; i++)
             {

@@ -10,10 +10,10 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void FindIssueEntryTargetNodeId_PrefersIssueSourceEdge()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var source = CreateNode("script", "Assets/Foo.cs", "Foo.cs", "Script", DependencyNodeKind.Asset);
-            var issue = new DependencyScanIssueData("Unity Console", "Assets/Foo.cs", "Assets/Foo.cs(8,13): error CS1003", DependencyScanIssueSeverity.Error);
-            var issueNode = new DependencyNodeData(
+            var issue = new DependencyScanIssue("Unity Console", "Assets/Foo.cs", "Assets/Foo.cs(8,13): error CS1003", DependencyScanIssueSeverity.Error);
+            var issueNode = new DependencyNode(
                 "issue:error:foo",
                 default,
                 "Assets/Foo.cs",
@@ -29,7 +29,7 @@ namespace DependencyAnalyzer.Editor.Tests
 
             graph.AddOrUpdateNode(source);
             graph.AddOrUpdateNode(issueNode);
-            graph.AddEdge(new DependencyEdgeData(source.Id, issueNode.Id, "Error Issue", DependencyReferenceKind.Issue));
+            graph.AddEdge(new DependencyEdge(source.Id, issueNode.Id, "Error Issue", DependencyReferenceKind.Issue));
 
             Assert.AreEqual(source.Id, IssueTargetResolver.FindIssueEntryTargetNodeId(graph, issue));
         }
@@ -37,7 +37,7 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void IssuePanelEntryBuilder_IncludesMissingReferenceRows()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var missing = CreateNode("missing", "Scene/Object", "Missing Field", "Missing", DependencyNodeKind.MissingReference);
             graph.AddOrUpdateNode(missing);
 
@@ -51,13 +51,13 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void IssuePanelEntryBuilder_IncludesTypedMissingTargetsFromEdges()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var source = CreateNode("source", "Scene/Object", "Object", "Object", DependencyNodeKind.SceneObject);
             var missing = CreateNode("missing-material", "Scene/Object", "material", "Material", DependencyNodeKind.Asset);
             missing.MarkMissingReferences();
             graph.AddOrUpdateNode(source);
             graph.AddOrUpdateNode(missing);
-            graph.AddEdge(new DependencyEdgeData(
+            graph.AddEdge(new DependencyEdge(
                 source.Id,
                 missing.Id,
                 "m_Materials.Array.data[0]",
@@ -73,32 +73,32 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void IssuePanelEntryBuilder_CountsConsoleAndAnalyzerIssuesSeparately()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var source = CreateNode("source", "Scene/Object", "Object", "Object", DependencyNodeKind.SceneObject);
             var missing = CreateNode("missing", "Scene/Object", "Missing Field", "Missing", DependencyNodeKind.MissingReference);
             graph.AddOrUpdateNode(source);
             graph.AddOrUpdateNode(missing);
-            graph.AddIssue(new DependencyScanIssueData(
+            graph.AddIssue(new DependencyScanIssue(
                 "Unity Console",
                 source.Path,
                 "Console error",
                 DependencyScanIssueSeverity.Error));
-            graph.AddIssue(new DependencyScanIssueData(
+            graph.AddIssue(new DependencyScanIssue(
                 "Unity Console",
                 string.Empty,
                 "Unlinked Console warning",
                 DependencyScanIssueSeverity.Warning));
-            graph.AddIssue(new DependencyScanIssueData(
+            graph.AddIssue(new DependencyScanIssue(
                 "SerializedPropertyScanner",
                 source.Path,
                 "Scanner warning",
                 DependencyScanIssueSeverity.Warning));
-            graph.AddIssue(new DependencyScanIssueData(
+            graph.AddIssue(new DependencyScanIssue(
                 "ScannerOrchestrator",
                 source.Path,
                 "Scanner error",
                 DependencyScanIssueSeverity.Error));
-            graph.AddIssue(new DependencyScanIssueData(
+            graph.AddIssue(new DependencyScanIssue(
                 "Unity Console Reader",
                 string.Empty,
                 "Reader warning",
@@ -116,8 +116,8 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void IssuePanelEntryBuilder_DoesNotAddOccurrencesToConsoleRowCount()
         {
-            var graph = new DependencyGraphData();
-            graph.AddIssue(new DependencyScanIssueData(
+            var graph = new DependencyGraph();
+            graph.AddIssue(new DependencyScanIssue(
                 "Unity Console",
                 string.Empty,
                 "Collapsed warning",
@@ -138,12 +138,12 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void IssuePanelEntryBuilder_EmptyConsoleKeepsAnalyzerCounts()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var source = CreateNode("source", "Scene/Object", "Object", "Object", DependencyNodeKind.SceneObject);
             var missing = CreateNode("missing", "Scene/Object", "Missing Field", "Missing", DependencyNodeKind.MissingReference);
             graph.AddOrUpdateNode(source);
             graph.AddOrUpdateNode(missing);
-            graph.AddIssue(new DependencyScanIssueData(
+            graph.AddIssue(new DependencyScanIssue(
                 "SerializedPropertyScanner",
                 source.Path,
                 "Scanner warning",
@@ -157,9 +157,9 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.AreEqual(2, counts.AnalyzerWarnings);
         }
 
-        private static DependencyNodeData CreateNode(string id, string path, string name, string type, DependencyNodeKind kind)
+        private static DependencyNode CreateNode(string id, string path, string name, string type, DependencyNodeKind kind)
         {
-            return new DependencyNodeData(
+            return new DependencyNode(
                 id,
                 default,
                 path,

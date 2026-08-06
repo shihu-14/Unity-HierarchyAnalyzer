@@ -13,7 +13,7 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void AddConsoleIssues_PreservesMetadataAndLinksContextNode()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var source = CreateNode("source", "Scene/Source", 123);
             graph.AddOrUpdateNode(source);
             var entry = CreateEntry(
@@ -30,7 +30,7 @@ namespace DependencyAnalyzer.Editor.Tests
 
             ConsoleIssueScanner.AddConsoleIssues(
                 graph,
-                new DependencyCache(),
+                new DependencyNodeCache(),
                 new FixedConsoleLogReader(ConsoleLogReadResult.Success(new[] { entry })));
 
             Assert.AreEqual(1, graph.Issues.Count);
@@ -49,12 +49,12 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void AddConsoleIssues_KeepsIssueWithoutRelatedNode()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var entry = CreateEntry("Standalone warning", string.Empty, string.Empty, 0, 0, 512, 0, 20, 0, 1);
 
             ConsoleIssueScanner.AddConsoleIssues(
                 graph,
-                new DependencyCache(),
+                new DependencyNodeCache(),
                 new FixedConsoleLogReader(ConsoleLogReadResult.Success(new[] { entry })));
 
             Assert.AreEqual(1, graph.Issues.Count);
@@ -68,13 +68,13 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void AddConsoleIssues_DeduplicatesSameConsoleRow()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var first = CreateEntry("Repeated warning", string.Empty, string.Empty, 0, 0, 512, 0, 30, 0, 1);
             var duplicate = CreateEntry("Repeated warning", string.Empty, string.Empty, 0, 0, 512, 0, 30, 1, 1);
 
             ConsoleIssueScanner.AddConsoleIssues(
                 graph,
-                new DependencyCache(),
+                new DependencyNodeCache(),
                 new FixedConsoleLogReader(ConsoleLogReadResult.Success(new[] { first, duplicate })));
 
             Assert.AreEqual(1, graph.Issues.Count);
@@ -83,13 +83,13 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void AddConsoleIssues_KeepsIdenticalTextFromDifferentConsoleRows()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var first = CreateEntry("Repeated warning", string.Empty, string.Empty, 0, 0, 512, 0, 40, 0, 1);
             var second = CreateEntry("Repeated warning", string.Empty, string.Empty, 0, 0, 512, 0, 41, 1, 1);
 
             ConsoleIssueScanner.AddConsoleIssues(
                 graph,
-                new DependencyCache(),
+                new DependencyNodeCache(),
                 new FixedConsoleLogReader(ConsoleLogReadResult.Success(new[] { first, second })));
 
             Assert.AreEqual(2, graph.Issues.Count);
@@ -98,17 +98,17 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void AddConsoleIssues_EmptyCurrentSnapshotDoesNotRetainPreviousIssues()
         {
-            var previousGraph = new DependencyGraphData();
+            var previousGraph = new DependencyGraph();
             var entry = CreateEntry("Old warning", string.Empty, string.Empty, 0, 0, 512, 0, 50, 0, 1);
             ConsoleIssueScanner.AddConsoleIssues(
                 previousGraph,
-                new DependencyCache(),
+                new DependencyNodeCache(),
                 new FixedConsoleLogReader(ConsoleLogReadResult.Success(new[] { entry })));
 
-            var currentGraph = new DependencyGraphData();
+            var currentGraph = new DependencyGraph();
             ConsoleIssueScanner.AddConsoleIssues(
                 currentGraph,
-                new DependencyCache(),
+                new DependencyNodeCache(),
                 new FixedConsoleLogReader(ConsoleLogReadResult.Success(Array.Empty<ConsoleLogEntry>())));
 
             Assert.AreEqual(1, previousGraph.Issues.Count);
@@ -118,11 +118,11 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void AddConsoleIssues_UsesOnlyReaderSnapshot()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
 
             ConsoleIssueScanner.AddConsoleIssues(
                 graph,
-                new DependencyCache(),
+                new DependencyNodeCache(),
                 new FixedConsoleLogReader(ConsoleLogReadResult.Success(Array.Empty<ConsoleLogEntry>())));
 
             Assert.AreEqual(0, graph.Issues.Count, "Past Editor.log content must not be used as a fallback.");
@@ -131,11 +131,11 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void AddConsoleIssues_ReportsReaderFailureWithoutRelatedNode()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
 
             ConsoleIssueScanner.AddConsoleIssues(
                 graph,
-                new DependencyCache(),
+                new DependencyNodeCache(),
                 new FixedConsoleLogReader(ConsoleLogReadResult.Failure("Internal API changed.")));
 
             Assert.AreEqual(1, graph.Issues.Count);
@@ -149,12 +149,12 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void AddConsoleIssues_DoesNotRegisterRegularLog()
         {
-            var graph = new DependencyGraphData();
+            var graph = new DependencyGraph();
             var entry = CreateEntry("Regular log", string.Empty, string.Empty, 0, 0, 1 << 2, 0, 60, 0, 1);
 
             ConsoleIssueScanner.AddConsoleIssues(
                 graph,
-                new DependencyCache(),
+                new DependencyNodeCache(),
                 new FixedConsoleLogReader(ConsoleLogReadResult.Success(new[] { entry })));
 
             Assert.AreEqual(0, graph.Issues.Count);
@@ -189,9 +189,9 @@ namespace DependencyAnalyzer.Editor.Tests
                 occurrenceCount);
         }
 
-        private static DependencyNodeData CreateNode(string id, string path, int instanceId)
+        private static DependencyNode CreateNode(string id, string path, int instanceId)
         {
-            return new DependencyNodeData(
+            return new DependencyNode(
                 id,
                 default,
                 path,

@@ -6,7 +6,7 @@ namespace DependencyAnalyzer.Editor.Controller
 {
     public sealed class EditorSelectionSync
     {
-        public bool PingAndSelect(DependencyNodeData node)
+        public bool PingAndSelect(DependencyNode node)
         {
             return PingAndSelect(ResolveObject(node));
         }
@@ -23,7 +23,7 @@ namespace DependencyAnalyzer.Editor.Controller
             return true;
         }
 
-        public Object ResolveObject(DependencyNodeData node)
+        public Object ResolveObject(DependencyNode node)
         {
             if (node == null || node.Kind == DependencyNodeKind.MissingReference)
             {

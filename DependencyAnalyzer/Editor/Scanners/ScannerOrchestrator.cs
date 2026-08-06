@@ -27,13 +27,13 @@ namespace DependencyAnalyzer.Editor.Scanners
             extensionScanners.Add(scanner);
         }
 
-        public async Task<DependencyGraphData> ScanAsync(
+        public async Task<DependencyGraph> ScanAsync(
             AnalyzerSettings settings,
-            DependencyCache cache,
+            DependencyNodeCache cache,
             IProgress<ScanProgress> progress,
             CancellationToken cancellationToken)
         {
-            var mergedGraph = new DependencyGraphData();
+            var mergedGraph = new DependencyGraph();
             var sceneGraph = await RunScannerAsync(sceneScanner, settings, cache, progress, cancellationToken);
             mergedGraph.MergeFrom(sceneGraph);
 
@@ -53,10 +53,10 @@ namespace DependencyAnalyzer.Editor.Scanners
             return mergedGraph;
         }
 
-        private static async Task<DependencyGraphData> RunScannerAsync(
+        private static async Task<DependencyGraph> RunScannerAsync(
             IDependencyScanner scanner,
             AnalyzerSettings settings,
-            DependencyCache cache,
+            DependencyNodeCache cache,
             IProgress<ScanProgress> progress,
             CancellationToken cancellationToken)
         {
@@ -71,8 +71,8 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
             catch (Exception exception)
             {
-                var graph = new DependencyGraphData();
-                graph.AddIssue(new DependencyScanIssueData(
+                var graph = new DependencyGraph();
+                graph.AddIssue(new DependencyScanIssue(
                     scanner.Name,
                     scanner.Name,
                     "Scanner failed: " + exception.Message,
