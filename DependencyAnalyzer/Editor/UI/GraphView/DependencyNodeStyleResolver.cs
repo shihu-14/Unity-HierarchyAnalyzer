@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DependencyAnalyzer.Editor.UI.GraphView
 {
-    public static class DependencyNodeStyleResolver
+    internal static class DependencyNodeStyleResolver
     {
         public static string GetNodeTypeClass(DependencyNode node)
         {

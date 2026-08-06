@@ -1,4 +1,4 @@
-using DependencyAnalyzer.Editor.Controller.Issues;
+using DependencyAnalyzer.Editor.UI.Issues;
 using NUnit.Framework;
 
 namespace DependencyAnalyzer.Editor.Tests

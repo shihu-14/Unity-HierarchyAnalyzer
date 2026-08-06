@@ -9,6 +9,7 @@ using DependencyAnalyzer.Editor.Scanners;
 using DependencyAnalyzer.Editor.Settings;
 using DependencyAnalyzer.Editor.UI.Controls;
 using DependencyAnalyzer.Editor.UI.GraphView;
+using DependencyAnalyzer.Editor.UI.Issues;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -318,7 +319,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 UpdateLoadButtonText();
                 SetStatus("Completed: " + currentGraph.Nodes.Count + " nodes, "
                     + currentGraph.Edges.Count + " edges, "
-                    + IssuePanelEntryBuilder.Count(currentGraph) + " issues");
+                    + IssuePanelEntryBuilder.Count(currentGraph, IssueTargetResolver.FindIssueEntryTargetNodeId) + " issues");
             }
             catch (OperationCanceledException)
             {

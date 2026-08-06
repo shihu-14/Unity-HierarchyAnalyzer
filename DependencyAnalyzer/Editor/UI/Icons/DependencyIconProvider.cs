@@ -3,9 +3,9 @@ using DependencyAnalyzer.Editor.Core;
 using UnityEditor;
 using UnityEngine;
 
-namespace DependencyAnalyzer.Editor.UI.GraphView
+namespace DependencyAnalyzer.Editor.UI.Icons
 {
-    public static class DependencyIconProvider
+    internal static class DependencyIconProvider
     {
         private const string WarningIssueIconPath = "Assets/DependencyAnalyzer/Editor/UI/Icons/issue-warning.png";
         private const string ErrorIssueIconPath = "Assets/DependencyAnalyzer/Editor/UI/Icons/issue-error.png";

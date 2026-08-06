@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace DependencyAnalyzer.Editor.Controller.Issues
+namespace DependencyAnalyzer.Editor.UI.Issues
 {
     internal static class IssueTextFormatter
     {

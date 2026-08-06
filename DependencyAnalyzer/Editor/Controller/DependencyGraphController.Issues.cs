@@ -6,6 +6,8 @@ using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Settings;
 using DependencyAnalyzer.Editor.UI.Controls;
 using DependencyAnalyzer.Editor.UI.GraphView;
+using DependencyAnalyzer.Editor.UI.Icons;
+using DependencyAnalyzer.Editor.UI.Issues;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -20,7 +22,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 return;
             }
 
-            var entries = IssuePanelEntryBuilder.Build(graphData);
+            var entries = IssuePanelEntryBuilder.Build(graphData, IssueTargetResolver.FindIssueEntryTargetNodeId);
             var errorEntries = entries
                 .Where(entry => entry.Severity == DependencyScanIssueSeverity.Error)
                 .ToList();
@@ -74,7 +76,7 @@ namespace DependencyAnalyzer.Editor.Controller
             var row = new VisualElement();
             row.AddToClassList("dependency-issue-row");
             row.AddToClassList(IssuePanelEntryBuilder.GetSeverityClass(entry.Severity));
-            if (string.IsNullOrEmpty(entry.TargetNodeId))
+            if (!entry.HasRelatedNode)
             {
                 row.AddToClassList("dependency-issue-row--disabled");
             }

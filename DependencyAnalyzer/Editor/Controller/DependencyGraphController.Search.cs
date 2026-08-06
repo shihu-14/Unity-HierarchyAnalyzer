@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DependencyAnalyzer.Editor.Controller.Issues;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Settings;
 using DependencyAnalyzer.Editor.UI.Controls;

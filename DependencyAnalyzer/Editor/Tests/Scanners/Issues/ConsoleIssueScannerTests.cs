@@ -4,6 +4,7 @@ using DependencyAnalyzer.Editor.Controller.Issues;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Scanners;
 using DependencyAnalyzer.Editor.Scanners.Issues;
+using DependencyAnalyzer.Editor.UI.Issues;
 using NUnit.Framework;
 
 namespace DependencyAnalyzer.Editor.Tests
@@ -59,7 +60,9 @@ namespace DependencyAnalyzer.Editor.Tests
 
             Assert.AreEqual(1, graph.Issues.Count);
             Assert.IsEmpty(graph.Issues[0].SubjectPath);
-            var panelEntries = IssuePanelEntryBuilder.Build(graph);
+            var panelEntries = IssuePanelEntryBuilder.Build(
+                graph,
+                IssueTargetResolver.FindIssueEntryTargetNodeId);
             Assert.AreEqual(1, panelEntries.Count);
             Assert.IsEmpty(panelEntries[0].TargetNodeId);
             StringAssert.Contains("No related node", panelEntries[0].Title);
@@ -141,8 +144,12 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.AreEqual(1, graph.Issues.Count);
             Assert.AreEqual("Unity Console Reader", graph.Issues[0].ScannerName);
             StringAssert.Contains("Internal API changed", graph.Issues[0].Message);
-            var panelEntries = IssuePanelEntryBuilder.Build(graph);
+            var panelEntries = IssuePanelEntryBuilder.Build(
+                graph,
+                IssueTargetResolver.FindIssueEntryTargetNodeId);
             Assert.AreEqual(1, panelEntries.Count);
+            Assert.AreEqual(IssuePanelEntryOrigin.Analyzer, panelEntries[0].Origin);
+            Assert.IsFalse(panelEntries[0].HasRelatedNode);
             Assert.IsEmpty(panelEntries[0].TargetNodeId);
         }
 
@@ -158,7 +165,9 @@ namespace DependencyAnalyzer.Editor.Tests
                 new FixedConsoleLogReader(ConsoleLogReadResult.Success(new[] { entry })));
 
             Assert.AreEqual(0, graph.Issues.Count);
-            var counts = IssuePanelEntryBuilder.CountByOrigin(IssuePanelEntryBuilder.Build(graph));
+            var counts = IssuePanelEntryBuilder.CountByOrigin(IssuePanelEntryBuilder.Build(
+                graph,
+                IssueTargetResolver.FindIssueEntryTargetNodeId));
             Assert.AreEqual(0, counts.ConsoleErrors);
             Assert.AreEqual(0, counts.ConsoleWarnings);
         }

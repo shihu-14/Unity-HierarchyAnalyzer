@@ -1,7 +1,7 @@
 using DependencyAnalyzer.Editor.Core;
 using UnityEngine;
 
-namespace DependencyAnalyzer.Editor.Controller.Issues
+namespace DependencyAnalyzer.Editor.UI.Issues
 {
     internal enum IssuePanelEntryOrigin
     {
@@ -59,6 +59,7 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
         public string Detail { get; }
         public DependencyScanIssueSeverity Severity { get; }
         public string TargetNodeId { get; }
+        public bool HasRelatedNode => !string.IsNullOrEmpty(TargetNodeId);
         public Texture NodeIcon { get; }
         public Color NodeColor { get; }
         public IssuePanelEntryOrigin Origin { get; }

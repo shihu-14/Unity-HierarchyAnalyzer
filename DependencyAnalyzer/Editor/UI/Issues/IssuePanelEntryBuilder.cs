@@ -2,19 +2,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
+using DependencyAnalyzer.Editor.UI.Icons;
 using DependencyAnalyzer.Editor.UI.GraphView;
 using UnityEngine;
 
-namespace DependencyAnalyzer.Editor.Controller.Issues
+namespace DependencyAnalyzer.Editor.UI.Issues
 {
     internal static class IssuePanelEntryBuilder
     {
-        public static int Count(DependencyGraph graphData)
+        public static int Count(
+            DependencyGraph graphData,
+            Func<DependencyGraph, DependencyScanIssue, string> resolveTargetNodeId)
         {
-            return Build(graphData).Count;
+            return Build(graphData, resolveTargetNodeId).Count;
         }
 
-        public static List<IssuePanelEntry> Build(DependencyGraph graphData)
+        public static List<IssuePanelEntry> Build(
+            DependencyGraph graphData,
+            Func<DependencyGraph, DependencyScanIssue, string> resolveTargetNodeId)
         {
             var entries = new List<IssuePanelEntry>();
             if (graphData == null)
@@ -50,21 +55,20 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                     continue;
                 }
 
-                var targetNodeId = IssueTargetResolver.FindIssueEntryTargetNodeId(graphData, issue);
+                var targetNodeId = resolveTargetNodeId == null
+                    ? string.Empty
+                    : resolveTargetNodeId(graphData, issue);
                 if (string.IsNullOrEmpty(targetNodeId)
                     || !graphData.TryGetNode(targetNodeId, out var targetNode))
                 {
-                    if (ShouldDisplayWithoutTarget(issue))
-                    {
-                        entries.Add(new IssuePanelEntry(
-                            IssueTextFormatter.FormatTitle(issue.ScannerName) + " (No related node)",
-                            BuildIssueDetail(issue),
-                            issue.Severity,
-                            string.Empty,
-                            null,
-                            new Color(0.38f, 0.42f, 0.47f),
-                            GetOrigin(issue)));
-                    }
+                    entries.Add(new IssuePanelEntry(
+                        IssueTextFormatter.FormatTitle(issue.ScannerName) + " (No related node)",
+                        BuildIssueDetail(issue),
+                        issue.Severity,
+                        string.Empty,
+                        null,
+                        new Color(0.38f, 0.42f, 0.47f),
+                        GetOrigin(issue)));
 
                     continue;
                 }
@@ -175,13 +179,6 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
         {
             return issue != null
                 && string.Equals(issue.ScannerName, "Unity Console", StringComparison.Ordinal);
-        }
-
-        private static bool ShouldDisplayWithoutTarget(DependencyScanIssue issue)
-        {
-            return issue != null
-                && (string.Equals(issue.ScannerName, "Unity Console", StringComparison.Ordinal)
-                    || string.Equals(issue.ScannerName, "Unity Console Reader", StringComparison.Ordinal));
         }
 
         public static string GetSeverityClass(DependencyScanIssueSeverity severity)

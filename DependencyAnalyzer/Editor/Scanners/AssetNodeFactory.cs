@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace DependencyAnalyzer.Editor.Scanners
 {
-    public static class AssetNodeFactory
+    internal static class AssetNodeFactory
     {
         internal static DependencyNode CreateAssetNode(string assetPath, DependencyNodeCache cache)
         {

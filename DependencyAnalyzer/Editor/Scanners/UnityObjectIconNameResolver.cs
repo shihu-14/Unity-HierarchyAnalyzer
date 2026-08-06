@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace DependencyAnalyzer.Editor.Scanners
 {
-    public static class UnityObjectIconNameResolver
+    internal static class UnityObjectIconNameResolver
     {
         public static string GetIconContentName(Type type)
         {

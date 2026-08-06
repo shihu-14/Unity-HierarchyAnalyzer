@@ -7,12 +7,21 @@ namespace DependencyAnalyzer.Editor.Tests
     public sealed class ConsoleIssueParserTests
     {
         [Test]
-        public void TryGetSeverity_DetectsCompilerErrorText()
+        public void TryGetSeverity_FallsBackToCompilerErrorTextWhenModeIsUnknown()
         {
             var entry = new ConsoleLogEntry("Assets/Foo.cs(8,13): error CS1003: Syntax error", string.Empty, string.Empty, 0, 0, 0);
 
             Assert.IsTrue(ConsoleIssueParser.TryGetSeverity(entry, out var severity));
             Assert.AreEqual(DependencyScanIssueSeverity.Error, severity);
+        }
+
+        [Test]
+        public void TryGetSeverity_FallsBackToCompilerWarningTextWhenModeIsUnknown()
+        {
+            var entry = new ConsoleLogEntry("Assets/Foo.cs(8,13): warning CS0168: Variable is never used", string.Empty, string.Empty, 0, 0, 0);
+
+            Assert.IsTrue(ConsoleIssueParser.TryGetSeverity(entry, out var severity));
+            Assert.AreEqual(DependencyScanIssueSeverity.Warning, severity);
         }
 
         [Test]
@@ -73,6 +82,22 @@ namespace DependencyAnalyzer.Editor.Tests
         public void TryGetSeverity_DoesNotTreatRegularLogAsIssue()
         {
             var entry = new ConsoleLogEntry("Regular log", string.Empty, string.Empty, 0, 1 << 2, 0);
+
+            Assert.IsFalse(ConsoleIssueParser.TryGetSeverity(entry, out _));
+        }
+
+        [Test]
+        public void TryGetSeverity_DoesNotUseWarningTextFallbackForLogMode()
+        {
+            var entry = new ConsoleLogEntry("This regular log contains warning text", string.Empty, string.Empty, 0, 1 << 2, 0);
+
+            Assert.IsFalse(ConsoleIssueParser.TryGetSeverity(entry, out _));
+        }
+
+        [Test]
+        public void TryGetSeverity_DoesNotUseErrorTextFallbackForScriptingLogMode()
+        {
+            var entry = new ConsoleLogEntry("This scripting log contains error text", string.Empty, string.Empty, 0, 1 << 10, 0);
 
             Assert.IsFalse(ConsoleIssueParser.TryGetSeverity(entry, out _));
         }

@@ -39,6 +39,19 @@ Inspect contents and usages before changing any folder. The current intended rol
 
 The production assembly is Editor-only. The runtime test-fixture assembly is not production runtime functionality.
 
+## Observed Dependency Direction
+
+The current composition root is `DependencyGraphWindow` in the Editor root. It constructs `DependencyGraphView` and `DependencyGraphController`, then passes the view into the controller. The resulting production dependency direction is:
+
+- Editor root -> Controller, UI, Settings
+- Controller -> Core, Scanners, Settings, UI
+- UI -> Core, Unity Editor, UI Toolkit
+- Scanners -> Core, Settings, Unity Editor APIs
+- Settings -> Unity Editor and UI Toolkit APIs
+- Core -> BCL and the minimal Unity identity types it stores
+
+`Project policy`: Keep UI presentation models independent of Controller implementation types. When UI construction needs controller-owned resolution rules, supply the resolved value or a narrow callback from the composition/coordinator side. Do not reverse the observed dependency direction merely to justify a file move.
+
 ## Folder Classification
 
 `Derived guideline`: Use one primary classification axis among siblings and keep siblings at comparable abstraction levels.

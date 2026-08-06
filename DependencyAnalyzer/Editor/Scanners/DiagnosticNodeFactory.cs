@@ -3,7 +3,7 @@ using DependencyAnalyzer.Editor.Core;
 
 namespace DependencyAnalyzer.Editor.Scanners
 {
-    public static class DiagnosticNodeFactory
+    internal static class DiagnosticNodeFactory
     {
         internal static DependencyNode CreateMissingNode(
             string id,

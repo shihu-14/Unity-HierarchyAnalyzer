@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DependencyAnalyzer.Editor.Core;
+using DependencyAnalyzer.Editor.UI.Icons;
 using UnityEngine;
 using UnityEngine.UIElements;
 

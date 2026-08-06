@@ -124,6 +124,7 @@ DependencyAnalyzer/
 │   │   ├── Controls/
 │   │   ├── GraphView/
 │   │   ├── Icons/
+│   │   ├── Issues/
 │   │   └── Styles/
 └── Tests/
     └── Runtime/
