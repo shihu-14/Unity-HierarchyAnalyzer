@@ -32,7 +32,7 @@
 
 - This repository contains an Editor-only Unity dependency graph tool.
 - Keep responsibilities separated:
-  - `Core`: immutable graph and issue data.
+  - `Core`: graph, node, edge, issue, and cache data structures plus graph-local operations; it does not depend on Controller, UI, or Scanners, and does not collect Unity state or render UI.
   - `Scanners`: Unity object, asset, serialized reference, and diagnostic collection.
   - `Controller`: scan orchestration, state, selection sync, and UI coordination.
   - `UI`: UI Toolkit graph, node, edge, toolbar, issue panel, USS, and UXML.
@@ -42,6 +42,7 @@
 
 ## Skill Routing
 
+- Naming, file/folder organization, responsibility, and safe structural refactoring: `.codex/skills/unity-code-organization/SKILL.md`
 - Unity Editor extension structure: `.codex/skills/unity-editor-extension/SKILL.md`
 - Serialized reference internals: `.codex/skills/unity-reference-analysis/SKILL.md`
 - UI Toolkit graph rendering: `.codex/skills/unity-ui-toolkit-graph/SKILL.md`

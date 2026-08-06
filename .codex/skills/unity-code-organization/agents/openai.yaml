@@ -1,0 +1,4 @@
+interface:
+  display_name: "Unity Code Organization"
+  short_description: "Review naming, structure, and safe Unity refactors"
+  default_prompt: "Use $unity-code-organization to review this repository's naming and structure before proposing a behavior-preserving refactor."
