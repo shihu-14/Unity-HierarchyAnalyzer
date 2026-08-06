@@ -1,5 +1,12 @@
 # Responsibility And Granularity
 
+## Evidence Scope
+
+- Only rules mapped as `Official requirement` or `Official recommendation` in `source-map.md` are official, and only within the cited source scope.
+- Repository workflows, thresholds, role meanings, and commit practices are `Project policy`.
+- Inferences assembled from multiple official principles are `Derived guideline`.
+- Never present a project policy as a direct Unity or Microsoft requirement.
+
 ## Responsibility Test
 
 Describe a type or file by the work it performs, the data it owns, and the reason it changes. Prefer a cohesive responsibility with explicit dependencies.

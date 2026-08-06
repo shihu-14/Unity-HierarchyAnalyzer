@@ -2,7 +2,12 @@
 
 ## Evidence Scope
 
-Apply Microsoft Framework Design Guidelines as requirements only to public and protected APIs. Apply internal naming rules as repository policy supported by current Unity and C# recommendations. See `source-map.md` before labeling a rule official.
+- Only rules mapped as `Official requirement` or `Official recommendation` in `source-map.md` are official, and only within the cited source scope.
+- Repository workflows, thresholds, role meanings, and commit practices are `Project policy`.
+- Inferences assembled from multiple official principles are `Derived guideline`.
+- Never present a project policy as a direct Unity or Microsoft requirement.
+
+Apply Microsoft Framework Design Guidelines as requirements only to public and protected APIs. Apply internal naming rules as repository policy supported by current Unity and C# recommendations.
 
 The objective is not the shortest name. Choose the shortest name that remains unambiguous, meaningful, searchable, and accurate at its call sites.
 
@@ -72,7 +77,7 @@ Allow these reviewed exceptions:
 - A cohesive group of internal render or transport types when splitting would reduce discoverability
 - Partial files named `PrimaryType.Concern.cs`
 
-For `MonoBehaviour` scripts, preserve Unity's file/type naming requirement. Treat `ScriptableObject` and serialized types as compatibility-sensitive even when Unity permits a structural edit.
+For `MonoBehaviour` scripts, preserve Unity's official file/type naming requirement. The broader one-primary-type-per-file rule is separate repository policy. Treat `ScriptableObject` and other serialized type renames as compatibility-sensitive project policy, not as the same official `MonoBehaviour` rule.
 
 ## UI Toolkit Names
 

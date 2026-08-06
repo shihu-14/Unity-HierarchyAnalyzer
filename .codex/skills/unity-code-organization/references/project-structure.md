@@ -1,5 +1,12 @@
 # Project Structure Guidance
 
+## Evidence Scope
+
+- Only rules mapped as `Official requirement` or `Official recommendation` in `source-map.md` are official, and only within the cited source scope.
+- Repository workflows, thresholds, role meanings, and commit practices are `Project policy`.
+- Inferences assembled from multiple official principles are `Derived guideline`.
+- Never present a project policy as a direct Unity or Microsoft requirement.
+
 ## Current Distribution Boundary
 
 This repository uses Assets-copy distribution, not UPM. Preserve this layout unless migration is explicitly requested:
@@ -11,7 +18,9 @@ Assets/
     └── Tests/
 ```
 
-Use Unity's official UPM layout only as a reference for package-level boundaries. It defines `Editor`, `Runtime`, `Tests/Editor`, `Tests/Runtime`, `Samples`, `Documentation`, and asmdef placement, but does not prescribe the detailed classification axis inside each folder.
+Use Unity's official UPM layout only as a version-specific reference for package-level boundaries. Unity 6000.0's recommended custom-package layout uses `Samples~` and `Documentation~` and explains that the trailing tilde makes Unity ignore their contents and `.meta` tracking. Unity 6000.4's package-creation layout instead shows `Samples` and `Documentation` without tildes. Both describe `Editor`, `Runtime`, `Tests/Editor`, `Tests/Runtime`, and asmdef placement, but neither prescribes the detailed classification axis inside each folder.
+
+This difference is not a basis for changing the current Assets-copy layout. Before any future UPM conversion, recheck the target Unity version and how export or installation handles sample and documentation folders and trailing tildes.
 
 ## Current Repository Responsibilities
 
@@ -19,7 +28,7 @@ Inspect contents and usages before changing any folder. The current intended rol
 
 | Area | Current responsibility |
 |---|---|
-| `Editor/Core` | Graph, node, edge, issue, and cache data |
+| `Editor/Core` | Graph, node, edge, issue, and cache data structures plus graph-local operations |
 | `Editor/Scanners` | Read Scene, serialized reference, AssetDatabase, and Console state into tool data |
 | `Editor/Controller` | Coordinate scan lifecycle, UI state, search, selection, and issue routing |
 | `Editor/UI` | Render and interact through UI Toolkit |

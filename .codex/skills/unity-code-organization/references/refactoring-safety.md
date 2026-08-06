@@ -1,5 +1,12 @@
 # Refactoring Safety
 
+## Evidence Scope
+
+- Only rules mapped as `Official requirement` or `Official recommendation` in `source-map.md` are official, and only within the cited source scope.
+- Repository workflows, thresholds, role meanings, and commit practices are `Project policy`.
+- Inferences assembled from multiple official principles are `Derived guideline`.
+- Never present a project policy as a direct Unity or Microsoft requirement.
+
 ## Separate Structure From Behavior
 
 Keep a structural refactor behavior-preserving. Do not combine a rename or move with new analysis rules, UI behavior, public API changes, serialization changes, dependency additions, or unrelated cleanup.
