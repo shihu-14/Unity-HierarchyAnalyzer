@@ -74,7 +74,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             DependencyNodeCache cache,
             AnalyzerSettings settings)
         {
-            var isVisibleComponent = ShouldVisualizeComponent(component);
+            var isVisibleComponent = ComponentScanPolicy.ShouldVisualizeComponent(component);
             var sourceObject = isVisibleComponent ? (UnityEngine.Object)component : component.gameObject;
             var sourceNode = CreateSceneObjectNode(sourceObject, cache);
             graph.AddOrUpdateNode(sourceNode);
@@ -156,7 +156,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             var missingReferenceType = GetMissingReferenceTypeName(reference.SerializedTypeName);
-            var missingNode = AssetScanner.CreateMissingNode(
+            var missingNode = DiagnosticNodeFactory.CreateMissingNode(
                 "missing:property:" + sourceNode.Id + ":" + memberName + ":" + reference.MissingInstanceId,
                 sourceNode.Path,
                 memberName,

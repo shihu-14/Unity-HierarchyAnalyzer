@@ -155,7 +155,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 return null;
             }
 
-            return graph.AddOrUpdateNode(AssetScanner.CreateAssetNode(assetPath, cache));
+            return graph.AddOrUpdateNode(AssetNodeFactory.CreateAssetNode(assetPath, cache));
         }
 
         private static DependencyNode FindNodeByInstanceId(DependencyGraph graph, int instanceId)

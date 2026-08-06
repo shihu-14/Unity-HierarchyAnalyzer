@@ -139,7 +139,7 @@ namespace DependencyAnalyzer.Editor.Scanners
         {
             if (component == null)
             {
-                var missingNode = AssetScanner.CreateMissingNode(
+                var missingNode = DiagnosticNodeFactory.CreateMissingNode(
                     "missing:component:" + gameObjectNode.Id + ":" + componentIndex,
                     gameObjectNode.Path,
                     "Missing MonoBehaviour",
@@ -159,7 +159,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             components.Add(component);
-            if (!ShouldVisualizeComponent(component))
+            if (!ComponentScanPolicy.ShouldVisualizeComponent(component))
             {
                 return;
             }
@@ -214,7 +214,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 return;
             }
 
-            var prefabNode = AssetScanner.CreateAssetNode(prefabAssetPath, cache);
+            var prefabNode = AssetNodeFactory.CreateAssetNode(prefabAssetPath, cache);
             graph.AddOrUpdateNode(prefabNode);
             graph.AddEdge(new DependencyEdge(
                 gameObjectNode.Id,

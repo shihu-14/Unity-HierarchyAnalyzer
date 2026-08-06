@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DependencyAnalyzer.Editor.Scanners
 {
-    public sealed partial class SerializedPropertyScanner
+    internal static class ComponentScanPolicy
     {
         internal static bool ShouldScanInspectorObjectReference(Component component, SerializedProperty property)
         {
@@ -34,7 +34,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
         }
 
-        private static bool ShouldVisualizeComponent(Component component)
+        internal static bool ShouldVisualizeComponent(Component component)
         {
             if (component == null)
             {

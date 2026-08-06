@@ -29,13 +29,13 @@ namespace DependencyAnalyzer.Editor.Scanners
                     return null;
                 }
 
-                return AssetScanner.CreateAssetNode(unityObject, cache);
+                return AssetNodeFactory.CreateAssetNode(unityObject, cache);
             }
 
             if (unityObject is GameObject || unityObject is Component)
             {
                 var component = unityObject as Component;
-                if (component != null && !ShouldVisualizeComponent(component))
+                if (component != null && !ComponentScanPolicy.ShouldVisualizeComponent(component))
                 {
                     return CreateSceneObjectNode(component.gameObject, cache);
                 }

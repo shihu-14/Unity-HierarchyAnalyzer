@@ -27,7 +27,7 @@ namespace DependencyAnalyzer.Editor.Scanners.Issues
                 }
 
                 graph.TryGetNode(sourceNodeId, out var sourceNode);
-                var issueNode = AssetScanner.CreateIssueNode(issue, cache, sourceNode);
+                var issueNode = DiagnosticNodeFactory.CreateIssueNode(issue, cache, sourceNode);
                 graph.AddOrUpdateNode(issueNode);
 
                 graph.AddEdge(new DependencyEdge(
