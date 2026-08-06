@@ -6,7 +6,6 @@ using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Settings;
 using DependencyAnalyzer.Editor.UI.Controls;
 using DependencyAnalyzer.Editor.UI.GraphView;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -96,7 +95,7 @@ namespace DependencyAnalyzer.Editor.Controller
 
             row.tooltip = entry.Detail;
             row.style.borderLeftColor = new StyleColor(entry.NodeColor);
-            var severityIcon = new Image { image = IconUtility.GetIssueIcon(entry.Severity) };
+            var severityIcon = new Image { image = DependencyIconProvider.GetIssueIcon(entry.Severity) };
             severityIcon.AddToClassList("dependency-issue-severity-icon");
 
             var nodeIcon = new Image { image = entry.NodeIcon };
@@ -137,7 +136,7 @@ namespace DependencyAnalyzer.Editor.Controller
             button.clicked += clicked;
             button.Clear();
 
-            var icon = new Image { image = IconUtility.GetIssueIcon(severity) };
+            var icon = new Image { image = DependencyIconProvider.GetIssueIcon(severity) };
             icon.AddToClassList("dependency-issue-filter-icon");
             var count = new Label("0");
             count.AddToClassList("dependency-issue-filter-count");

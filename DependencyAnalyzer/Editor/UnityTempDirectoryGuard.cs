@@ -3,7 +3,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace DependencyAnalyzer.Editor.Utils
+namespace DependencyAnalyzer.Editor
 {
     [InitializeOnLoad]
     public static class UnityTempDirectoryGuard

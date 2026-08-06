@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEngine;
 using UnityEngine.UIElements;
 

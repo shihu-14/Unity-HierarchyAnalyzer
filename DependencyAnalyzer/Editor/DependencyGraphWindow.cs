@@ -1,7 +1,6 @@
 using System.IO;
 using DependencyAnalyzer.Editor.Controller;
 using DependencyAnalyzer.Editor.UI.GraphView;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;

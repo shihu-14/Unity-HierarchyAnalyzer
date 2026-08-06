@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Settings;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -53,7 +52,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 type.Name,
                 type.FullName,
                 Array.Empty<string>(),
-                IconUtility.GetIconContentName(type),
+                UnityObjectIconNameResolver.GetIconContentName(type),
                 DependencyNodeKind.SceneObject,
                 unityObject.GetInstanceID());
             return cache.Store(node);
@@ -277,7 +276,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 }
             }
 
-            return IconUtility.GetIconContentName(type);
+            return UnityObjectIconNameResolver.GetIconContentName(type);
         }
 
         private static GlobalObjectId GetGlobalObjectId(UnityEngine.Object unityObject)

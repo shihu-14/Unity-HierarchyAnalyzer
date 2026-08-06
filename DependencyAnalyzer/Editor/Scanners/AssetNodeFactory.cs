@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -71,7 +70,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 displayTypeName,
                 displayTypeFullName,
                 labels,
-                isMainAsset ? GetIconContentName(assetPath, type) : IconUtility.GetIconContentName(type),
+                isMainAsset ? GetIconContentName(assetPath, type) : UnityObjectIconNameResolver.GetIconContentName(type),
                 DependencyNodeKind.Asset,
                 assetObject.GetInstanceID());
 
@@ -141,7 +140,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 return "Prefab Icon";
             }
 
-            return IsModelMeshPath(assetPath) ? "Mesh Icon" : IconUtility.GetIconContentName(type);
+            return IsModelMeshPath(assetPath) ? "Mesh Icon" : UnityObjectIconNameResolver.GetIconContentName(type);
         }
 
         private static string BuildStableAssetId(

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Utils;
+using DependencyAnalyzer.Editor.UI.GraphView;
 using UnityEngine;
 
 namespace DependencyAnalyzer.Editor.Controller.Issues
@@ -38,8 +38,8 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                     IssueTextFormatter.FormatDetail(string.IsNullOrEmpty(node.Path) ? node.TypeName : node.Path),
                     DependencyScanIssueSeverity.Warning,
                     node.Id,
-                    IconUtility.GetIcon(node),
-                    IconUtility.GetNodeAccentColor(node),
+                    DependencyIconProvider.GetIcon(node),
+                    DependencyNodeStyleResolver.GetNodeAccentColor(node),
                     IssuePanelEntryOrigin.Analyzer));
             }
 
@@ -74,8 +74,8 @@ namespace DependencyAnalyzer.Editor.Controller.Issues
                     BuildIssueDetail(issue),
                     issue.Severity,
                     targetNodeId,
-                    IconUtility.GetIcon(targetNode),
-                    IconUtility.GetNodeAccentColor(targetNode),
+                    DependencyIconProvider.GetIcon(targetNode),
+                    DependencyNodeStyleResolver.GetNodeAccentColor(targetNode),
                     GetOrigin(issue)));
             }
 

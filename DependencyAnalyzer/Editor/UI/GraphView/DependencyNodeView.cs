@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -89,7 +88,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             style.height = nodeHeight;
 
             AddToClassList("dependency-node");
-            AddToClassList(IconUtility.GetNodeTypeClass(data));
+            AddToClassList(DependencyNodeStyleResolver.GetNodeTypeClass(data));
             AddToClassList(GetImpactClass(data));
             if (HasHiddenChildren)
             {
@@ -166,7 +165,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             header.style.paddingRight = Mathf.Round(Mathf.Clamp(7f * nodeScale, 4f, 7f));
             header.style.paddingTop = Mathf.Round(Mathf.Clamp(6f * nodeScale, 2f, 6f));
 
-            var icon = new Image { image = IconUtility.GetIcon(Data) };
+            var icon = new Image { image = DependencyIconProvider.GetIcon(Data) };
             icon.AddToClassList("dependency-node-icon");
             var iconSize = Mathf.Round(Mathf.Clamp(24f * nodeScale, 15f, 24f));
             icon.style.width = iconSize;
@@ -211,7 +210,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 var severity = hasPropagatedIssue
                     ? propagatedIssueSeverity
                     : DependencyScanIssueSeverity.Warning;
-                var warningIcon = new Image { image = IconUtility.GetIssueIcon(severity) };
+                var warningIcon = new Image { image = DependencyIconProvider.GetIssueIcon(severity) };
                 warningIcon.AddToClassList("dependency-node-warning");
                 var warningSize = Mathf.Round(Mathf.Clamp(18f * nodeScale, 12f, 18f));
                 warningIcon.style.width = warningSize;
@@ -257,7 +256,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
 
             var severity = Data.IssueSeverity.HasValue ? Data.IssueSeverity.Value : DependencyScanIssueSeverity.Warning;
-            var marker = new Image { image = IconUtility.GetIssueIcon(severity) };
+            var marker = new Image { image = DependencyIconProvider.GetIssueIcon(severity) };
             marker.AddToClassList("dependency-node-issue-marker");
             var markerSize = Mathf.Round(Mathf.Clamp(20f * nodeScale, 14f, 20f));
             marker.style.width = markerSize;

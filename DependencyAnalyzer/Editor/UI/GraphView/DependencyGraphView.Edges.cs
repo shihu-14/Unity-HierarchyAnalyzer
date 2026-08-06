@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -53,8 +52,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 var visualSourceRect = GetEdgeSourceRect(renderNode.Parent, sourceRect);
                 var edgeView = new DependencyEdgeView(
                     renderNode.EdgeFromParent,
-                    IconUtility.GetNodeAccentColor(renderNode.Parent.Node),
-                    IconUtility.GetNodeAccentColor(renderNode.Node));
+                    DependencyNodeStyleResolver.GetNodeAccentColor(renderNode.Parent.Node),
+                    DependencyNodeStyleResolver.GetNodeAccentColor(renderNode.Node));
                 var targetRenderNode = renderNode;
                 edgeView.SetCanvasSize(currentCanvasSize.x, currentCanvasSize.y);
                 edgeView.SetEndpoints(visualSourceRect, targetRect, routeOffset, edgeIndex, total);

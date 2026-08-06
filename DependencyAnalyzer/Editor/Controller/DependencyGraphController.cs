@@ -9,7 +9,6 @@ using DependencyAnalyzer.Editor.Scanners;
 using DependencyAnalyzer.Editor.Settings;
 using DependencyAnalyzer.Editor.UI.Controls;
 using DependencyAnalyzer.Editor.UI.GraphView;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;

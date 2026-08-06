@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Utils;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -434,7 +433,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return;
             }
 
-            var nodeColor = IconUtility.GetNodeAccentColor(view.Data);
+            var nodeColor = DependencyNodeStyleResolver.GetNodeAccentColor(view.Data);
             var borderColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 0.92f);
             var fillColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 0.08f);
             var ring = new VisualElement();
@@ -495,7 +494,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             const float durationSeconds = 0.95f;
             const float holdSeconds = 0.16f;
-            var nodeColor = IconUtility.GetNodeAccentColor(view.Data);
+            var nodeColor = DependencyNodeStyleResolver.GetNodeAccentColor(view.Data);
             var borderColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 1f);
             var fillColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 0.10f);
             var ring = new VisualElement();
