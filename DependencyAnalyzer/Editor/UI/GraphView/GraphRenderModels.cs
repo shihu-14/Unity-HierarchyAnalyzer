@@ -19,7 +19,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
     internal sealed class NodeAnimation
     {
-        public NodeAnimation(string viewId, CustomNodeView view, Vector2 startPosition, Vector2 endPosition, bool fadeIn)
+        public NodeAnimation(string viewId, DependencyNodeView view, Vector2 startPosition, Vector2 endPosition, bool fadeIn)
         {
             ViewId = viewId;
             View = view;
@@ -29,7 +29,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         }
 
         public string ViewId { get; }
-        public CustomNodeView View { get; }
+        public DependencyNodeView View { get; }
         public Vector2 StartPosition { get; }
         public Vector2 EndPosition { get; }
         public bool FadeIn { get; }

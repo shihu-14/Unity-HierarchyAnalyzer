@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 
 namespace DependencyAnalyzer.Editor.Tests
 {
-    public sealed class CustomNodeViewTests
+    public sealed class DependencyNodeViewTests
     {
         [Test]
         public void Tooltip_KeepsReferenceCounts()
@@ -80,9 +80,9 @@ namespace DependencyAnalyzer.Editor.Tests
                 kind);
         }
 
-        private static CustomNodeView CreateView(DependencyNode node)
+        private static DependencyNodeView CreateView(DependencyNode node)
         {
-            return new CustomNodeView(
+            return new DependencyNodeView(
                 "view",
                 node,
                 false,

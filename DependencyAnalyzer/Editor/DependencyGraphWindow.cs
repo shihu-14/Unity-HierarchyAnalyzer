@@ -8,7 +8,7 @@ using UnityEngine.UIElements;
 
 namespace DependencyAnalyzer.Editor
 {
-    public sealed class DependencyWindow : EditorWindow
+    public sealed class DependencyGraphWindow : EditorWindow
     {
         private DependencyGraphController controller;
         private DependencyGraphView graphView;
@@ -16,7 +16,7 @@ namespace DependencyAnalyzer.Editor
         [MenuItem("Tools/Dependency Analyzer/Open Graph")]
         public static void Open()
         {
-            var window = GetWindow<DependencyWindow>();
+            var window = GetWindow<DependencyGraphWindow>();
             window.titleContent = new GUIContent("Dependency Graph");
             window.minSize = new Vector2(720f, 480f);
             window.Show();

@@ -308,7 +308,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 siblingIndex,
                 parent,
                 GetDepthNodeScale(depth) * siblingCountScale);
-            renderNode.Size = CustomNodeView.GetPreferredSize(node, renderNode.SizeScale);
+            renderNode.Size = DependencyNodeView.GetPreferredSize(node, renderNode.SizeScale);
             var childPath = new HashSet<string>(path) { nodeId };
             var regularEdges = GetRenderableChildEdges(GetRegularTreeOutgoingEdges(nodeId), childPath, isSearchFiltering);
             var menuEdges = GetRenderableChildEdges(GetMenuTreeOutgoingEdges(nodeId), childPath, isSearchFiltering);

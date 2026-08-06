@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 
 namespace DependencyAnalyzer.Editor.UI.GraphView
 {
-    public sealed class CustomEdgeView : VisualElement
+    public sealed class DependencyEdgeView : VisualElement
     {
         private Rect sourceRect;
         private Rect targetRect;
@@ -16,7 +16,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private readonly Color parentEdgeColor;
         private readonly Color childEdgeColor;
 
-        public CustomEdgeView(DependencyEdge edgeData, Color parentNodeColor, Color childNodeColor)
+        public DependencyEdgeView(DependencyEdge edgeData, Color parentNodeColor, Color childNodeColor)
         {
             EdgeData = edgeData;
             var alpha = edgeData.PointsToMissingReference ? 0.95f : 0.9f;
@@ -36,7 +36,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         }
 
         public DependencyEdge EdgeData { get; }
-        public event Action<CustomEdgeView> ChildJumpRequested;
+        public event Action<DependencyEdgeView> ChildJumpRequested;
 
         public override bool ContainsPoint(Vector2 localPoint)
         {

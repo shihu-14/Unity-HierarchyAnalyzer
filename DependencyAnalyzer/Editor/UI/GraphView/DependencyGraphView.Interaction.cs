@@ -18,7 +18,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             NodeSelected?.Invoke(node);
         }
 
-        private void HandleNodeToggleRequested(CustomNodeView nodeView)
+        private void HandleNodeToggleRequested(DependencyNodeView nodeView)
         {
             if (nodeView == null || string.IsNullOrEmpty(nodeView.Data.Id))
             {
@@ -39,7 +39,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             EnsureViewVisible(nodeView.ViewId);
         }
 
-        private void HandleMenuToggleRequested(CustomNodeView nodeView)
+        private void HandleMenuToggleRequested(DependencyNodeView nodeView)
         {
             if (nodeView == null || string.IsNullOrEmpty(nodeView.ViewId))
             {
@@ -60,7 +60,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             EnsureViewVisible(nodeView.ViewId);
         }
 
-        private void HandleParentJumpRequested(CustomNodeView nodeView)
+        private void HandleParentJumpRequested(DependencyNodeView nodeView)
         {
             if (nodeView == null)
             {
@@ -95,7 +95,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             FlashView(renderNode.ViewId, movedView);
         }
 
-        private void HandleNodeMoved(CustomNodeView nodeView, Vector2 nextPosition)
+        private void HandleNodeMoved(DependencyNodeView nodeView, Vector2 nextPosition)
         {
             if (nodeView == null || !nodeRects.ContainsKey(nodeView.ViewId))
             {
@@ -427,7 +427,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
         }
 
-        private static void AddSearchPulseHighlight(CustomNodeView view, bool isCurrent)
+        private static void AddSearchPulseHighlight(DependencyNodeView view, bool isCurrent)
         {
             if (view == null)
             {
@@ -466,7 +466,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }).Every(16);
         }
 
-        private static void SetHighlightRingBounds(CustomNodeView view, VisualElement ring, float padding)
+        private static void SetHighlightRingBounds(DependencyNodeView view, VisualElement ring, float padding)
         {
             if (view == null || ring == null)
             {

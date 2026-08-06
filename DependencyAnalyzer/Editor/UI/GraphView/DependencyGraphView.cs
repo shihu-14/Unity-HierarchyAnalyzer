@@ -30,7 +30,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private readonly VisualElement nodeLayer;
         private readonly VisualElement miniMap;
         private readonly Label emptyStateLabel;
-        private readonly Dictionary<string, CustomNodeView> nodeViews = new Dictionary<string, CustomNodeView>();
+        private readonly Dictionary<string, DependencyNodeView> nodeViews = new Dictionary<string, DependencyNodeView>();
         private readonly Dictionary<string, Rect> nodeRects = new Dictionary<string, Rect>();
         private readonly Dictionary<string, RenderNode> renderNodeByViewId = new Dictionary<string, RenderNode>();
         private readonly Dictionary<string, List<RenderNode>> renderNodesByNodeId = new Dictionary<string, List<RenderNode>>();

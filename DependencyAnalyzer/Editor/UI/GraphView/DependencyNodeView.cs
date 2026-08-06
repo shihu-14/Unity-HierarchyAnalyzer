@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 
 namespace DependencyAnalyzer.Editor.UI.GraphView
 {
-    public sealed class CustomNodeView : VisualElement
+    public sealed class DependencyNodeView : VisualElement
     {
         public const float NodeWidth = 240f;
         public const float NodeHeight = 72f;
@@ -50,7 +50,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private bool isDragging;
         private bool hasDragged;
 
-        public CustomNodeView(
+        public DependencyNodeView(
             string viewId,
             DependencyNode data,
             bool hasHiddenChildren,
@@ -110,10 +110,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         public float HiddenStackOffset => HasHiddenChildren ? GetHiddenStackOffset(nodeScale) : 0f;
         public bool IsExpanded => isExpanded;
         public event Action<DependencyNode> NodeSelected;
-        public event Action<CustomNodeView, Vector2> NodeMoved;
-        public event Action<CustomNodeView> ToggleRequested;
-        public event Action<CustomNodeView> MenuToggleRequested;
-        public event Action<CustomNodeView> ParentJumpRequested;
+        public event Action<DependencyNodeView, Vector2> NodeMoved;
+        public event Action<DependencyNodeView> ToggleRequested;
+        public event Action<DependencyNodeView> MenuToggleRequested;
+        public event Action<DependencyNodeView> ParentJumpRequested;
 
         public void SetGraphPosition(Vector2 position)
         {

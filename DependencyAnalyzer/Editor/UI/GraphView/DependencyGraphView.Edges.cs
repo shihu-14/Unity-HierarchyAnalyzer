@@ -51,7 +51,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 var total = totalBySource[parentViewId];
                 var routeOffset = (edgeIndex - (total - 1) * 0.5f) * 22f;
                 var visualSourceRect = GetEdgeSourceRect(renderNode.Parent, sourceRect);
-                var edgeView = new CustomEdgeView(
+                var edgeView = new DependencyEdgeView(
                     renderNode.EdgeFromParent,
                     IconUtility.GetNodeAccentColor(renderNode.Parent.Node),
                     IconUtility.GetNodeAccentColor(renderNode.Node));
@@ -71,7 +71,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return sourceRect;
             }
 
-            var stackOffset = CustomNodeView.GetHiddenStackOffset(renderNode.SizeScale);
+            var stackOffset = DependencyNodeView.GetHiddenStackOffset(renderNode.SizeScale);
             return new Rect(
                 sourceRect.x + stackOffset,
                 sourceRect.y + stackOffset,
