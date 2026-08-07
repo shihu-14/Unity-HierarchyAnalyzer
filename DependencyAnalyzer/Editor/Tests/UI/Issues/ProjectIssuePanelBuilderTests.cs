@@ -32,8 +32,9 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.AreEqual(1, group.Count);
             Assert.IsEmpty(group.ObjectGroups);
             Assert.AreEqual(source.Id, location.TargetNodeId);
-            CollectionAssert.AreEqual(new[] { "Scene: Main", "Player" }, location.ParentSegments);
+            CollectionAssert.AreEqual(new[] { "Main", "Player" }, location.ParentSegments);
             Assert.AreEqual("Missing Component [1]", location.Label);
+            Assert.AreEqual("Path: Main/Player/Missing Component [1]", location.DisplayPath);
         }
 
         [Test]

@@ -27,7 +27,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
 
         public IReadOnlyList<string> ParentSegments => parentSegments;
         public string Label { get; }
-        public string DisplayPath => string.Join("/", parentSegments.Concat(new[] { Label }));
+        public string DisplayPath => "Path: " + string.Join("/", parentSegments.Concat(new[] { Label }));
         public string TargetNodeId { get; }
         public bool HasRelatedNode => !string.IsNullOrEmpty(TargetNodeId);
         public Color AccentColor { get; }

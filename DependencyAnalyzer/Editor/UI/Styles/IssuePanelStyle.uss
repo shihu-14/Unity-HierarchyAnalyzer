@@ -183,6 +183,14 @@
     background-color: #20242a;
 }
 
+.dependency-issue-location-list--issue-child .dependency-issue-location-row {
+    padding-left: 32px;
+}
+
+.dependency-issue-location-list--object-child .dependency-issue-location-row {
+    padding-left: 48px;
+}
+
 .dependency-issue-location-row {
     min-height: 28px;
     flex-direction: row;
@@ -208,10 +216,10 @@
 }
 
 .dependency-issue-location-accent {
-    width: 7px;
-    height: 7px;
-    min-width: 7px;
-    margin-right: 7px;
+    width: 3px;
+    height: 14px;
+    min-width: 3px;
+    margin-right: 5px;
     flex-shrink: 0;
 }
 

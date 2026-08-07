@@ -24,7 +24,7 @@ Unity 6向けのEditor専用依存関係ビューアーです。projectを実行
   - 未設定の`None`はMissingとして扱わない
   - Component/property/追加scanner単位の失敗では取得済みの部分graphを保持して続行
 
-ユーザー向けIssues panelに表示するのはMissing ScriptとBroken Missing Referenceだけで、どちらもWarningとして扱います。Runtime Exception、compiler/runtime Console log、`Debug.LogError`、`Debug.LogWarning`はUnity Console側の責務であり、このツールへ取り込みません。Analyzer自身の想定外の解析失敗はproject issueと分離し、developer diagnosticとしてgraph内部に保持しますが、Unity Consoleへ自動出力しません。
+ユーザー向けIssues panelに表示するのはMissing ScriptとBroken Missing Referenceだけで、どちらもWarningとして扱います。Runtime Exception、compiler/runtime Console log、`Debug.LogError`、`Debug.LogWarning`はUnity Console側の責務であり、このツールへ取り込みません。property/component/scanner単位の解析失敗はdeveloper diagnosticとしてgraph内部に保持し、Issues panelや通常のUnity Console Warning/Errorへ自動出力しません。ただしscan処理全体が未処理例外で失敗した場合は、調査可能にするためUnity Consoleへexceptionを出力します。
 
 このツールが判定するのはserialized referenceとして確認できる一般的な事実です。「このAudioSourceにはAudioClipが必要」や、`None`のfieldがrequiredかoptionalかなど、プロジェクト固有の用途や正しさは診断しません。
 
@@ -161,7 +161,7 @@ GitHub ActionsはAssets-copy導入を再現する最小`TestProject`を作り、
 - Addressables、`Resources.Load`、独自文字列IDなどの非serialized参照は対象外です。
 - Package内scriptなど、表示policyから外れるComponentはnodeを省略する場合があります。serialized参照自体は所有GameObjectをsourceとして解析します。
 - Runtime Exception、compiler/runtime Console log、`Debug.LogError`、`Debug.LogWarning`はIssues panelの対象外です。
-- Analyzer自身の想定外の解析失敗は内部diagnosticとして保持し、Unity Consoleへ自動出力せず、Issues panelのWarning件数にも含めません。
+- property/component/scanner単位の解析失敗は内部diagnosticとして保持し、Unity Consoleへ通常のWarning/Errorとして自動出力せず、Issues panelのWarning件数にも含めません。scan処理全体が未処理例外で失敗した場合だけ、調査用にUnity Consoleへexceptionを出力します。
 - 検索`Filter` toggleとscanのCancel buttonはUI未提供です。
 - UPM package化と`package.json`追加は行っていません。配布方式はAssets folder copyです。
 

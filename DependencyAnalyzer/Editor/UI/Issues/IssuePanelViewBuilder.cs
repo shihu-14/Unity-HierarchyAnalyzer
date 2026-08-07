@@ -8,7 +8,10 @@ namespace DependencyAnalyzer.Editor.UI.Issues
 {
     internal static class IssuePanelViewBuilder
     {
-        private const float BaseLocationIndent = 12f;
+        private const string IssueChildLocationListClass =
+            "dependency-issue-location-list--issue-child";
+        private const string ObjectChildLocationListClass =
+            "dependency-issue-location-list--object-child";
 
         public static void ConfigureWarningStatus(Image icon, Label count, int warningCount)
         {
@@ -42,7 +45,10 @@ namespace DependencyAnalyzer.Editor.UI.Issues
 
             if (group.Type == ProjectIssueType.MissingScript)
             {
-                container.Add(CreateLocationList(group.Locations, focusNode));
+                container.Add(CreateLocationList(
+                    group.Locations,
+                    focusNode,
+                    IssueChildLocationListClass));
                 return container;
             }
 
@@ -123,7 +129,10 @@ namespace DependencyAnalyzer.Editor.UI.Issues
 
             if (isExpanded)
             {
-                container.Add(CreateLocationList(group.Locations, focusNode));
+                container.Add(CreateLocationList(
+                    group.Locations,
+                    focusNode,
+                    ObjectChildLocationListClass));
             }
 
             return container;
@@ -131,10 +140,12 @@ namespace DependencyAnalyzer.Editor.UI.Issues
 
         private static VisualElement CreateLocationList(
             IReadOnlyList<ProjectIssueLocation> locations,
-            Action<string> focusNode)
+            Action<string> focusNode,
+            string hierarchyClass)
         {
             var list = new VisualElement();
             list.AddToClassList("dependency-issue-location-list");
+            list.AddToClassList(hierarchyClass);
             for (var i = 0; i < locations.Count; i++)
             {
                 list.Add(CreateLocationRow(locations[i], focusNode));
@@ -152,7 +163,6 @@ namespace DependencyAnalyzer.Editor.UI.Issues
                 : new Button();
             row.text = string.Empty;
             row.AddToClassList("dependency-issue-location-row");
-            row.style.paddingLeft = BaseLocationIndent;
             row.tooltip = location.DisplayPath;
 
             var accent = new VisualElement();

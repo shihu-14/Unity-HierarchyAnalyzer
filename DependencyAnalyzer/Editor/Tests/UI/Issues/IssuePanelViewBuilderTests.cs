@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using DependencyAnalyzer.Editor.UI.Issues;
 using NUnit.Framework;
@@ -12,6 +13,7 @@ namespace DependencyAnalyzer.Editor.Tests
     public sealed class IssuePanelViewBuilderTests
     {
         private const string GraphWindowUxmlPath = "Assets/DependencyAnalyzer/Editor/UI/Styles/GraphWindow.uxml";
+        private const string IssuePanelStylePath = "Assets/DependencyAnalyzer/Editor/UI/Styles/IssuePanelStyle.uss";
 
         [Test]
         public void BrokenReferenceView_CreatesIssueTypeObjectTypeAndLocationHierarchy()
@@ -25,6 +27,8 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-group-row"));
             Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-object-group-row"));
             Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-location-row"));
+            Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-location-list--object-child"));
+            Assert.IsNull(view.Q<VisualElement>(className: "dependency-issue-location-list--issue-child"));
         }
 
         [Test]
@@ -64,6 +68,8 @@ namespace DependencyAnalyzer.Editor.Tests
                 null);
 
             Assert.IsNull(view.Q<VisualElement>(className: "dependency-issue-object-group-row"));
+            Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-location-list--issue-child"));
+            Assert.IsNull(view.Q<VisualElement>(className: "dependency-issue-location-list--object-child"));
             var locationRow = view.Q<VisualElement>(className: "dependency-issue-location-row");
             Assert.IsNotNull(locationRow);
             Assert.AreEqual(
@@ -72,7 +78,7 @@ namespace DependencyAnalyzer.Editor.Tests
         }
 
         [Test]
-        public void LocationRow_PlacesAccentSquareImmediatelyBeforePathWithoutInlineBorder()
+        public void LocationRow_PlacesVerticalAccentImmediatelyBeforePathWithoutInlineBorder()
         {
             var objectGroup = CreateObjectGroup(CreateLocation("target"));
             var group = CreateBrokenReferenceGroup(objectGroup);
@@ -87,7 +93,8 @@ namespace DependencyAnalyzer.Editor.Tests
 
             Assert.IsNotNull(accent);
             Assert.IsNotNull(label);
-            Assert.AreEqual("Scene: Main/Player/MeshRenderer/m_Material", label.text);
+            Assert.AreEqual("Path: Main/Player/MeshRenderer/m_Material", label.text);
+            Assert.AreEqual(label.text, row.tooltip);
             Assert.AreEqual(Color.cyan, accent.style.backgroundColor.value);
             Assert.AreEqual(row.IndexOf(accent) + 1, row.IndexOf(label));
             Assert.AreEqual(StyleKeyword.Null, row.style.borderLeftColor.keyword);
@@ -125,8 +132,29 @@ namespace DependencyAnalyzer.Editor.Tests
 
             Assert.IsFalse(row.enabledSelf);
             Assert.AreEqual(
-                "Scene: Main/Player/MeshRenderer/No related node",
+                "Path: Main/Player/MeshRenderer/No related node",
                 row.Q<Label>(className: "dependency-issue-location-label").text);
+        }
+
+        [Test]
+        public void IssuePanelStyles_IndentHierarchyAndUseVerticalAccentWithoutRowBorder()
+        {
+            var styleText = File.ReadAllText(IssuePanelStylePath);
+            var issueChildRule = ExtractStyleRule(
+                styleText,
+                ".dependency-issue-location-list--issue-child .dependency-issue-location-row");
+            var objectChildRule = ExtractStyleRule(
+                styleText,
+                ".dependency-issue-location-list--object-child .dependency-issue-location-row");
+            var markerRule = ExtractStyleRule(styleText, ".dependency-issue-location-accent");
+            var rowRule = ExtractStyleRule(styleText, ".dependency-issue-location-row");
+
+            StringAssert.Contains("padding-left: 32px;", issueChildRule);
+            StringAssert.Contains("padding-left: 48px;", objectChildRule);
+            StringAssert.Contains("width: 3px;", markerRule);
+            StringAssert.Contains("height: 14px;", markerRule);
+            StringAssert.Contains("margin-right: 5px;", markerRule);
+            StringAssert.Contains("border-left-width: 0;", rowRule);
         }
 
         [Test]
@@ -195,10 +223,21 @@ namespace DependencyAnalyzer.Editor.Tests
         private static ProjectIssueLocation CreateLocation(string targetNodeId)
         {
             return new ProjectIssueLocation(
-                new[] { "Scene: Main", "Player", "MeshRenderer" },
+                new[] { "Main", "Player", "MeshRenderer" },
                 string.IsNullOrEmpty(targetNodeId) ? "No related node" : "m_Material",
                 targetNodeId,
                 Color.cyan);
+        }
+
+        private static string ExtractStyleRule(string styleText, string selector)
+        {
+            var signature = "\n" + selector + " {";
+            var start = styleText.IndexOf(signature, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(start, 0, "USS selector was not found: " + selector);
+            start++;
+            var end = styleText.IndexOf('}', start);
+            Assert.Greater(end, start, "USS rule was not closed: " + selector);
+            return styleText.Substring(start, end - start + 1);
         }
 
         private static void SimulateClick(Button button)

@@ -139,7 +139,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             if (sceneSeparator >= 0)
             {
                 var scenePath = path.Substring(0, sceneSeparator);
-                segments.Add("Scene: " + GetSceneDisplayName(scenePath));
+                segments.Add(GetSceneDisplayName(scenePath));
                 segments.AddRange(SplitPath(path.Substring(sceneSeparator + 2)));
             }
             else
