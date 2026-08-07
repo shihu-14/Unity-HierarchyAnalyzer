@@ -28,13 +28,33 @@ namespace DependencyAnalyzer.Editor.Tests
         }
 
         [Test]
+        public void LocationRow_ShowsDisplayPathWithoutSegmentBranches()
+        {
+            var location = CreateLocation("target");
+            var objectGroup = CreateObjectGroup(location);
+            var group = CreateBrokenReferenceGroup(objectGroup);
+            var view = IssuePanelViewBuilder.CreateGroupView(
+                group,
+                new HashSet<string> { group.Id, objectGroup.Id },
+                null,
+                null);
+
+            var label = view.Q<Label>(className: "dependency-issue-location-label");
+
+            Assert.AreEqual(location.DisplayPath, label.text);
+            Assert.IsNull(view.Q<VisualElement>(className: "dependency-issue-location-branch"));
+            Assert.AreEqual(1, view.Query<VisualElement>(className: "dependency-issue-location-row").ToList().Count);
+        }
+
+        [Test]
         public void MissingScriptView_ShowsLocationsWithoutObjectTypeGroup()
         {
+            var location = CreateLocation("target");
             var group = new ProjectIssueGroup(
                 "issue:missing-script",
                 ProjectIssueType.MissingScript,
                 "Missing Script",
-                new[] { CreateLocation("target") },
+                new[] { location },
                 null);
 
             var view = IssuePanelViewBuilder.CreateGroupView(
@@ -44,7 +64,11 @@ namespace DependencyAnalyzer.Editor.Tests
                 null);
 
             Assert.IsNull(view.Q<VisualElement>(className: "dependency-issue-object-group-row"));
-            Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-location-row"));
+            var locationRow = view.Q<VisualElement>(className: "dependency-issue-location-row");
+            Assert.IsNotNull(locationRow);
+            Assert.AreEqual(
+                location.DisplayPath,
+                locationRow.Q<Label>(className: "dependency-issue-location-label").text);
         }
 
         [Test]
@@ -63,6 +87,7 @@ namespace DependencyAnalyzer.Editor.Tests
 
             Assert.IsNotNull(accent);
             Assert.IsNotNull(label);
+            Assert.AreEqual("Scene: Main/Player/MeshRenderer/m_Material", label.text);
             Assert.AreEqual(Color.cyan, accent.style.backgroundColor.value);
             Assert.AreEqual(row.IndexOf(accent) + 1, row.IndexOf(label));
             Assert.AreEqual(StyleKeyword.Null, row.style.borderLeftColor.keyword);
@@ -99,7 +124,9 @@ namespace DependencyAnalyzer.Editor.Tests
             var row = view.Q<VisualElement>(className: "dependency-issue-location-row");
 
             Assert.IsFalse(row.enabledSelf);
-            Assert.AreEqual("No related node", row.Q<Label>(className: "dependency-issue-location-label").text);
+            Assert.AreEqual(
+                "Scene: Main/Player/MeshRenderer/No related node",
+                row.Q<Label>(className: "dependency-issue-location-label").text);
         }
 
         [Test]

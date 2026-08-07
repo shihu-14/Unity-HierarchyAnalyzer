@@ -31,7 +31,6 @@ namespace DependencyAnalyzer.Editor.UI.Issues
         public string TargetNodeId { get; }
         public bool HasRelatedNode => !string.IsNullOrEmpty(TargetNodeId);
         public Color AccentColor { get; }
-        public bool HasHierarchy => parentSegments.Count > 0;
         public string SortKey => string.Join("/", parentSegments) + "\u001f" + Label;
     }
 }

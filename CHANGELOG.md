@@ -8,8 +8,8 @@
 - Use stable object identity for assets and sub-assets.
 - Remove project-specific component health guesses from production analysis.
 - Limit user-facing Issues to missing scripts and broken serialized object references detected before runtime.
-- Remove Unity Console ingestion and keep Analyzer failures separate as developer diagnostics.
-- Group broken references by issue type, referenced Object type, and affected location.
+- Remove Unity Console ingestion and keep Analyzer failures as internal developer diagnostics without automatic Console logging.
+- Group broken references by issue type, referenced Object type, and one-line full-path location.
 - Simplify the Issues header to a non-interactive Warning count and keep location rows focused on their graph node.
 - Remove obsolete asset-size metadata and dependency count badges while retaining reference counts in tooltips.
 - Show asset labels in node tooltips only when an Asset has non-empty labels.

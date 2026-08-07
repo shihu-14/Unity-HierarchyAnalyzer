@@ -45,7 +45,6 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             mergedGraph.RecalculateReferenceCounts();
-            AnalyzerDiagnosticReporter.Report(mergedGraph.Issues);
             progress?.Report(new ScanProgress("Dependency Analyzer", "Completed", 1, 1));
             return mergedGraph;
         }

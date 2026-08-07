@@ -9,7 +9,6 @@ namespace DependencyAnalyzer.Editor.UI.Issues
     internal static class IssuePanelViewBuilder
     {
         private const float BaseLocationIndent = 12f;
-        private const float LocationIndentStep = 14f;
 
         public static void ConfigureWarningStatus(Image icon, Label count, int warningCount)
         {
@@ -136,65 +135,16 @@ namespace DependencyAnalyzer.Editor.UI.Issues
         {
             var list = new VisualElement();
             list.AddToClassList("dependency-issue-location-list");
-            var root = new LocationBranch(string.Empty);
-            var flatLocations = new List<ProjectIssueLocation>();
-
             for (var i = 0; i < locations.Count; i++)
             {
-                var location = locations[i];
-                if (!location.HasHierarchy)
-                {
-                    flatLocations.Add(location);
-                    continue;
-                }
-
-                var branch = root;
-                for (var segmentIndex = 0; segmentIndex < location.ParentSegments.Count; segmentIndex++)
-                {
-                    branch = branch.GetOrAddChild(location.ParentSegments[segmentIndex]);
-                }
-
-                branch.Locations.Add(location);
-            }
-
-            for (var childIndex = 0; childIndex < root.Children.Count; childIndex++)
-            {
-                AddLocationBranch(list, root.Children[childIndex], 0, focusNode);
-            }
-
-            for (var i = 0; i < flatLocations.Count; i++)
-            {
-                list.Add(CreateLocationRow(flatLocations[i], 0, focusNode));
+                list.Add(CreateLocationRow(locations[i], focusNode));
             }
 
             return list;
         }
 
-        private static void AddLocationBranch(
-            VisualElement list,
-            LocationBranch branch,
-            int depth,
-            Action<string> focusNode)
-        {
-            var branchRow = new Label(branch.Label);
-            branchRow.AddToClassList("dependency-issue-location-branch");
-            branchRow.style.paddingLeft = BaseLocationIndent + (depth * LocationIndentStep);
-            list.Add(branchRow);
-
-            for (var childIndex = 0; childIndex < branch.Children.Count; childIndex++)
-            {
-                AddLocationBranch(list, branch.Children[childIndex], depth + 1, focusNode);
-            }
-
-            for (var locationIndex = 0; locationIndex < branch.Locations.Count; locationIndex++)
-            {
-                list.Add(CreateLocationRow(branch.Locations[locationIndex], depth + 1, focusNode));
-            }
-        }
-
         private static VisualElement CreateLocationRow(
             ProjectIssueLocation location,
-            int depth,
             Action<string> focusNode)
         {
             var row = location.HasRelatedNode
@@ -202,7 +152,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
                 : new Button();
             row.text = string.Empty;
             row.AddToClassList("dependency-issue-location-row");
-            row.style.paddingLeft = BaseLocationIndent + (depth * LocationIndentStep);
+            row.style.paddingLeft = BaseLocationIndent;
             row.tooltip = location.DisplayPath;
 
             var accent = new VisualElement();
@@ -210,7 +160,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             accent.style.backgroundColor = location.AccentColor;
             row.Add(accent);
 
-            var label = new Label(location.Label);
+            var label = new Label(location.DisplayPath);
             label.AddToClassList("dependency-issue-location-label");
             row.Add(label);
 
@@ -221,34 +171,6 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             }
 
             return row;
-        }
-
-        private sealed class LocationBranch
-        {
-            private readonly Dictionary<string, LocationBranch> childLookup =
-                new Dictionary<string, LocationBranch>(StringComparer.OrdinalIgnoreCase);
-
-            public LocationBranch(string label)
-            {
-                Label = label ?? string.Empty;
-            }
-
-            public string Label { get; }
-            public List<LocationBranch> Children { get; } = new List<LocationBranch>();
-            public List<ProjectIssueLocation> Locations { get; } = new List<ProjectIssueLocation>();
-
-            public LocationBranch GetOrAddChild(string label)
-            {
-                if (childLookup.TryGetValue(label, out var child))
-                {
-                    return child;
-                }
-
-                child = new LocationBranch(label);
-                childLookup.Add(label, child);
-                Children.Add(child);
-                return child;
-            }
         }
     }
 }

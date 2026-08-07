@@ -332,6 +332,30 @@ namespace DependencyAnalyzer.Editor.Tests
         }
 
         [Test]
+        public async Task ScanAsync_SkipsUnreadablePropertyWithoutIssueOrConsoleDiagnostic()
+        {
+            var material = CreateMaterialAsset("ReadableAfterUnreadable.mat");
+            var owner = new GameObject("UnreadableReference");
+            var fixture = owner.AddComponent<ReferenceFixtureComponent>();
+            var scanner = new SerializedPropertyScanner(
+                new UnreadableThenValidReferenceReader(owner, material));
+
+            var graph = await ScanAsync(scanner);
+            var sourceNode = FindNode(graph, fixture);
+            var materialNode = FindNode(graph, material);
+
+            AssertEdge(
+                graph,
+                sourceNode,
+                materialNode,
+                DependencyReferenceKind.SerializedProperty,
+                "readableReference");
+            Assert.IsEmpty(graph.Issues);
+            Assert.AreEqual(0, ProjectIssuePanelBuilder.Build(graph).WarningCount);
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        [Test]
         public async Task ScannerOrchestrator_RetainsSceneGraphWhenExtensionScannerFails()
         {
             var gameObject = new GameObject("SceneResultBeforeFailure");
@@ -339,10 +363,6 @@ namespace DependencyAnalyzer.Editor.Tests
             orchestrator.RegisterScanner(new ThrowingDependencyScanner());
             var settings = ScriptableObject.CreateInstance<AnalyzerSettings>();
             transientObjects.Add(settings);
-            LogAssert.Expect(
-                LogType.Error,
-                "[Dependency Analyzer Diagnostic] " + ThrowingDependencyScanner.ScannerName
-                + " [" + ThrowingDependencyScanner.ScannerName + "]: Scanner failed: Injected scanner failure");
 
             var graph = await orchestrator.ScanAsync(
                 settings,
@@ -353,6 +373,8 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.NotNull(FindNode(graph, gameObject));
             Assert.IsTrue(graph.Issues.Any(issue => issue.ScannerName == ThrowingDependencyScanner.ScannerName
                 && issue.Message.Contains("Scanner failed")));
+            Assert.AreEqual(0, ProjectIssuePanelBuilder.Build(graph).WarningCount);
+            LogAssert.NoUnexpectedReceived();
         }
 
         [Test]
@@ -509,6 +531,49 @@ namespace DependencyAnalyzer.Editor.Tests
                         0,
                         string.Empty);
                     throw new InvalidOperationException("Injected property enumeration failure");
+                }
+
+                foreach (var reference in innerReader.Read(component))
+                {
+                    yield return reference;
+                }
+            }
+        }
+
+        private sealed class UnreadableThenValidReferenceReader : ISerializedObjectReferenceReader
+        {
+            private readonly GameObject owner;
+            private readonly UnityEngine.Object validReference;
+            private readonly UnitySerializedObjectReferenceReader innerReader =
+                new UnitySerializedObjectReferenceReader();
+
+            public UnreadableThenValidReferenceReader(
+                GameObject owner,
+                UnityEngine.Object validReference)
+            {
+                this.owner = owner;
+                this.validReference = validReference;
+            }
+
+            public IEnumerable<SerializedObjectReferenceInfo> Read(Component component)
+            {
+                if (component.gameObject == owner && component is ReferenceFixtureComponent)
+                {
+                    yield return new SerializedObjectReferenceInfo(
+                        "unreadableReference",
+                        "PPtr<Object>",
+                        SerializedObjectReferenceState.Unreadable,
+                        null,
+                        0,
+                        "Injected unreadable property");
+                    yield return new SerializedObjectReferenceInfo(
+                        "readableReference",
+                        "PPtr<Object>",
+                        SerializedObjectReferenceState.Valid,
+                        validReference,
+                        0,
+                        string.Empty);
+                    yield break;
                 }
 
                 foreach (var reference in innerReader.Read(component))

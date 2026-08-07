@@ -113,11 +113,6 @@ namespace DependencyAnalyzer.Editor.Scanners
 
             if (reference.State == SerializedObjectReferenceState.Unreadable)
             {
-                graph.AddIssue(new DependencyScanIssue(
-                    ScannerName,
-                    sourceNode.Path,
-                    "Failed to read " + memberName + ": " + reference.ErrorMessage,
-                    DependencyScanIssueSeverity.Warning));
                 return;
             }
 
