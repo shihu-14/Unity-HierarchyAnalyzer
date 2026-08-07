@@ -129,6 +129,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
                 return new ProjectIssueLocation(
                     null,
                     "No related node",
+                    "No related node",
                     string.Empty,
                     new Color(0.38f, 0.42f, 0.47f));
             }
@@ -159,6 +160,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             return new ProjectIssueLocation(
                 segments,
                 label,
+                sourceNode.DisplayName,
                 sourceNode.Id,
                 DependencyNodeStyleResolver.GetNodeAccentColor(sourceNode));
         }

@@ -75,7 +75,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             row.AddToClassList("dependency-issue-group-row");
             row.tooltip = group.Title;
 
-            var chevron = new ChevronIcon(isExpanded, 0.45f);
+            var chevron = ChevronIcon.CreateIssuePanel(isExpanded);
             chevron.AddToClassList("dependency-issue-group-chevron");
             row.Add(chevron);
 
@@ -107,7 +107,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             row.AddToClassList("dependency-issue-object-group-row");
             row.tooltip = group.ObjectType;
 
-            var chevron = new ChevronIcon(isExpanded, 0.42f);
+            var chevron = ChevronIcon.CreateIssuePanel(isExpanded);
             chevron.AddToClassList("dependency-issue-object-group-chevron");
             row.Add(chevron);
 
@@ -170,9 +170,13 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             accent.style.backgroundColor = location.AccentColor;
             row.Add(accent);
 
-            var label = new Label(location.DisplayPath);
-            label.AddToClassList("dependency-issue-location-label");
-            row.Add(label);
+            var objectName = new Label(location.ObjectName);
+            objectName.AddToClassList("dependency-issue-location-object-name");
+            row.Add(objectName);
+
+            var path = new Label(location.DisplayPath);
+            path.AddToClassList("dependency-issue-location-label");
+            row.Add(path);
 
             if (!location.HasRelatedNode)
             {

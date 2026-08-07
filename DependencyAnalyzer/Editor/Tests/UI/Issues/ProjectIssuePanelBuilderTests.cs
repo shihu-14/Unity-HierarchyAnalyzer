@@ -34,6 +34,7 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.AreEqual(source.Id, location.TargetNodeId);
             CollectionAssert.AreEqual(new[] { "Main", "Player" }, location.ParentSegments);
             Assert.AreEqual("Missing Component [1]", location.Label);
+            Assert.AreEqual(source.DisplayName, location.ObjectName);
             Assert.AreEqual("Path: Main/Player/Missing Component [1]", location.DisplayPath);
         }
 
@@ -56,6 +57,9 @@ namespace DependencyAnalyzer.Editor.Tests
                 new[] { "Material", "Texture", "Mesh", "ReferenceFixtureAsset" },
                 group.ObjectGroups.Select(objectGroup => objectGroup.ObjectType));
             Assert.IsTrue(group.ObjectGroups.All(objectGroup => objectGroup.Count == 1));
+            Assert.AreEqual(
+                "material",
+                group.ObjectGroups.Single(objectGroup => objectGroup.ObjectType == "Material").Locations.Single().ObjectName);
         }
 
         [Test]
@@ -150,6 +154,7 @@ namespace DependencyAnalyzer.Editor.Tests
                 .Locations.Single();
 
             Assert.IsFalse(location.HasRelatedNode);
+            Assert.AreEqual("No related node", location.ObjectName);
             Assert.AreEqual("No related node", location.Label);
         }
 

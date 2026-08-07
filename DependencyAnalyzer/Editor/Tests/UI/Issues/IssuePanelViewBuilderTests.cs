@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using DependencyAnalyzer.Editor.UI.Controls;
 using DependencyAnalyzer.Editor.UI.Issues;
 using NUnit.Framework;
 using UnityEditor;
@@ -29,6 +30,75 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-location-row"));
             Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-location-list--object-child"));
             Assert.IsNull(view.Q<VisualElement>(className: "dependency-issue-location-list--issue-child"));
+        }
+
+        [Test]
+        public void IssuePanelChevrons_UseHeaderDrawingSettingsForEveryGroupLevel()
+        {
+            var headerButton = new Button();
+            ChevronIcon.SetIssuePanelButtonIcon(headerButton, true);
+            var objectGroup = CreateObjectGroup(CreateLocation("target"));
+            var group = CreateBrokenReferenceGroup(objectGroup);
+            var view = IssuePanelViewBuilder.CreateGroupView(
+                group,
+                new HashSet<string> { group.Id, objectGroup.Id },
+                null,
+                null);
+
+            var headerChevron = headerButton.Q<ChevronIcon>();
+            var groupChevron = view.Q<ChevronIcon>(className: "dependency-issue-group-chevron");
+            var objectChevron = view.Q<ChevronIcon>(className: "dependency-issue-object-group-chevron");
+
+            Assert.IsNotNull(headerChevron);
+            Assert.IsNotNull(groupChevron);
+            Assert.IsNotNull(objectChevron);
+            Assert.AreEqual(ChevronIcon.IssuePanelVerticalScale, headerChevron.VerticalScale);
+            Assert.AreEqual(headerChevron.VerticalScale, groupChevron.VerticalScale);
+            Assert.AreEqual(headerChevron.VerticalScale, objectChevron.VerticalScale);
+
+            var styleText = File.ReadAllText(IssuePanelStylePath);
+            var headerRule = ExtractStyleRule(styleText, ".dependency-issue-toggle-button");
+            var groupRule = ExtractStyleRule(
+                styleText,
+                ".dependency-issue-group-chevron,\n.dependency-issue-object-group-chevron");
+            StringAssert.Contains("width: 24px;", headerRule);
+            StringAssert.Contains("height: 22px;", headerRule);
+            StringAssert.Contains("width: 24px;", groupRule);
+            StringAssert.Contains("height: 22px;", groupRule);
+        }
+
+        [Test]
+        public void GroupCounts_AppearImmediatelyAfterTitlesWithoutFlexPush()
+        {
+            var objectGroup = CreateObjectGroup(CreateLocation("target"));
+            var group = CreateBrokenReferenceGroup(objectGroup);
+            var view = IssuePanelViewBuilder.CreateGroupView(
+                group,
+                new HashSet<string> { group.Id },
+                null,
+                null);
+            var issueRow = view.Q<VisualElement>(className: "dependency-issue-group-row");
+            var objectRow = view.Q<VisualElement>(className: "dependency-issue-object-group-row");
+            var issueTitle = issueRow.Q<Label>(className: "dependency-issue-group-title");
+            var issueCount = issueRow.Q<Label>(className: "dependency-issue-group-count");
+            var objectTitle = objectRow.Q<Label>(className: "dependency-issue-object-group-title");
+            var objectCount = objectRow.Q<Label>(className: "dependency-issue-object-group-count");
+
+            Assert.AreEqual(issueRow.IndexOf(issueTitle) + 1, issueRow.IndexOf(issueCount));
+            Assert.AreEqual(objectRow.IndexOf(objectTitle) + 1, objectRow.IndexOf(objectCount));
+
+            var styleText = File.ReadAllText(IssuePanelStylePath);
+            var titleRule = ExtractStyleRule(
+                styleText,
+                ".dependency-issue-group-title,\n.dependency-issue-object-group-title");
+            var countRule = ExtractStyleRule(
+                styleText,
+                ".dependency-issue-group-count,\n.dependency-issue-object-group-count");
+            StringAssert.Contains("flex-grow: 0;", titleRule);
+            StringAssert.Contains("flex-shrink: 1;", titleRule);
+            StringAssert.Contains("margin-left: 6px;", countRule);
+            StringAssert.Contains("flex-shrink: 0;", countRule);
+            StringAssert.DoesNotContain("flex-grow: 1;", countRule);
         }
 
         [Test]
@@ -78,7 +148,7 @@ namespace DependencyAnalyzer.Editor.Tests
         }
 
         [Test]
-        public void LocationRow_PlacesVerticalAccentImmediatelyBeforePathWithoutInlineBorder()
+        public void LocationRow_PlacesAccentObjectNameAndPathInOrderWithoutInlineBorder()
         {
             var objectGroup = CreateObjectGroup(CreateLocation("target"));
             var group = CreateBrokenReferenceGroup(objectGroup);
@@ -89,14 +159,18 @@ namespace DependencyAnalyzer.Editor.Tests
                 null);
             var row = view.Q<VisualElement>(className: "dependency-issue-location-row");
             var accent = row.Q<VisualElement>(className: "dependency-issue-location-accent");
-            var label = row.Q<Label>(className: "dependency-issue-location-label");
+            var objectName = row.Q<Label>(className: "dependency-issue-location-object-name");
+            var path = row.Q<Label>(className: "dependency-issue-location-label");
 
             Assert.IsNotNull(accent);
-            Assert.IsNotNull(label);
-            Assert.AreEqual("Path: Main/Player/MeshRenderer/m_Material", label.text);
-            Assert.AreEqual(label.text, row.tooltip);
+            Assert.IsNotNull(objectName);
+            Assert.IsNotNull(path);
+            Assert.AreEqual("MeshRenderer", objectName.text);
+            Assert.AreEqual("Path: Main/Player/MeshRenderer/m_Material", path.text);
+            Assert.AreEqual(path.text, row.tooltip);
             Assert.AreEqual(Color.cyan, accent.style.backgroundColor.value);
-            Assert.AreEqual(row.IndexOf(accent) + 1, row.IndexOf(label));
+            Assert.AreEqual(row.IndexOf(accent) + 1, row.IndexOf(objectName));
+            Assert.AreEqual(row.IndexOf(objectName) + 1, row.IndexOf(path));
             Assert.AreEqual(StyleKeyword.Null, row.style.borderLeftColor.keyword);
         }
 
@@ -131,6 +205,9 @@ namespace DependencyAnalyzer.Editor.Tests
             var row = view.Q<VisualElement>(className: "dependency-issue-location-row");
 
             Assert.IsFalse(row.enabledSelf);
+            Assert.AreEqual(
+                "No related node",
+                row.Q<Label>(className: "dependency-issue-location-object-name").text);
             Assert.AreEqual(
                 "Path: Main/Player/MeshRenderer/No related node",
                 row.Q<Label>(className: "dependency-issue-location-label").text);
@@ -225,6 +302,7 @@ namespace DependencyAnalyzer.Editor.Tests
             return new ProjectIssueLocation(
                 new[] { "Main", "Player", "MeshRenderer" },
                 string.IsNullOrEmpty(targetNodeId) ? "No related node" : "m_Material",
+                string.IsNullOrEmpty(targetNodeId) ? "No related node" : "MeshRenderer",
                 targetNodeId,
                 Color.cyan);
         }

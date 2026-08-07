@@ -11,6 +11,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
         public ProjectIssueLocation(
             IEnumerable<string> parentSegments,
             string label,
+            string objectName,
             string targetNodeId,
             Color accentColor)
         {
@@ -21,12 +22,14 @@ namespace DependencyAnalyzer.Editor.UI.Issues
                     .Select(segment => segment.Trim())
                     .ToList();
             Label = string.IsNullOrWhiteSpace(label) ? "No related node" : label.Trim();
+            ObjectName = string.IsNullOrWhiteSpace(objectName) ? "No related node" : objectName.Trim();
             TargetNodeId = targetNodeId ?? string.Empty;
             AccentColor = accentColor;
         }
 
         public IReadOnlyList<string> ParentSegments => parentSegments;
         public string Label { get; }
+        public string ObjectName { get; }
         public string DisplayPath => "Path: " + string.Join("/", parentSegments.Concat(new[] { Label }));
         public string TargetNodeId { get; }
         public bool HasRelatedNode => !string.IsNullOrEmpty(TargetNodeId);

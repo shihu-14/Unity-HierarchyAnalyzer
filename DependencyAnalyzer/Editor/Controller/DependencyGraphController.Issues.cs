@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using DependencyAnalyzer.Editor.Core;
+using DependencyAnalyzer.Editor.UI.Controls;
 using DependencyAnalyzer.Editor.UI.Issues;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -107,7 +108,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 return;
             }
 
-            SetChevronButtonIcon(issueToggleButton, !issueListVisible, 0.59f);
+            ChevronIcon.SetIssuePanelButtonIcon(issueToggleButton, !issueListVisible);
             issueToggleButton.tooltip = issueListVisible ? "Hide issues" : "Show issues";
         }
 

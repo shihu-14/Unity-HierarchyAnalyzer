@@ -5,6 +5,8 @@ namespace DependencyAnalyzer.Editor.UI.Controls
 {
     internal sealed class ChevronIcon : VisualElement
     {
+        internal const float IssuePanelVerticalScale = 0.59f;
+
         private readonly bool pointsUp;
         private readonly float verticalScale;
 
@@ -14,6 +16,27 @@ namespace DependencyAnalyzer.Editor.UI.Controls
             this.verticalScale = Mathf.Clamp(verticalScale, 0.25f, 1f);
             pickingMode = PickingMode.Ignore;
             generateVisualContent += DrawChevron;
+        }
+
+        internal float VerticalScale => verticalScale;
+
+        internal static ChevronIcon CreateIssuePanel(bool pointsUp)
+        {
+            return new ChevronIcon(pointsUp, IssuePanelVerticalScale);
+        }
+
+        internal static void SetIssuePanelButtonIcon(Button button, bool pointsUp)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.text = string.Empty;
+            button.Clear();
+            var icon = CreateIssuePanel(pointsUp);
+            icon.StretchToParentSize();
+            button.Add(icon);
         }
 
         private void DrawChevron(MeshGenerationContext context)

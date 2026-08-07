@@ -132,8 +132,8 @@
 
 .dependency-issue-group-chevron,
 .dependency-issue-object-group-chevron {
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 22px;
     margin-right: 3px;
     flex-shrink: 0;
 }
@@ -155,7 +155,8 @@
 .dependency-issue-group-title,
 .dependency-issue-object-group-title {
     min-width: 0;
-    flex-grow: 1;
+    flex-grow: 0;
+    flex-shrink: 1;
     color: #eef2f7;
     font-size: 11px;
     -unity-text-align: middle-left;
@@ -170,11 +171,12 @@
 
 .dependency-issue-group-count,
 .dependency-issue-object-group-count {
-    min-width: 28px;
-    margin-left: 8px;
+    min-width: 0;
+    margin-left: 6px;
+    flex-shrink: 0;
     color: #b8c1cc;
     font-size: 11px;
-    -unity-text-align: middle-right;
+    -unity-text-align: middle-left;
 }
 
 .dependency-issue-location-list {
@@ -223,10 +225,25 @@
     flex-shrink: 0;
 }
 
+.dependency-issue-location-object-name {
+    max-width: 220px;
+    min-width: 0;
+    margin-right: 12px;
+    flex-shrink: 1;
+    color: #eef2f7;
+    font-size: 11px;
+    -unity-font-style: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -unity-text-align: middle-left;
+}
+
 .dependency-issue-location-label {
     flex-grow: 1;
+    flex-shrink: 1;
     min-width: 0;
-    color: #dce2ea;
+    color: #aeb8c4;
     font-size: 11px;
     white-space: nowrap;
     overflow: hidden;
