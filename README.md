@@ -1,6 +1,6 @@
 # Unity Dependency Analyzer
 
-Unity 6向けのEditor専用依存関係ビューアーです。現在ロードされているSceneを起点に、GameObject、Component、Inspector上のObject参照、Prefab Instanceとsource Prefabの関係をグラフ表示します。
+Unity 6向けのEditor専用依存関係ビューアーです。projectを実行せずに、現在ロードされているSceneのHierarchy、Component、Serialized Reference構造と、実行前に客観的に確認できる壊れた参照をグラフ表示します。
 
 現在の開発バージョンは`0.1.0-dev`です。変更内容は[CHANGELOG.md](CHANGELOG.md)を参照してください。
 
@@ -20,17 +20,13 @@ Unity 6向けのEditor専用依存関係ビューアーです。現在ロード�
   - GUIDとlocal file IDに基づき、同一path内の別sub-assetを別nodeとして識別
 - Broken data
   - Missing Script
-  - Missing Object Reference（Material、Meshなど）
+  - Broken Missing Reference（Material、Texture、Mesh、GameObject、Component、Scriptなど）
   - 未設定の`None`はMissingとして扱わない
-  - Component/property/追加scanner単位の失敗をIssue化し、取得済みの部分graphを保持して続行
-- 現在のUnity Consoleに表示されるwarning/errorとの連携
-  - ConsoleをClearして再解析すると、Consoleから消えたlogはIssues panelにも残らない
-  - context objectやAsset pathから特定できるlogはgraph nodeへ関連付ける
-  - nodeを特定できないlogも、クリック不能な`No related node`行としてIssues panelへ保持
-  - `Editor.log`は解析対象にしない
-  - Issues headerでConsole由来とAnalyzer独自のerror/warning件数を分けて表示
+  - Component/property/追加scanner単位の失敗では取得済みの部分graphを保持して続行
 
-このツールが判定するのはserialized referenceとして確認できる一般的な事実です。「このAudioSourceにはAudioClipが必要」など、プロジェクト固有の用途や正しさは診断しません。
+ユーザー向けIssues panelに表示するのはMissing ScriptとBroken Missing Referenceだけで、どちらもWarningとして扱います。Runtime Exception、compiler/runtime Console log、`Debug.LogError`、`Debug.LogWarning`はUnity Console側の責務であり、このツールへ取り込みません。Analyzer自身の想定外の解析失敗はproject issueと分離し、developer diagnosticとしてUnity Consoleへ出力します。
+
+このツールが判定するのはserialized referenceとして確認できる一般的な事実です。「このAudioSourceにはAudioClipが必要」や、`None`のfieldがrequiredかoptionalかなど、プロジェクト固有の用途や正しさは診断しません。
 
 ## Graph UI
 
@@ -42,7 +38,7 @@ Unity 6向けのEditor専用依存関係ビューアーです。現在ロード�
 - minimap、parent jump、edge click、node highlight
 - `Command + F` / `Ctrl + F`、Enter / Shift + Enter、arrow buttonによる検索移動
 - node name、path、type、asset label、node kind、Missing状態を検索
-- 下部`Issues` panelにMissing Referenceとscanner issueを表示
+- 下部`Issues` panelにMissing ScriptとBroken Missing Referenceを種類、参照先Object type、発生場所の順で表示
 - node tooltipにはDependencies / Used Byを表示し、Asset Labelsはlabelを持つAssetだけに表示
 
 toolbarの操作は次のとおりです。
@@ -109,10 +105,8 @@ DependencyAnalyzer/
 │   ├── DependencyGraphWindow.cs
 │   ├── UnityTempDirectoryGuard.cs
 │   ├── Controller/
-│   │   └── Issues/
 │   ├── Core/
 │   ├── Scanners/
-│   │   └── Issues/
 │   ├── Settings/
 │   ├── Tests/
 │   │   ├── Controller/
@@ -130,8 +124,8 @@ DependencyAnalyzer/
     └── Runtime/
 ```
 
-- `Core`: dependency graph/node/edge/issueとnode cache
-- `Scanners`: Scene、serialized reference、Asset、Console issueの収集とnode生成
+- `Core`: dependency graph/node/edge、Analyzer diagnosticとnode cache
+- `Scanners`: Scene、serialized reference、Assetの収集とnode生成
 - `Controller`: scan orchestration、状態、検索、selection sync、Issues panel
 - `UI`: UI Toolkitによるgraph/node/edge/toolbar/panel
 - `Editor/Tests`: production責務別のEdit Mode Testと壊れたPrefab Fixture
@@ -151,8 +145,8 @@ Edit Mode Testは、次の一般的な依存関係事実を検証します。
 - main asset path内のsub-asset identity
 - Missing Script、Missing Object、Missing Material
 - component/scanner失敗後の継続と部分結果保持
-- Missing nodeのIssues panel登録
-- 現在のUnity Console snapshot、Console Clear後の再解析、node未特定log、重複log
+- Missing Script／Broken Missing Referenceの分類、Object type別group、location navigation
+- Analyzer diagnosticとUnity Console logがユーザー向けIssue件数へ混入しないこと
 - node tooltipのAsset Labels表示条件、reference count維持、count badge非表示
 
 通常fixtureはtest中に生成して削除します。コードだけで安定再現しにくいMissing状態は、`Editor/Tests/Fixtures`の小さなPrefab YAMLと固定`.meta`で保持します。
@@ -166,8 +160,8 @@ GitHub ActionsはAssets-copy導入を再現する最小`TestProject`を作り、
 - Prefab source componentとのproperty単位の対応表は作りません。
 - Addressables、`Resources.Load`、独自文字列IDなどの非serialized参照は対象外です。
 - Package内scriptなど、表示policyから外れるComponentはnodeを省略する場合があります。serialized参照自体は所有GameObjectをsourceとして解析します。
-- Console連携はUnity内部APIをreflectionで読み取ります。内部API取得に失敗した場合は、原因を`Unity Console Reader` Issueとして表示します。
-- Console件数は現在のConsole snapshotに含まれるwarning/error行数です。Collapseが有効な場合は1表示行を1件とし、発生回数は`Occurrences`として詳細へ保持します。Missing Reference、scanner issue、Console Reader failureはAnalyzer件数へ含めます。
+- Runtime Exception、compiler/runtime Console log、`Debug.LogError`、`Debug.LogWarning`はIssues panelの対象外です。
+- Analyzer自身の想定外の解析失敗は`[Dependency Analyzer Diagnostic]` prefixでUnity Consoleへ出力し、Issues panelのWarning件数には含めません。
 - 検索`Filter` toggleとscanのCancel buttonはUI未提供です。
 - UPM package化と`package.json`追加は行っていません。配布方式はAssets folder copyです。
 

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DependencyAnalyzer.Editor.Controller.Issues;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Scanners;
 using DependencyAnalyzer.Editor.Settings;
@@ -44,12 +43,9 @@ namespace DependencyAnalyzer.Editor.Controller
         private readonly VisualElement issueResizeHandle;
         private readonly ScrollView issueList;
         private readonly Label issueTitleLabel;
-        private readonly Label issueTotalCountLabel;
-        private readonly Button issueWarningFilterButton;
-        private readonly Button issueErrorFilterButton;
+        private readonly Image issueWarningIcon;
+        private readonly Label issueWarningCountLabel;
         private readonly Button issueToggleButton;
-        private Label issueWarningCountLabel;
-        private Label issueErrorCountLabel;
         private readonly HashSet<string> expandedIssueGroupIds = new HashSet<string>(StringComparer.Ordinal);
 
         private CancellationTokenSource scanCancellation;
@@ -58,8 +54,6 @@ namespace DependencyAnalyzer.Editor.Controller
         private bool hierarchyRefreshQueued;
         private bool suppressNextSelectionFocus;
         private bool issueListVisible = true;
-        private bool issueWarningsVisible = true;
-        private bool issueErrorsVisible = true;
         private bool hasCompletedLoad;
         private bool isLoading;
         private bool isResizingIssuePanel;
@@ -93,9 +87,8 @@ namespace DependencyAnalyzer.Editor.Controller
             issueResizeHandle = root.Q<VisualElement>("issue-resize-handle");
             issueList = root.Q<ScrollView>("issue-list");
             issueTitleLabel = root.Q<Label>("issue-title-label");
-            issueTotalCountLabel = root.Q<Label>("issue-total-count-label");
-            issueWarningFilterButton = root.Q<Button>("issue-warning-filter-button");
-            issueErrorFilterButton = root.Q<Button>("issue-error-filter-button");
+            issueWarningIcon = root.Q<Image>("issue-warning-icon");
+            issueWarningCountLabel = root.Q<Label>("issue-warning-count-label");
             issueToggleButton = root.Q<Button>("issue-toggle-button");
 
             if (loadButton != null)
@@ -138,17 +131,6 @@ namespace DependencyAnalyzer.Editor.Controller
             {
                 searchFilterToggle.RegisterValueChangedCallback(HandleSearchFilterChanged);
             }
-
-            issueWarningCountLabel = ConfigureIssueFilterButton(
-                issueWarningFilterButton,
-                DependencyScanIssueSeverity.Warning,
-                "Show or hide warnings",
-                ToggleIssueWarnings);
-            issueErrorCountLabel = ConfigureIssueFilterButton(
-                issueErrorFilterButton,
-                DependencyScanIssueSeverity.Error,
-                "Show or hide errors",
-                ToggleIssueErrors);
 
             if (issueToggleButton != null)
             {
@@ -224,16 +206,6 @@ namespace DependencyAnalyzer.Editor.Controller
             if (searchFilterToggle != null)
             {
                 searchFilterToggle.UnregisterValueChangedCallback(HandleSearchFilterChanged);
-            }
-
-            if (issueWarningFilterButton != null)
-            {
-                issueWarningFilterButton.clicked -= ToggleIssueWarnings;
-            }
-
-            if (issueErrorFilterButton != null)
-            {
-                issueErrorFilterButton.clicked -= ToggleIssueErrors;
             }
 
             if (issueToggleButton != null)
@@ -317,12 +289,12 @@ namespace DependencyAnalyzer.Editor.Controller
                 currentGraph = await scannerOrchestrator.ScanAsync(settings, cache, progress, token);
                 graphView.Populate(currentGraph, settings.InitialExpansionDepth);
                 UpdateSearchState(graphView.SetSearch(GetSearchQuery(), IsSearchFilterEnabled(), false));
-                PopulateIssuePanel(currentGraph);
+                var issueModel = PopulateIssuePanel(currentGraph);
                 hasCompletedLoad = true;
                 UpdateLoadButtonText();
                 SetStatus("Completed: " + currentGraph.Nodes.Count + " nodes, "
                     + currentGraph.Edges.Count + " edges, "
-                    + IssueGroupBuilder.Count(currentGraph, IssueTargetResolver.FindIssueEntryTargetNodeId) + " issues");
+                    + issueModel.WarningCount + " issues");
             }
             catch (OperationCanceledException)
             {

@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.Scanners;
 using DependencyAnalyzer.Editor.Settings;
+using DependencyAnalyzer.Editor.UI.Issues;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.TestTools;
 using UnityEngine.SceneManagement;
 
 namespace DependencyAnalyzer.Editor.Tests
@@ -90,6 +92,7 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.IsFalse(componentNode.HasMissingReferences);
             Assert.IsFalse(graph.Edges.Any(edge => edge.PointsToMissingReference));
             Assert.IsFalse(graph.Nodes.Any(node => node.Kind == DependencyNodeKind.MissingReference));
+            Assert.AreEqual(0, ProjectIssuePanelBuilder.Build(graph).WarningCount);
         }
 
         [Test]
@@ -336,6 +339,10 @@ namespace DependencyAnalyzer.Editor.Tests
             orchestrator.RegisterScanner(new ThrowingDependencyScanner());
             var settings = ScriptableObject.CreateInstance<AnalyzerSettings>();
             transientObjects.Add(settings);
+            LogAssert.Expect(
+                LogType.Error,
+                "[Dependency Analyzer Diagnostic] " + ThrowingDependencyScanner.ScannerName
+                + " [" + ThrowingDependencyScanner.ScannerName + "]: Scanner failed: Injected scanner failure");
 
             var graph = await orchestrator.ScanAsync(
                 settings,
@@ -346,6 +353,26 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.NotNull(FindNode(graph, gameObject));
             Assert.IsTrue(graph.Issues.Any(issue => issue.ScannerName == ThrowingDependencyScanner.ScannerName
                 && issue.Message.Contains("Scanner failed")));
+        }
+
+        [Test]
+        public async Task ScannerOrchestrator_DoesNotReadUnityConsoleMessagesAsProjectIssues()
+        {
+            const string consoleMessage = "Dependency Analyzer test runtime warning";
+            LogAssert.Expect(LogType.Warning, consoleMessage);
+            Debug.LogWarning(consoleMessage);
+            var orchestrator = new ScannerOrchestrator();
+            var settings = ScriptableObject.CreateInstance<AnalyzerSettings>();
+            transientObjects.Add(settings);
+
+            var graph = await orchestrator.ScanAsync(
+                settings,
+                new DependencyNodeCache(),
+                null,
+                CancellationToken.None);
+
+            Assert.AreEqual(0, ProjectIssuePanelBuilder.Build(graph).WarningCount);
+            Assert.IsFalse(graph.Issues.Any(issue => issue.ScannerName == "Unity Console"));
         }
 
         [TestCase("MissingScript.prefab", "Missing Component")]
@@ -365,6 +392,26 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.NotNull(missingEdge, "Missing edge was not detected for " + prefabName);
             Assert.IsTrue(graph.TryGetNode(missingEdge.TargetNodeId, out var missingNode));
             Assert.IsTrue(missingNode.HasMissingReferences);
+        }
+
+        [Test]
+        public async Task ScanAsync_BuildsMissingScriptIssueWithOwningGameObjectLocation()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FixtureFolder + "/MissingScript.prefab");
+            Assert.NotNull(prefab);
+            PrefabUtility.InstantiatePrefab(prefab);
+
+            var graph = await ScanAsync();
+            var missingEdge = graph.Edges.Single(edge =>
+                edge.PointsToMissingReference
+                && edge.ReferenceKind == DependencyReferenceKind.Component);
+            var model = ProjectIssuePanelBuilder.Build(graph);
+            var group = model.Groups.Single(candidate => candidate.Type == ProjectIssueType.MissingScript);
+            var location = group.Locations.Single();
+
+            Assert.AreEqual(1, group.Count);
+            Assert.AreEqual(missingEdge.SourceNodeId, location.TargetNodeId);
+            StringAssert.Contains("Missing Component", location.Label);
         }
 
         private Material CreateMaterialAsset(string relativePath)

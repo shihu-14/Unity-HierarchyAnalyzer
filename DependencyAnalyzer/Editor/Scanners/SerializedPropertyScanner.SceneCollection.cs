@@ -139,7 +139,7 @@ namespace DependencyAnalyzer.Editor.Scanners
         {
             if (component == null)
             {
-                var missingNode = DiagnosticNodeFactory.CreateMissingNode(
+                var missingNode = MissingReferenceNodeFactory.CreateMissingNode(
                     "missing:component:" + gameObjectNode.Id + ":" + componentIndex,
                     gameObjectNode.Path,
                     "Missing MonoBehaviour",

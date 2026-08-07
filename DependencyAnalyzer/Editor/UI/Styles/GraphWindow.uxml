@@ -23,10 +23,9 @@
             <ui:VisualElement name="issue-resize-handle" class="dependency-issue-resize-handle" />
             <ui:VisualElement name="issue-panel-header" class="dependency-issue-header">
                 <ui:Label name="issue-title-label" text="Issues" class="dependency-issue-title" />
-                <ui:Label name="issue-total-count-label" text="0" class="dependency-issue-total-count" />
-                <ui:VisualElement name="issue-filter-controls" class="dependency-issue-filter-controls">
-                    <ui:Button name="issue-error-filter-button" text="" class="dependency-issue-filter-button" />
-                    <ui:Button name="issue-warning-filter-button" text="" class="dependency-issue-filter-button" />
+                <ui:VisualElement name="issue-warning-status" class="dependency-issue-warning-status">
+                    <ui:Image name="issue-warning-icon" class="dependency-issue-warning-icon" />
+                    <ui:Label name="issue-warning-count-label" text="0" class="dependency-issue-warning-count" />
                 </ui:VisualElement>
                 <ui:Button name="issue-toggle-button" text="" />
             </ui:VisualElement>

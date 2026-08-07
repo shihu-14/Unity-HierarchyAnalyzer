@@ -1,6 +1,9 @@
-using DependencyAnalyzer.Editor.Core;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
 using DependencyAnalyzer.Editor.UI.Issues;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -8,99 +11,185 @@ namespace DependencyAnalyzer.Editor.Tests
 {
     public sealed class IssuePanelViewBuilderTests
     {
-        [Test]
-        public void OccurrenceRow_PlacesNodeIconBeforeSeverityIcon()
-        {
-            var nodeIconTexture = new Texture2D(1, 1);
-            try
-            {
-                var group = CreateGroup(CreateOccurrence("node", nodeIconTexture));
-
-                var view = IssuePanelViewBuilder.CreateGroupView(group, true, null, null);
-                var row = view.Q<VisualElement>(className: "dependency-issue-occurrence-row");
-                var nodeIcon = row.Q<Image>(className: "dependency-issue-node-icon");
-                var severityIcon = row.Q<Image>(className: "dependency-issue-severity-icon");
-
-                Assert.IsNotNull(nodeIcon);
-                Assert.IsNotNull(severityIcon);
-                Assert.Less(row.IndexOf(nodeIcon), row.IndexOf(severityIcon));
-            }
-            finally
-            {
-                Object.DestroyImmediate(nodeIconTexture);
-            }
-        }
+        private const string GraphWindowUxmlPath = "Assets/DependencyAnalyzer/Editor/UI/Styles/GraphWindow.uxml";
 
         [Test]
-        public void NoRelatedNodeRow_IsDisabled()
+        public void BrokenReferenceView_CreatesIssueTypeObjectTypeAndLocationHierarchy()
         {
-            var group = CreateGroup(CreateOccurrence(string.Empty, null));
-            var view = IssuePanelViewBuilder.CreateGroupView(
-                group,
-                true,
-                null,
-                null);
-            var row = view.Q<VisualElement>(className: "dependency-issue-occurrence-row");
+            var objectGroup = CreateObjectGroup(CreateLocation("target"));
+            var group = CreateBrokenReferenceGroup(objectGroup);
+            var expanded = new HashSet<string> { group.Id, objectGroup.Id };
 
-            Assert.IsFalse(row.enabledSelf);
-            Assert.AreEqual("No related node", row.Q<Label>(className: "dependency-issue-occurrence-label").text);
-        }
-
-        [Test]
-        public void RelatedOccurrenceRow_IsEnabled()
-        {
-            var group = CreateGroup(CreateOccurrence("target", null));
-            var view = IssuePanelViewBuilder.CreateGroupView(
-                group,
-                true,
-                null,
-                null);
-            var row = view.Q<VisualElement>(className: "dependency-issue-occurrence-row");
-
-            Assert.IsTrue(row.enabledSelf);
-        }
-
-        [Test]
-        public void CollapsedGroup_HidesAffectedLocations()
-        {
-            var group = CreateGroup(CreateOccurrence("target", null));
-            var view = IssuePanelViewBuilder.CreateGroupView(
-                group,
-                false,
-                null,
-                null);
+            var view = IssuePanelViewBuilder.CreateGroupView(group, expanded, null, null);
 
             Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-group-row"));
-            Assert.IsNull(view.Q<VisualElement>(className: "dependency-issue-location-list"));
+            Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-object-group-row"));
+            Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-location-row"));
         }
 
-        private static IssueGroup CreateGroup(IssueOccurrence occurrence)
+        [Test]
+        public void MissingScriptView_ShowsLocationsWithoutObjectTypeGroup()
         {
-            return new IssueGroup(
-                "group",
-                "Missing Reference: Material",
-                DependencyScanIssueSeverity.Warning,
-                IssueOrigin.Analyzer,
+            var group = new ProjectIssueGroup(
+                "issue:missing-script",
+                ProjectIssueType.MissingScript,
+                "Missing Script",
+                new[] { CreateLocation("target") },
+                null);
+
+            var view = IssuePanelViewBuilder.CreateGroupView(
+                group,
+                new HashSet<string> { group.Id },
                 null,
-                new[] { occurrence });
+                null);
+
+            Assert.IsNull(view.Q<VisualElement>(className: "dependency-issue-object-group-row"));
+            Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-location-row"));
         }
 
-        private static IssueOccurrence CreateOccurrence(string targetNodeId, Texture nodeIcon)
+        [Test]
+        public void LocationRow_PlacesAccentSquareImmediatelyBeforePathWithoutInlineBorder()
         {
-            return new IssueOccurrence(
-                "Missing Reference/Material",
-                "Missing Reference/Material",
-                "Missing Reference: Material",
-                "Missing serialized reference",
-                DependencyScanIssueSeverity.Warning,
+            var objectGroup = CreateObjectGroup(CreateLocation("target"));
+            var group = CreateBrokenReferenceGroup(objectGroup);
+            var view = IssuePanelViewBuilder.CreateGroupView(
+                group,
+                new HashSet<string> { group.Id, objectGroup.Id },
+                null,
+                null);
+            var row = view.Q<VisualElement>(className: "dependency-issue-location-row");
+            var accent = row.Q<VisualElement>(className: "dependency-issue-location-accent");
+            var label = row.Q<Label>(className: "dependency-issue-location-label");
+
+            Assert.IsNotNull(accent);
+            Assert.IsNotNull(label);
+            Assert.AreEqual(Color.cyan, accent.style.backgroundColor.value);
+            Assert.AreEqual(row.IndexOf(accent) + 1, row.IndexOf(label));
+            Assert.AreEqual(StyleKeyword.Null, row.style.borderLeftColor.keyword);
+        }
+
+        [Test]
+        public void LocationRow_ClickInvokesFocusCallbackWithTargetNodeId()
+        {
+            var objectGroup = CreateObjectGroup(CreateLocation("target-node"));
+            var group = CreateBrokenReferenceGroup(objectGroup);
+            var focusedNodeId = string.Empty;
+            var view = IssuePanelViewBuilder.CreateGroupView(
+                group,
+                new HashSet<string> { group.Id, objectGroup.Id },
+                null,
+                nodeId => focusedNodeId = nodeId);
+            var row = view.Q<Button>(className: "dependency-issue-location-row");
+
+            SimulateClick(row);
+
+            Assert.AreEqual("target-node", focusedNodeId);
+        }
+
+        [Test]
+        public void LocationWithoutRelatedNode_IsDisabled()
+        {
+            var objectGroup = CreateObjectGroup(CreateLocation(string.Empty));
+            var group = CreateBrokenReferenceGroup(objectGroup);
+            var view = IssuePanelViewBuilder.CreateGroupView(
+                group,
+                new HashSet<string> { group.Id, objectGroup.Id },
+                null,
+                null);
+            var row = view.Q<VisualElement>(className: "dependency-issue-location-row");
+
+            Assert.IsFalse(row.enabledSelf);
+            Assert.AreEqual("No related node", row.Q<Label>(className: "dependency-issue-location-label").text);
+        }
+
+        [Test]
+        public void CollapsedObjectType_HidesLocations()
+        {
+            var objectGroup = CreateObjectGroup(CreateLocation("target"));
+            var group = CreateBrokenReferenceGroup(objectGroup);
+            var view = IssuePanelViewBuilder.CreateGroupView(
+                group,
+                new HashSet<string> { group.Id },
+                null,
+                null);
+
+            Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-object-group-row"));
+            Assert.IsNull(view.Q<VisualElement>(className: "dependency-issue-location-row"));
+        }
+
+        [Test]
+        public void ConfigureWarningStatus_ShowsWarningCountWithoutButtonBehavior()
+        {
+            var icon = new Image();
+            var count = new Label();
+
+            IssuePanelViewBuilder.ConfigureWarningStatus(icon, count, 7);
+
+            Assert.IsNotNull(icon.image);
+            Assert.AreEqual("7", count.text);
+        }
+
+        [Test]
+        public void GraphWindowLayout_HasWarningStatusWithoutTotalOrSeverityFilters()
+        {
+            var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(GraphWindowUxmlPath);
+            Assert.IsNotNull(visualTree);
+            var root = visualTree.CloneTree();
+            var status = root.Q<VisualElement>("issue-warning-status");
+
+            Assert.IsNotNull(status);
+            Assert.IsFalse(status is Button);
+            Assert.IsNotNull(root.Q<Image>("issue-warning-icon"));
+            Assert.IsNotNull(root.Q<Label>("issue-warning-count-label"));
+            Assert.IsNull(root.Q<Label>("issue-total-count-label"));
+            Assert.IsNull(root.Q<Button>("issue-error-filter-button"));
+            Assert.IsNull(root.Q<Button>("issue-warning-filter-button"));
+        }
+
+        private static ProjectIssueGroup CreateBrokenReferenceGroup(ProjectIssueObjectGroup objectGroup)
+        {
+            return new ProjectIssueGroup(
+                "issue:broken-missing-reference",
+                ProjectIssueType.BrokenMissingReference,
+                "Broken Missing Reference",
+                null,
+                new[] { objectGroup });
+        }
+
+        private static ProjectIssueObjectGroup CreateObjectGroup(ProjectIssueLocation location)
+        {
+            return new ProjectIssueObjectGroup(
+                "issue:broken-missing-reference:type:material",
+                "Material",
+                null,
+                new[] { location });
+        }
+
+        private static ProjectIssueLocation CreateLocation(string targetNodeId)
+        {
+            return new ProjectIssueLocation(
+                new[] { "Scene: Main", "Player", "MeshRenderer" },
+                string.IsNullOrEmpty(targetNodeId) ? "No related node" : "m_Material",
                 targetNodeId,
-                nodeIcon,
-                Color.gray,
-                null,
-                IssueOrigin.Analyzer,
-                new IssueLocation(null, string.IsNullOrEmpty(targetNodeId) ? "No related node" : "m_Material"),
-                1);
+                Color.cyan);
         }
 
+        private static void SimulateClick(Button button)
+        {
+            var method = typeof(Clickable).GetMethod(
+                "SimulateSingleClick",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            Assert.IsNotNull(method, "Clickable.SimulateSingleClick was not available in this Unity version.");
+            var parameters = method.GetParameters();
+            var arguments = new object[parameters.Length];
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                arguments[i] = parameters[i].ParameterType.IsValueType
+                    ? Activator.CreateInstance(parameters[i].ParameterType)
+                    : null;
+            }
+
+            method.Invoke(button.clickable, arguments);
+        }
     }
 }

@@ -1,9 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using DependencyAnalyzer.Editor.Controller.Issues;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.UI.Icons;
 using DependencyAnalyzer.Editor.UI.Issues;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -12,56 +8,35 @@ namespace DependencyAnalyzer.Editor.Controller
 {
     public sealed partial class DependencyGraphController
     {
-        private void PopulateIssuePanel(DependencyGraph graphData)
+        private ProjectIssuePanelModel PopulateIssuePanel(DependencyGraph graphData)
         {
+            var model = ProjectIssuePanelBuilder.Build(graphData);
             if (issueList == null)
             {
-                return;
+                return model;
             }
-
-            var groups = IssueGroupBuilder.Build(graphData, IssueTargetResolver.FindIssueEntryTargetNodeId);
-            var errorGroups = groups
-                .Where(group => group.Severity == DependencyScanIssueSeverity.Error)
-                .ToList();
-            var warningGroups = groups
-                .Where(group => group.Severity == DependencyScanIssueSeverity.Warning)
-                .ToList();
-            var summary = IssueGroupBuilder.Summarize(groups);
 
             if (issueTitleLabel != null)
             {
                 issueTitleLabel.text = "Issues";
-                issueTitleLabel.tooltip = "Detected root issues";
+                issueTitleLabel.tooltip = "Broken project references";
             }
 
-            if (issueTotalCountLabel != null)
-            {
-                issueTotalCountLabel.text = summary.TotalCount.ToString();
-                issueTotalCountLabel.tooltip = "Root issue count. A collapsed Console row counts as one issue.";
-            }
-
-            UpdateIssueFilterButtons(summary.ErrorCount, summary.WarningCount);
+            IssuePanelViewBuilder.ConfigureWarningStatus(issueWarningIcon, issueWarningCountLabel, model.WarningCount);
             issueList.contentContainer.Clear();
-            if (groups.Count == 0)
+            if (model.Groups.Count == 0)
             {
                 var empty = new Label("No issues");
                 empty.AddToClassList("dependency-issue-empty");
                 issueList.Add(empty);
-                return;
+                return model;
             }
 
-            if (issueErrorsVisible)
-            {
-                AddIssueGroups(errorGroups);
-            }
-
-            if (issueWarningsVisible)
-            {
-                AddIssueGroups(warningGroups);
-            }
+            AddIssueGroups(model.Groups);
+            return model;
         }
 
-        private void AddIssueGroups(IReadOnlyList<IssueGroup> groups)
+        private void AddIssueGroups(IReadOnlyList<ProjectIssueGroup> groups)
         {
             if (issueList == null || groups == null || groups.Count == 0)
             {
@@ -73,7 +48,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 var group = groups[i];
                 issueList.Add(IssuePanelViewBuilder.CreateGroupView(
                     group,
-                    expandedIssueGroupIds.Contains(group.Id),
+                    expandedIssueGroupIds,
                     ToggleIssueGroup,
                     FocusIssueNode));
             }
@@ -102,76 +77,6 @@ namespace DependencyAnalyzer.Editor.Controller
             }
 
             graphView.FocusNode(targetNodeId, true);
-        }
-
-        private static Label ConfigureIssueFilterButton(
-            Button button,
-            DependencyScanIssueSeverity severity,
-            string tooltip,
-            Action clicked)
-        {
-            if (button == null)
-            {
-                return null;
-            }
-
-            button.text = string.Empty;
-            button.tooltip = tooltip;
-            button.clicked += clicked;
-            button.Clear();
-
-            var icon = new Image { image = DependencyIconProvider.GetIssueIcon(severity) };
-            icon.AddToClassList("dependency-issue-filter-icon");
-            var count = new Label("0");
-            count.AddToClassList("dependency-issue-filter-count");
-            button.Add(icon);
-            button.Add(count);
-            return count;
-        }
-
-        private void ToggleIssueWarnings()
-        {
-            issueWarningsVisible = !issueWarningsVisible;
-            PopulateIssuePanel(currentGraph);
-        }
-
-        private void ToggleIssueErrors()
-        {
-            issueErrorsVisible = !issueErrorsVisible;
-            PopulateIssuePanel(currentGraph);
-        }
-
-        private void UpdateIssueFilterButtons(int errorCount, int warningCount)
-        {
-            if (issueWarningCountLabel != null)
-            {
-                issueWarningCountLabel.text = warningCount.ToString();
-            }
-
-            if (issueErrorCountLabel != null)
-            {
-                issueErrorCountLabel.text = errorCount.ToString();
-            }
-
-            SetIssueFilterButtonState(issueWarningFilterButton, issueWarningsVisible);
-            SetIssueFilterButtonState(issueErrorFilterButton, issueErrorsVisible);
-        }
-
-        private static void SetIssueFilterButtonState(Button button, bool visible)
-        {
-            if (button == null)
-            {
-                return;
-            }
-
-            if (visible)
-            {
-                button.RemoveFromClassList("dependency-issue-filter-button--off");
-            }
-            else
-            {
-                button.AddToClassList("dependency-issue-filter-button--off");
-            }
         }
 
         private void ToggleIssueList()

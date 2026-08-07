@@ -15,6 +15,10 @@ namespace DependencyAnalyzer.Editor.Core
 
         public IReadOnlyList<DependencyNode> Nodes => nodes;
         public IReadOnlyList<DependencyEdge> Edges => edges;
+        /// <summary>
+        /// Gets Analyzer diagnostics collected while building this graph.
+        /// Broken project references are represented by missing-reference edges instead.
+        /// </summary>
         public IReadOnlyList<DependencyScanIssue> Issues => issues;
 
         public DependencyNode AddOrUpdateNode(DependencyNode node)
@@ -66,6 +70,9 @@ namespace DependencyAnalyzer.Editor.Core
             return true;
         }
 
+        /// <summary>
+        /// Adds an Analyzer diagnostic without converting it into a user-facing project issue.
+        /// </summary>
         public void AddIssue(DependencyScanIssue issue)
         {
             if (issue != null)

@@ -156,7 +156,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             var missingReferenceType = GetMissingReferenceTypeName(reference.SerializedTypeName);
-            var missingNode = DiagnosticNodeFactory.CreateMissingNode(
+            var missingNode = MissingReferenceNodeFactory.CreateMissingNode(
                 "missing:property:" + sourceNode.Id + ":" + memberName + ":" + reference.MissingInstanceId,
                 sourceNode.Path,
                 memberName,
