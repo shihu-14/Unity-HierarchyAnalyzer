@@ -117,8 +117,10 @@ namespace DependencyAnalyzer.Editor
             issueResizeHandle.AddToClassList("dependency-issue-resize-handle");
             var issueHeader = new VisualElement { name = "issue-panel-header" };
             issueHeader.AddToClassList("dependency-issue-header");
-            var issueTitleLabel = new Label("Issues | Console E: 0 W: 0 | Analyzer E: 0 W: 0") { name = "issue-title-label" };
+            var issueTitleLabel = new Label("Issues") { name = "issue-title-label" };
             issueTitleLabel.AddToClassList("dependency-issue-title");
+            var issueTotalCountLabel = new Label("0") { name = "issue-total-count-label" };
+            issueTotalCountLabel.AddToClassList("dependency-issue-total-count");
             var issueFilterControls = new VisualElement { name = "issue-filter-controls" };
             issueFilterControls.AddToClassList("dependency-issue-filter-controls");
             var issueWarningFilterButton = new Button { name = "issue-warning-filter-button" };
@@ -128,9 +130,10 @@ namespace DependencyAnalyzer.Editor
             var issueToggleButton = new Button { name = "issue-toggle-button" };
             var issueList = new ScrollView { name = "issue-list" };
             issueList.AddToClassList("dependency-issue-list");
-            issueFilterControls.Add(issueWarningFilterButton);
             issueFilterControls.Add(issueErrorFilterButton);
+            issueFilterControls.Add(issueWarningFilterButton);
             issueHeader.Add(issueTitleLabel);
+            issueHeader.Add(issueTotalCountLabel);
             issueHeader.Add(issueFilterControls);
             issueHeader.Add(issueToggleButton);
             issuePanel.Add(issueResizeHandle);

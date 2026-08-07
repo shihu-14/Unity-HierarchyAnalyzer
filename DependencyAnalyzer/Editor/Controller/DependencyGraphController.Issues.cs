@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using DependencyAnalyzer.Editor.Controller.Issues;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Settings;
-using DependencyAnalyzer.Editor.UI.Controls;
-using DependencyAnalyzer.Editor.UI.GraphView;
 using DependencyAnalyzer.Editor.UI.Icons;
 using DependencyAnalyzer.Editor.UI.Issues;
 using UnityEngine;
@@ -22,24 +19,30 @@ namespace DependencyAnalyzer.Editor.Controller
                 return;
             }
 
-            var entries = IssuePanelEntryBuilder.Build(graphData, IssueTargetResolver.FindIssueEntryTargetNodeId);
-            var errorEntries = entries
-                .Where(entry => entry.Severity == DependencyScanIssueSeverity.Error)
+            var groups = IssueGroupBuilder.Build(graphData, IssueTargetResolver.FindIssueEntryTargetNodeId);
+            var errorGroups = groups
+                .Where(group => group.Severity == DependencyScanIssueSeverity.Error)
                 .ToList();
-            var warningEntries = entries
-                .Where(entry => entry.Severity == DependencyScanIssueSeverity.Warning)
+            var warningGroups = groups
+                .Where(group => group.Severity == DependencyScanIssueSeverity.Warning)
                 .ToList();
-            var counts = IssuePanelEntryBuilder.CountByOrigin(entries);
+            var summary = IssueGroupBuilder.Summarize(groups);
 
             if (issueTitleLabel != null)
             {
-                issueTitleLabel.text = counts.DisplayText;
-                issueTitleLabel.tooltip = "Console counts current Console rows. Analyzer counts Missing References and scanner issues.";
+                issueTitleLabel.text = "Issues";
+                issueTitleLabel.tooltip = "Detected root issues";
             }
 
-            UpdateIssueFilterButtons(counts.ErrorCount, counts.WarningCount);
+            if (issueTotalCountLabel != null)
+            {
+                issueTotalCountLabel.text = summary.TotalCount.ToString();
+                issueTotalCountLabel.tooltip = "Root issue count. A collapsed Console row counts as one issue.";
+            }
+
+            UpdateIssueFilterButtons(summary.ErrorCount, summary.WarningCount);
             issueList.contentContainer.Clear();
-            if (entries.Count == 0)
+            if (groups.Count == 0)
             {
                 var empty = new Label("No issues");
                 empty.AddToClassList("dependency-issue-empty");
@@ -49,77 +52,56 @@ namespace DependencyAnalyzer.Editor.Controller
 
             if (issueErrorsVisible)
             {
-                AddIssueRows(errorEntries);
+                AddIssueGroups(errorGroups);
             }
 
             if (issueWarningsVisible)
             {
-                AddIssueRows(warningEntries);
+                AddIssueGroups(warningGroups);
             }
         }
 
-        private void AddIssueRows(IReadOnlyList<IssuePanelEntry> entries)
+        private void AddIssueGroups(IReadOnlyList<IssueGroup> groups)
         {
-            if (issueList == null || entries == null || entries.Count == 0)
+            if (issueList == null || groups == null || groups.Count == 0)
             {
                 return;
             }
 
-            for (var i = 0; i < entries.Count; i++)
+            for (var i = 0; i < groups.Count; i++)
             {
-                issueList.Add(CreateIssueRow(entries[i]));
+                var group = groups[i];
+                issueList.Add(IssuePanelViewBuilder.CreateGroupView(
+                    group,
+                    expandedIssueGroupIds.Contains(group.Id),
+                    ToggleIssueGroup,
+                    FocusIssueNode));
             }
         }
 
-        private VisualElement CreateIssueRow(IssuePanelEntry entry)
+        private void ToggleIssueGroup(string groupId)
         {
-            var row = new VisualElement();
-            row.AddToClassList("dependency-issue-row");
-            row.AddToClassList(IssuePanelEntryBuilder.GetSeverityClass(entry.Severity));
-            if (!entry.HasRelatedNode)
+            if (string.IsNullOrEmpty(groupId))
             {
-                row.AddToClassList("dependency-issue-row--disabled");
-            }
-            else
-            {
-                row.RegisterCallback<MouseDownEvent>(evt =>
-                {
-                    if (evt.button != 0)
-                    {
-                        return;
-                    }
-
-                    graphView.FocusNode(entry.TargetNodeId, true);
-                    evt.PreventDefault();
-                    evt.StopPropagation();
-                });
+                return;
             }
 
-            row.tooltip = entry.Detail;
-            row.style.borderLeftColor = new StyleColor(entry.NodeColor);
-            var severityIcon = new Image { image = DependencyIconProvider.GetIssueIcon(entry.Severity) };
-            severityIcon.AddToClassList("dependency-issue-severity-icon");
-
-            var nodeIcon = new Image { image = entry.NodeIcon };
-            nodeIcon.AddToClassList("dependency-issue-node-icon");
-
-            var text = new VisualElement();
-            text.AddToClassList("dependency-issue-text");
-
-            var main = new Label(entry.Title);
-            main.AddToClassList("dependency-issue-main");
-            var detail = new Label(entry.Detail);
-            detail.AddToClassList("dependency-issue-detail");
-            text.Add(main);
-            text.Add(detail);
-
-            row.Add(severityIcon);
-            if (entry.NodeIcon != null)
+            if (!expandedIssueGroupIds.Add(groupId))
             {
-                row.Add(nodeIcon);
+                expandedIssueGroupIds.Remove(groupId);
             }
-            row.Add(text);
-            return row;
+
+            PopulateIssuePanel(currentGraph);
+        }
+
+        private void FocusIssueNode(string targetNodeId)
+        {
+            if (string.IsNullOrEmpty(targetNodeId))
+            {
+                return;
+            }
+
+            graphView.FocusNode(targetNodeId, true);
         }
 
         private static Label ConfigureIssueFilterButton(

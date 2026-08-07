@@ -11,6 +11,7 @@
 - Preserve unlinked Console issues and available file, line, stack trace, context, and occurrence metadata.
 - Match Unity Console error and warning mode classification, including graph compile errors.
 - Separate current Console row counts from Analyzer issue counts in the Issues header.
+- Group Issue panel findings by root cause, show affected locations hierarchically, and count root occurrences independently from graph marker propagation.
 - Remove obsolete asset-size metadata and dependency count badges while retaining reference counts in tooltips.
 - Show asset labels in node tooltips only when an Asset has non-empty labels.
 - Rename public graph, node, edge, issue, cache, window, and graph-view element types to reflect their domain responsibilities.

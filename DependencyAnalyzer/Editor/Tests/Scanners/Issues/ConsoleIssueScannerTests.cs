@@ -60,12 +60,13 @@ namespace DependencyAnalyzer.Editor.Tests
 
             Assert.AreEqual(1, graph.Issues.Count);
             Assert.IsEmpty(graph.Issues[0].SubjectPath);
-            var panelEntries = IssuePanelEntryBuilder.Build(
+            var groups = IssueGroupBuilder.Build(
                 graph,
                 IssueTargetResolver.FindIssueEntryTargetNodeId);
-            Assert.AreEqual(1, panelEntries.Count);
-            Assert.IsEmpty(panelEntries[0].TargetNodeId);
-            StringAssert.Contains("No related node", panelEntries[0].Title);
+            Assert.AreEqual(1, groups.Count);
+            Assert.AreEqual(1, groups[0].OccurrenceCount);
+            Assert.IsEmpty(groups[0].Occurrences[0].TargetNodeId);
+            Assert.AreEqual("No related node", groups[0].Occurrences[0].Location.Label);
         }
 
         [Test]
@@ -144,13 +145,13 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.AreEqual(1, graph.Issues.Count);
             Assert.AreEqual("Unity Console Reader", graph.Issues[0].ScannerName);
             StringAssert.Contains("Internal API changed", graph.Issues[0].Message);
-            var panelEntries = IssuePanelEntryBuilder.Build(
+            var groups = IssueGroupBuilder.Build(
                 graph,
                 IssueTargetResolver.FindIssueEntryTargetNodeId);
-            Assert.AreEqual(1, panelEntries.Count);
-            Assert.AreEqual(IssuePanelEntryOrigin.Analyzer, panelEntries[0].Origin);
-            Assert.IsFalse(panelEntries[0].HasRelatedNode);
-            Assert.IsEmpty(panelEntries[0].TargetNodeId);
+            Assert.AreEqual(1, groups.Count);
+            Assert.AreEqual(IssueOrigin.Analyzer, groups[0].Origin);
+            Assert.IsFalse(groups[0].Occurrences[0].HasRelatedNode);
+            Assert.IsEmpty(groups[0].Occurrences[0].TargetNodeId);
         }
 
         [Test]
@@ -165,11 +166,11 @@ namespace DependencyAnalyzer.Editor.Tests
                 new FixedConsoleLogReader(ConsoleLogReadResult.Success(new[] { entry })));
 
             Assert.AreEqual(0, graph.Issues.Count);
-            var counts = IssuePanelEntryBuilder.CountByOrigin(IssuePanelEntryBuilder.Build(
+            var summary = IssueGroupBuilder.Summarize(IssueGroupBuilder.Build(
                 graph,
                 IssueTargetResolver.FindIssueEntryTargetNodeId));
-            Assert.AreEqual(0, counts.ConsoleErrors);
-            Assert.AreEqual(0, counts.ConsoleWarnings);
+            Assert.AreEqual(0, summary.ConsoleErrors);
+            Assert.AreEqual(0, summary.ConsoleWarnings);
         }
 
         private static ConsoleLogEntry CreateEntry(
