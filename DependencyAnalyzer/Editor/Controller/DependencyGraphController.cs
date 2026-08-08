@@ -344,6 +344,9 @@ namespace DependencyAnalyzer.Editor.Controller
             var selectedObject = Selection.activeObject;
             if (selectedObject == null)
             {
+                suppressNextSelectionFocus = false;
+                suppressedSelectionInstanceId = 0;
+                graphView.ClearEditorSelectionHighlight();
                 return;
             }
 

@@ -88,6 +88,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     AddSearchPulseHighlight(nodeView, true);
                 }
 
+                if (string.Equals(editorSelectionNodeId, renderNode.NodeId, StringComparison.Ordinal))
+                {
+                    AddEditorSelectionPulseHighlight(nodeView);
+                }
+
                 nodeViews.Add(renderNode.ViewId, nodeView);
                 var rect = nodeView.GetGraphRect();
                 nodeRects.Add(renderNode.ViewId, rect);

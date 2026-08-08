@@ -1,31 +1,50 @@
+using System;
 using DependencyAnalyzer.Editor.Core;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace DependencyAnalyzer.Editor.Controller
 {
     public sealed class EditorSelectionSync
     {
+        private readonly Action<Object> selectObject;
+        private readonly Action<Object> pingObject;
+
+        public EditorSelectionSync()
+            : this(target => Selection.activeObject = target, EditorGUIUtility.PingObject)
+        {
+        }
+
+        internal EditorSelectionSync(Action<Object> selectObject, Action<Object> pingObject)
+        {
+            this.selectObject = selectObject ?? throw new ArgumentNullException(nameof(selectObject));
+            this.pingObject = pingObject ?? throw new ArgumentNullException(nameof(pingObject));
+        }
+
         public bool PingAndSelect(DependencyNode node)
         {
             return PingAndSelect(ResolveObject(node));
         }
 
-        public bool PingAndSelect(Object target)
+        public bool PingAndSelect(Object inspectorTarget)
         {
-            if (target == null)
+            if (inspectorTarget == null)
             {
                 return false;
             }
 
-            Selection.activeObject = target;
-            EditorGUIUtility.PingObject(target);
+            var hierarchyOrProjectTarget = inspectorTarget is Component component
+                ? component.gameObject
+                : inspectorTarget;
+            selectObject(inspectorTarget);
+            pingObject(hierarchyOrProjectTarget);
             return true;
         }
 
         public Object ResolveObject(DependencyNode node)
         {
-            if (node == null || node.Kind == DependencyNodeKind.MissingReference)
+            if (node == null || node.IsMissingTarget)
             {
                 return null;
             }

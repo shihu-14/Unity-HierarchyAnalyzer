@@ -22,6 +22,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const int MaxAnimatedLayoutNodeCount = 600;
         private const int MaxAnimatedLayoutNodeDelta = 400;
         private const int MaxSearchSuggestions = int.MaxValue;
+        internal const string EditorSelectionHighlightClass = "dependency-node-editor-selection-ring";
 
         private readonly VisualElement contentLayer;
         private readonly VisualElement edgeLayer;
@@ -70,6 +71,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private int initialDepth = 2;
         private string focusedNodeId;
         private string focusedViewId;
+        private string editorSelectionNodeId;
         private string searchQuery = string.Empty;
         private bool searchFilterEnabled;
         private int currentSearchResultIndex = -1;
@@ -121,6 +123,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         public event Action<DependencyNode> NodeSelected;
 
+        internal string EditorSelectionNodeId => editorSelectionNodeId ?? string.Empty;
+
         public void ConfigureZoom(float minimum, float maximum, float step)
         {
             minZoom = Mathf.Clamp(minimum, 0.05f, 1f);
@@ -137,6 +141,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             searchFilterEnabled = filterEnabled;
             forcedVisibleNodeIds.Clear();
             RebuildSearchIndex(previousCurrentNodeId);
+            AddForcedVisiblePath(editorSelectionNodeId);
             Render();
 
             if (focusCurrent && searchResultNodeIds.Count > 0)
@@ -194,8 +199,15 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             graph = graphData;
             RebuildGraphCaches();
+            if (!string.IsNullOrEmpty(editorSelectionNodeId)
+                && (graph == null || !graph.TryGetNode(editorSelectionNodeId, out _)))
+            {
+                editorSelectionNodeId = null;
+            }
+
             initialDepth = Mathf.Clamp(depth, 1, 4);
             RebuildSearchIndex(GetCurrentSearchNodeId());
+            AddForcedVisiblePath(editorSelectionNodeId);
             Render();
         }
 
@@ -235,15 +247,41 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         {
             if (instanceId == 0 || graph == null)
             {
+                ClearEditorSelectionHighlight();
                 return false;
             }
 
             if (!nodeByInstanceId.TryGetValue(instanceId, out var node))
             {
+                ClearEditorSelectionHighlight();
                 return false;
             }
 
-            return FocusNode(node.Id, true);
+            editorSelectionNodeId = node.Id;
+            AddForcedVisiblePath(node.Id);
+            ExpandAncestors(node.Id);
+            Render();
+
+            if (!TryGetVisibleNodeRect(node.Id, out var targetRect))
+            {
+                return false;
+            }
+
+            CenterViewOnIfNeeded(targetRect);
+            return true;
+        }
+
+        internal void ClearEditorSelectionHighlight()
+        {
+            editorSelectionNodeId = null;
+            foreach (var view in nodeViews.Values)
+            {
+                var rings = view.Query<VisualElement>(className: EditorSelectionHighlightClass).ToList();
+                for (var i = 0; i < rings.Count; i++)
+                {
+                    rings[i].RemoveFromHierarchy();
+                }
+            }
         }
 
         public bool FocusNode(string nodeId, bool centerView)
@@ -265,19 +303,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return true;
             }
 
-            var targetRect = Rect.zero;
-            if (renderNodesByNodeId.TryGetValue(nodeId, out var visibleNodes))
-            {
-                for (var i = 0; i < visibleNodes.Count; i++)
-                {
-                    if (nodeRects.TryGetValue(visibleNodes[i].ViewId, out targetRect))
-                    {
-                        break;
-                    }
-                }
-            }
-
-            if (targetRect.width <= 0f || targetRect.height <= 0f)
+            if (!TryGetVisibleNodeRect(nodeId, out var targetRect))
             {
                 return false;
             }
@@ -285,6 +311,24 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var movedView = CenterViewOnIfNeeded(targetRect);
             FlashFocusedNode(movedView);
             return true;
+        }
+
+        private bool TryGetVisibleNodeRect(string nodeId, out Rect targetRect)
+        {
+            targetRect = Rect.zero;
+            if (!string.IsNullOrEmpty(nodeId)
+                && renderNodesByNodeId.TryGetValue(nodeId, out var visibleNodes))
+            {
+                for (var i = 0; i < visibleNodes.Count; i++)
+                {
+                    if (nodeRects.TryGetValue(visibleNodes[i].ViewId, out targetRect))
+                    {
+                        return targetRect.width > 0f && targetRect.height > 0f;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public struct SearchResultState

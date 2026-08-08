@@ -41,7 +41,8 @@
     background-color: rgba(143, 161, 179, 0.1);
 }
 
-.dependency-node-search-ring {
+.dependency-node-search-ring,
+.dependency-node-editor-selection-ring {
     position: absolute;
     border-top-width: 3px;
     border-right-width: 3px;

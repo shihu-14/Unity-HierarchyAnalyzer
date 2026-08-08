@@ -10,8 +10,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
     public sealed partial class DependencyGraphView
     {
 
-        private void HandleNodeSelected(DependencyNode node)
+        internal void HandleNodeSelected(DependencyNode node)
         {
+            ClearEditorSelectionHighlight();
             focusedNodeId = node.Id;
             focusedViewId = null;
             NodeSelected?.Invoke(node);
@@ -147,17 +148,26 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return;
             }
 
-            if (evt.button == 0 && TryFocusEdgeAt(evt.localMousePosition))
+            if (evt.button == 0)
             {
-                evt.PreventDefault();
-                evt.StopPropagation();
-                return;
+                HandleGraphBackgroundSelected();
+                if (TryFocusEdgeAt(evt.localMousePosition))
+                {
+                    evt.PreventDefault();
+                    evt.StopPropagation();
+                    return;
+                }
             }
 
             isPanning = true;
             lastMousePosition = evt.localMousePosition;
             evt.PreventDefault();
             evt.StopPropagation();
+        }
+
+        internal void HandleGraphBackgroundSelected()
+        {
+            ClearEditorSelectionHighlight();
         }
 
         private void HandleMouseMove(MouseMoveEvent evt)
@@ -428,7 +438,30 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private static void AddSearchPulseHighlight(DependencyNodeView view, bool isCurrent)
         {
+            AddPulseHighlight(
+                view,
+                "dependency-node-search-ring",
+                isCurrent ? 5f : 4f,
+                isCurrent ? 3f : 2f);
+        }
+
+        private static void AddEditorSelectionPulseHighlight(DependencyNodeView view)
+        {
+            AddPulseHighlight(view, EditorSelectionHighlightClass, 9f, 2f);
+        }
+
+        private static void AddPulseHighlight(
+            DependencyNodeView view,
+            string className,
+            float padding,
+            float borderWidth)
+        {
             if (view == null)
+            {
+                return;
+            }
+
+            if (view.Q<VisualElement>(className: className) != null)
             {
                 return;
             }
@@ -437,10 +470,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var borderColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 0.92f);
             var fillColor = new Color(nodeColor.r, nodeColor.g, nodeColor.b, 0.08f);
             var ring = new VisualElement();
-            ring.AddToClassList("dependency-node-search-ring");
+            ring.AddToClassList(className);
             ring.pickingMode = PickingMode.Ignore;
-            SetHighlightRingBounds(view, ring, isCurrent ? 5f : 4f);
-            var borderWidth = isCurrent ? 3f : 2f;
+            SetHighlightRingBounds(view, ring, padding);
             ring.style.borderTopWidth = borderWidth;
             ring.style.borderRightWidth = borderWidth;
             ring.style.borderBottomWidth = borderWidth;
