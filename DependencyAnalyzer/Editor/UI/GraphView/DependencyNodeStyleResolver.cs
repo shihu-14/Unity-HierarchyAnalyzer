@@ -7,7 +7,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
     internal static class DependencyNodeStyleResolver
     {
         internal const string MissingTargetClass = "dependency-node--missing-target";
-        internal const float MissingTargetOpacity = 0.60f;
+        internal const float MissingTargetOpacity = 0.45f;
 
         public static string GetNodeTypeClass(DependencyNode node)
         {

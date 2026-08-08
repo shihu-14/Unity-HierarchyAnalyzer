@@ -87,6 +87,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             style.position = Position.Absolute;
             style.width = nodeWidth;
             style.height = nodeHeight;
+            style.opacity = TargetOpacity;
 
             AddToClassList("dependency-node");
             AddToClassList(DependencyNodeStyleResolver.GetNodeTypeClass(data));

@@ -129,19 +129,26 @@ namespace DependencyAnalyzer.Editor.Tests
 
             Assert.IsTrue(view.ClassListContains("dependency-node--csharp"));
             Assert.IsTrue(view.ClassListContains(DependencyNodeStyleResolver.MissingTargetClass));
-            Assert.AreEqual(0.60f, view.TargetOpacity);
+            Assert.AreEqual(0.45f, view.TargetOpacity);
+            Assert.AreEqual(0.45f, view.style.opacity.value);
         }
 
         [Test]
-        public void MissingTargetStyle_UsesAnimationTargetOpacity()
+        public void NodeOpacity_UsesResolverAsSingleSourceOfTruth()
         {
+            var missingNode = CreateNode(DependencyNodeKind.Asset, Array.Empty<string>());
+            missingNode.MarkAsMissingTarget(MissingTargetKind.BrokenReference);
+            var missingView = CreateView(missingNode);
+            var normalView = CreateView(CreateNode(DependencyNodeKind.Asset, Array.Empty<string>()));
             var styleText = File.ReadAllText(
                 "Assets/DependencyAnalyzer/Editor/UI/Styles/NodeStyle.uss").Replace("\r\n", "\n");
 
-            StringAssert.Contains(
-                ".dependency-node--missing-target {\n    opacity: 0.6;\n}",
-                styleText);
-            Assert.AreEqual(0.60f, DependencyNodeStyleResolver.MissingTargetOpacity);
+            Assert.AreEqual(0.45f, DependencyNodeStyleResolver.MissingTargetOpacity);
+            Assert.AreEqual(0.45f, missingView.TargetOpacity);
+            Assert.AreEqual(0.45f, missingView.style.opacity.value);
+            Assert.AreEqual(1f, normalView.TargetOpacity);
+            Assert.AreEqual(1f, normalView.style.opacity.value);
+            StringAssert.DoesNotContain(".dependency-node--missing-target", styleText);
         }
 
         private static DependencyNode CreateNode(
