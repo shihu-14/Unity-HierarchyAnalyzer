@@ -170,9 +170,16 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             accent.style.backgroundColor = location.AccentColor;
             row.Add(accent);
 
-            var objectName = new Label(location.ObjectName);
-            objectName.AddToClassList("dependency-issue-location-object-name");
-            row.Add(objectName);
+            if (location.HasMissingObjectType)
+            {
+                var missingObjectType = new Label(location.MissingObjectType);
+                missingObjectType.AddToClassList("dependency-issue-location-type");
+                row.Add(missingObjectType);
+            }
+
+            var sourceObjectName = new Label(location.SourceObjectName);
+            sourceObjectName.AddToClassList("dependency-issue-location-source-name");
+            row.Add(sourceObjectName);
 
             var path = new Label(location.DisplayPath);
             path.AddToClassList("dependency-issue-location-label");

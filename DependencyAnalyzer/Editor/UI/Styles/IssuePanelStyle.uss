@@ -219,13 +219,27 @@
 
 .dependency-issue-location-accent {
     width: 3px;
-    height: 14px;
+    height: 19px;
     min-width: 3px;
     margin-right: 5px;
     flex-shrink: 0;
 }
 
-.dependency-issue-location-object-name {
+.dependency-issue-location-type {
+    min-width: 58px;
+    max-width: 120px;
+    margin-right: 10px;
+    flex-shrink: 0;
+    color: #d8dee7;
+    font-size: 11px;
+    -unity-font-style: normal;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -unity-text-align: middle-left;
+}
+
+.dependency-issue-location-source-name {
     max-width: 220px;
     min-width: 0;
     margin-right: 12px;

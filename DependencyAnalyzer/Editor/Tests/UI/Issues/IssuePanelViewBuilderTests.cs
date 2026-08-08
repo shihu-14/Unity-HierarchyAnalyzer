@@ -55,6 +55,10 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.AreEqual(ChevronIcon.IssuePanelVerticalScale, headerChevron.VerticalScale);
             Assert.AreEqual(headerChevron.VerticalScale, groupChevron.VerticalScale);
             Assert.AreEqual(headerChevron.VerticalScale, objectChevron.VerticalScale);
+            Assert.AreEqual(ChevronIcon.IssuePanelStrokeColor, headerChevron.StrokeColor);
+            Assert.AreEqual(headerChevron.StrokeColor, groupChevron.StrokeColor);
+            Assert.AreEqual(headerChevron.StrokeColor, objectChevron.StrokeColor);
+            Assert.AreEqual(new Color(0.64f, 0.64f, 0.64f, 0.90f), headerChevron.StrokeColor);
 
             var styleText = File.ReadAllText(IssuePanelStylePath);
             var headerRule = ExtractStyleRule(styleText, ".dependency-issue-toggle-button");
@@ -123,7 +127,7 @@ namespace DependencyAnalyzer.Editor.Tests
         [Test]
         public void MissingScriptView_ShowsLocationsWithoutObjectTypeGroup()
         {
-            var location = CreateLocation("target");
+            var location = CreateMissingScriptLocation("target");
             var group = new ProjectIssueGroup(
                 "issue:missing-script",
                 ProjectIssueType.MissingScript,
@@ -131,24 +135,34 @@ namespace DependencyAnalyzer.Editor.Tests
                 new[] { location },
                 null);
 
+            var focusedNodeId = string.Empty;
             var view = IssuePanelViewBuilder.CreateGroupView(
                 group,
                 new HashSet<string> { group.Id },
                 null,
-                null);
+                nodeId => focusedNodeId = nodeId);
 
             Assert.IsNull(view.Q<VisualElement>(className: "dependency-issue-object-group-row"));
             Assert.IsNotNull(view.Q<VisualElement>(className: "dependency-issue-location-list--issue-child"));
             Assert.IsNull(view.Q<VisualElement>(className: "dependency-issue-location-list--object-child"));
             var locationRow = view.Q<VisualElement>(className: "dependency-issue-location-row");
             Assert.IsNotNull(locationRow);
+            Assert.IsNull(locationRow.Q<Label>(className: "dependency-issue-location-type"));
+            Assert.AreEqual(
+                "Player",
+                locationRow.Q<Label>(className: "dependency-issue-location-source-name").text);
+            Assert.AreEqual(
+                Color.green,
+                locationRow.Q<VisualElement>(className: "dependency-issue-location-accent").style.backgroundColor.value);
             Assert.AreEqual(
                 location.DisplayPath,
                 locationRow.Q<Label>(className: "dependency-issue-location-label").text);
+            SimulateClick((Button)locationRow);
+            Assert.AreEqual("target", focusedNodeId);
         }
 
         [Test]
-        public void LocationRow_PlacesAccentObjectNameAndPathInOrderWithoutInlineBorder()
+        public void LocationRow_PlacesAccentTypeSourceAndPathInOrderWithoutInlineBorder()
         {
             var objectGroup = CreateObjectGroup(CreateLocation("target"));
             var group = CreateBrokenReferenceGroup(objectGroup);
@@ -159,18 +173,22 @@ namespace DependencyAnalyzer.Editor.Tests
                 null);
             var row = view.Q<VisualElement>(className: "dependency-issue-location-row");
             var accent = row.Q<VisualElement>(className: "dependency-issue-location-accent");
-            var objectName = row.Q<Label>(className: "dependency-issue-location-object-name");
+            var typeName = row.Q<Label>(className: "dependency-issue-location-type");
+            var sourceName = row.Q<Label>(className: "dependency-issue-location-source-name");
             var path = row.Q<Label>(className: "dependency-issue-location-label");
 
             Assert.IsNotNull(accent);
-            Assert.IsNotNull(objectName);
+            Assert.IsNotNull(typeName);
+            Assert.IsNotNull(sourceName);
             Assert.IsNotNull(path);
-            Assert.AreEqual("MeshRenderer", objectName.text);
+            Assert.AreEqual("Material", typeName.text);
+            Assert.AreEqual("MeshRenderer", sourceName.text);
             Assert.AreEqual("Path: Main/Player/MeshRenderer/m_Material", path.text);
             Assert.AreEqual(path.text, row.tooltip);
             Assert.AreEqual(Color.cyan, accent.style.backgroundColor.value);
-            Assert.AreEqual(row.IndexOf(accent) + 1, row.IndexOf(objectName));
-            Assert.AreEqual(row.IndexOf(objectName) + 1, row.IndexOf(path));
+            Assert.AreEqual(row.IndexOf(accent) + 1, row.IndexOf(typeName));
+            Assert.AreEqual(row.IndexOf(typeName) + 1, row.IndexOf(sourceName));
+            Assert.AreEqual(row.IndexOf(sourceName) + 1, row.IndexOf(path));
             Assert.AreEqual(StyleKeyword.Null, row.style.borderLeftColor.keyword);
         }
 
@@ -207,7 +225,10 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.IsFalse(row.enabledSelf);
             Assert.AreEqual(
                 "No related node",
-                row.Q<Label>(className: "dependency-issue-location-object-name").text);
+                row.Q<Label>(className: "dependency-issue-location-source-name").text);
+            Assert.AreEqual(
+                "Material",
+                row.Q<Label>(className: "dependency-issue-location-type").text);
             Assert.AreEqual(
                 "Path: Main/Player/MeshRenderer/No related node",
                 row.Q<Label>(className: "dependency-issue-location-label").text);
@@ -229,7 +250,7 @@ namespace DependencyAnalyzer.Editor.Tests
             StringAssert.Contains("padding-left: 32px;", issueChildRule);
             StringAssert.Contains("padding-left: 48px;", objectChildRule);
             StringAssert.Contains("width: 3px;", markerRule);
-            StringAssert.Contains("height: 14px;", markerRule);
+            StringAssert.Contains("height: 19px;", markerRule);
             StringAssert.Contains("margin-right: 5px;", markerRule);
             StringAssert.Contains("border-left-width: 0;", rowRule);
         }
@@ -303,8 +324,20 @@ namespace DependencyAnalyzer.Editor.Tests
                 new[] { "Main", "Player", "MeshRenderer" },
                 string.IsNullOrEmpty(targetNodeId) ? "No related node" : "m_Material",
                 string.IsNullOrEmpty(targetNodeId) ? "No related node" : "MeshRenderer",
+                "Material",
                 targetNodeId,
                 Color.cyan);
+        }
+
+        private static ProjectIssueLocation CreateMissingScriptLocation(string targetNodeId)
+        {
+            return new ProjectIssueLocation(
+                new[] { "Main", "Player" },
+                "Missing Component [0]",
+                "Player",
+                string.Empty,
+                targetNodeId,
+                Color.green);
         }
 
         private static string ExtractStyleRule(string styleText, string selector)

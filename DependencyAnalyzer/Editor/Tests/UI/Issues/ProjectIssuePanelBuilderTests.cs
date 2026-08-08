@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using DependencyAnalyzer.Editor.Core;
+using DependencyAnalyzer.Editor.UI.GraphView;
 using DependencyAnalyzer.Editor.UI.Issues;
 using NUnit.Framework;
 
@@ -34,7 +35,9 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.AreEqual(source.Id, location.TargetNodeId);
             CollectionAssert.AreEqual(new[] { "Main", "Player" }, location.ParentSegments);
             Assert.AreEqual("Missing Component [1]", location.Label);
-            Assert.AreEqual(source.DisplayName, location.ObjectName);
+            Assert.AreEqual(source.DisplayName, location.SourceObjectName);
+            Assert.IsFalse(location.HasMissingObjectType);
+            Assert.AreEqual(DependencyNodeStyleResolver.GetNodeAccentColor(source), location.AccentColor);
             Assert.AreEqual("Path: Main/Player/Missing Component [1]", location.DisplayPath);
         }
 
@@ -45,6 +48,8 @@ namespace DependencyAnalyzer.Editor.Tests
             AddMissingReference(graph, "material", "Material", "m_Material");
             AddMissingReference(graph, "texture", "Texture2D", "m_Texture");
             AddMissingReference(graph, "mesh", "Mesh", "m_Mesh");
+            AddMissingReference(graph, "script", "Script", "scriptReference");
+            AddMissingReference(graph, "generic", "Missing Reference", "objectReference");
             AddMissingReference(graph, "other", "ReferenceFixtureAsset", "customReference");
 
             var model = ProjectIssuePanelBuilder.Build(graph);
@@ -52,14 +57,21 @@ namespace DependencyAnalyzer.Editor.Tests
 
             Assert.AreEqual(ProjectIssueType.BrokenMissingReference, group.Type);
             Assert.AreEqual("Broken Missing Reference", group.Title);
-            Assert.AreEqual(4, group.Count);
+            Assert.AreEqual(6, group.Count);
             CollectionAssert.AreEquivalent(
-                new[] { "Material", "Texture", "Mesh", "ReferenceFixtureAsset" },
+                new[] { "Material", "Texture", "Mesh", "Script", "Object Reference", "ReferenceFixtureAsset" },
                 group.ObjectGroups.Select(objectGroup => objectGroup.ObjectType));
             Assert.IsTrue(group.ObjectGroups.All(objectGroup => objectGroup.Count == 1));
-            Assert.AreEqual(
-                "material",
-                group.ObjectGroups.Single(objectGroup => objectGroup.ObjectType == "Material").Locations.Single().ObjectName);
+            AssertBrokenLocationUsesTypeColor(group, "Material", "Material");
+            AssertBrokenLocationUsesTypeColor(group, "Texture", "Texture");
+            AssertBrokenLocationUsesTypeColor(group, "Mesh", "Mesh");
+            AssertBrokenLocationUsesTypeColor(group, "Script", "Script", "cs Script Icon");
+            AssertBrokenLocationUsesTypeColor(group, "Object Reference", "Object Reference");
+            var materialLocation = group.ObjectGroups
+                .Single(objectGroup => objectGroup.ObjectType == "Material")
+                .Locations.Single();
+            Assert.AreEqual("material", materialLocation.SourceObjectName);
+            Assert.AreEqual("Path: Main/Root/material/Component/m_Material", materialLocation.DisplayPath);
         }
 
         [Test]
@@ -72,6 +84,12 @@ namespace DependencyAnalyzer.Editor.Tests
 
             Assert.AreEqual(ProjectIssueType.BrokenMissingReference, group.Type);
             Assert.AreEqual("Script", group.ObjectGroups.Single().ObjectType);
+            var location = group.ObjectGroups.Single().Locations.Single();
+            Assert.AreEqual("Script", location.MissingObjectType);
+            Assert.AreEqual(
+                DependencyNodeStyleResolver.GetNodeAccentColor(
+                    CreateNode("style-script", string.Empty, "Script", "Script", DependencyNodeKind.Asset, "cs Script Icon")),
+                location.AccentColor);
         }
 
         [Test]
@@ -154,8 +172,34 @@ namespace DependencyAnalyzer.Editor.Tests
                 .Locations.Single();
 
             Assert.IsFalse(location.HasRelatedNode);
-            Assert.AreEqual("No related node", location.ObjectName);
+            Assert.AreEqual("No related node", location.SourceObjectName);
+            Assert.AreEqual("Material", location.MissingObjectType);
+            Assert.AreEqual(
+                DependencyNodeStyleResolver.GetNodeAccentColor(
+                    CreateNode("style-material", string.Empty, "Material", "Material", DependencyNodeKind.Asset)),
+                location.AccentColor);
             Assert.AreEqual("No related node", location.Label);
+        }
+
+        private static void AssertBrokenLocationUsesTypeColor(
+            ProjectIssueGroup group,
+            string objectType,
+            string styleTypeName,
+            string iconContentName = "DefaultAsset Icon")
+        {
+            var location = group.ObjectGroups
+                .Single(objectGroup => objectGroup.ObjectType == objectType)
+                .Locations.Single();
+            var styleNode = CreateNode(
+                "style-" + objectType,
+                string.Empty,
+                objectType,
+                styleTypeName,
+                DependencyNodeKind.Asset,
+                iconContentName);
+
+            Assert.AreEqual(objectType, location.MissingObjectType);
+            Assert.AreEqual(DependencyNodeStyleResolver.GetNodeAccentColor(styleNode), location.AccentColor);
         }
 
         private static void AddMissingReference(
@@ -197,7 +241,8 @@ namespace DependencyAnalyzer.Editor.Tests
             string path,
             string displayName,
             string typeName,
-            DependencyNodeKind kind)
+            DependencyNodeKind kind,
+            string iconContentName = "DefaultAsset Icon")
         {
             return new DependencyNode(
                 id,
@@ -207,7 +252,7 @@ namespace DependencyAnalyzer.Editor.Tests
                 typeName,
                 typeName,
                 Array.Empty<string>(),
-                "DefaultAsset Icon",
+                iconContentName,
                 kind);
         }
     }

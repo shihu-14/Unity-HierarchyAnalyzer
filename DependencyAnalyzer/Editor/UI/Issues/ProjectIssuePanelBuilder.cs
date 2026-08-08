@@ -28,10 +28,15 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             {
                 graph.TryGetNode(edge.SourceNodeId, out var sourceNode);
                 graph.TryGetNode(edge.TargetNodeId, out var missingNode);
-                var location = BuildLocation(sourceNode, edge.MemberName);
                 if (IsMissingScript(edge, missingNode))
                 {
-                    missingScripts.Add(location);
+                    missingScripts.Add(BuildLocation(
+                        sourceNode,
+                        edge.MemberName,
+                        string.Empty,
+                        sourceNode == null
+                            ? new Color(0.38f, 0.42f, 0.47f)
+                            : DependencyNodeStyleResolver.GetNodeAccentColor(sourceNode)));
                     continue;
                 }
 
@@ -40,11 +45,16 @@ namespace DependencyAnalyzer.Editor.UI.Issues
                 {
                     accumulator = new ObjectGroupAccumulator(
                         objectType,
-                        missingNode == null ? null : DependencyIconProvider.GetIcon(missingNode));
+                        missingNode == null ? null : DependencyIconProvider.GetIcon(missingNode),
+                        DependencyNodeStyleResolver.GetTypeAccentColor(objectType));
                     brokenReferences.Add(objectType, accumulator);
                 }
 
-                accumulator.Locations.Add(location);
+                accumulator.Locations.Add(BuildLocation(
+                    sourceNode,
+                    edge.MemberName,
+                    objectType,
+                    accumulator.AccentColor));
             }
 
             var groups = new List<ProjectIssueGroup>();
@@ -122,7 +132,11 @@ namespace DependencyAnalyzer.Editor.UI.Issues
                 : value.Trim().ToLowerInvariant().Replace(' ', '-');
         }
 
-        private static ProjectIssueLocation BuildLocation(DependencyNode sourceNode, string memberName)
+        private static ProjectIssueLocation BuildLocation(
+            DependencyNode sourceNode,
+            string memberName,
+            string missingObjectType,
+            Color accentColor)
         {
             if (sourceNode == null)
             {
@@ -130,8 +144,9 @@ namespace DependencyAnalyzer.Editor.UI.Issues
                     null,
                     "No related node",
                     "No related node",
+                    missingObjectType,
                     string.Empty,
-                    new Color(0.38f, 0.42f, 0.47f));
+                    accentColor);
             }
 
             var path = (sourceNode.Path ?? string.Empty).Replace('\\', '/');
@@ -161,8 +176,9 @@ namespace DependencyAnalyzer.Editor.UI.Issues
                 segments,
                 label,
                 sourceNode.DisplayName,
+                missingObjectType,
                 sourceNode.Id,
-                DependencyNodeStyleResolver.GetNodeAccentColor(sourceNode));
+                accentColor);
         }
 
         private static List<string> SplitPath(string path)
@@ -185,14 +201,16 @@ namespace DependencyAnalyzer.Editor.UI.Issues
 
         private sealed class ObjectGroupAccumulator
         {
-            public ObjectGroupAccumulator(string objectType, Texture icon)
+            public ObjectGroupAccumulator(string objectType, Texture icon, Color accentColor)
             {
                 ObjectType = objectType;
                 Icon = icon;
+                AccentColor = accentColor;
             }
 
             public string ObjectType { get; }
             public Texture Icon { get; }
+            public Color AccentColor { get; }
             public List<ProjectIssueLocation> Locations { get; } = new List<ProjectIssueLocation>();
         }
     }
