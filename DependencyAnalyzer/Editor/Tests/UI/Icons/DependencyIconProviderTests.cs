@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.UI.Icons;
@@ -31,7 +32,7 @@ namespace DependencyAnalyzer.Editor.Tests
         }
 
         [Test]
-        public void MissingScriptIcon_HasTransparentTightCanvasWithoutWhiteHalo()
+        public void MissingScriptIcon_HasTransparentTightCanvasAndWhiteGlyph()
         {
             var bytes = File.ReadAllBytes(DependencyIconProvider.MissingScriptIconPath);
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
@@ -52,6 +53,8 @@ namespace DependencyAnalyzer.Editor.Tests
                 var maxX = -1;
                 var maxY = -1;
                 var nonTransparentPixelCount = 0;
+                var partialAlphaValues = new HashSet<byte>();
+                var hasOpaquePixel = false;
                 for (var y = 0; y < texture.height; y++)
                 {
                     for (var x = 0; x < texture.width; x++)
@@ -63,15 +66,25 @@ namespace DependencyAnalyzer.Editor.Tests
                         }
 
                         nonTransparentPixelCount++;
+                        hasOpaquePixel |= pixel.a == byte.MaxValue;
+                        if (pixel.a < byte.MaxValue)
+                        {
+                            partialAlphaValues.Add(pixel.a);
+                        }
+
                         minX = Math.Min(minX, x);
                         minY = Math.Min(minY, y);
                         maxX = Math.Max(maxX, x);
                         maxY = Math.Max(maxY, y);
-                        Assert.LessOrEqual(Math.Max(pixel.r, Math.Max(pixel.g, pixel.b)), 64);
+                        Assert.AreEqual(byte.MaxValue, pixel.r);
+                        Assert.AreEqual(byte.MaxValue, pixel.g);
+                        Assert.AreEqual(byte.MaxValue, pixel.b);
                     }
                 }
 
                 Assert.Greater(nonTransparentPixelCount, 10000);
+                Assert.IsTrue(hasOpaquePixel);
+                Assert.Greater(partialAlphaValues.Count, 8);
                 Assert.AreEqual(38, minX);
                 Assert.AreEqual(16, minY);
                 Assert.AreEqual(217, maxX);
