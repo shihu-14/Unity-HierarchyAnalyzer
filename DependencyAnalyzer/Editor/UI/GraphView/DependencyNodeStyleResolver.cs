@@ -6,16 +6,14 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 {
     internal static class DependencyNodeStyleResolver
     {
+        internal const string MissingTargetClass = "dependency-node--missing-target";
+        internal const float MissingTargetOpacity = 0.60f;
+
         public static string GetNodeTypeClass(DependencyNode node)
         {
             if (node == null)
             {
                 return "dependency-node--default";
-            }
-
-            if (node.Kind == DependencyNodeKind.MissingReference)
-            {
-                return "dependency-node--missing";
             }
 
             if (node.Kind == DependencyNodeKind.Issue)
@@ -105,6 +103,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         public static Color GetNodeAccentColor(DependencyNode node)
         {
             return GetAccentColorForClass(GetNodeTypeClass(node));
+        }
+
+        internal static float GetNodeOpacity(DependencyNode node)
+        {
+            return node != null && node.IsMissingTarget ? MissingTargetOpacity : 1f;
         }
 
         internal static Color GetTypeAccentColor(string typeName)
@@ -212,8 +215,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     return new Color(0.89f, 0.41f, 0.68f);
                 case "dependency-node--light":
                     return new Color(0.85f, 0.78f, 0.40f);
-                case "dependency-node--missing":
-                    return new Color(0.87f, 0.39f, 0.39f);
                 case "dependency-node--issue-error":
                     return new Color(0.93f, 0.31f, 0.31f);
                 case "dependency-node--issue-warning":

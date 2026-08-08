@@ -12,7 +12,8 @@ namespace DependencyAnalyzer.Editor.Scanners
             string typeName = "Missing",
             string namespaceQualifiedTypeName = "Missing Reference",
             string iconContentName = "console.warnicon.sml",
-            DependencyNodeKind kind = DependencyNodeKind.MissingReference)
+            DependencyNodeKind kind = DependencyNodeKind.MissingReference,
+            MissingTargetKind missingTargetKind = MissingTargetKind.BrokenReference)
         {
             var node = new DependencyNode(
                 id,
@@ -27,7 +28,7 @@ namespace DependencyAnalyzer.Editor.Scanners
                 0,
                 DependencyScanIssueSeverity.Warning,
                 "Missing reference");
-            node.MarkMissingReferences();
+            node.MarkAsMissingTarget(missingTargetKind);
             return node;
         }
     }

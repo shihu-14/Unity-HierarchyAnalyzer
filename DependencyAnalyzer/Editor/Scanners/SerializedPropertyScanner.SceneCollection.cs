@@ -146,7 +146,8 @@ namespace DependencyAnalyzer.Editor.Scanners
                     "Script",
                     "UnityEngine.MonoBehaviour",
                     "cs Script Icon",
-                    DependencyNodeKind.Component);
+                    DependencyNodeKind.Component,
+                    MissingTargetKind.MissingScript);
                 gameObjectNode.MarkMissingReferences();
                 graph.AddOrUpdateNode(missingNode);
                 graph.AddEdge(new DependencyEdge(

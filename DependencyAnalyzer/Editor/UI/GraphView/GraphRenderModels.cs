@@ -37,16 +37,18 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
     internal sealed class GhostAnimation
     {
-        public GhostAnimation(VisualElement view, Rect startRect, Vector2 endPosition)
+        public GhostAnimation(VisualElement view, Rect startRect, Vector2 endPosition, float startOpacity)
         {
             View = view;
             StartRect = startRect;
             EndPosition = endPosition;
+            StartOpacity = startOpacity;
         }
 
         public VisualElement View { get; }
         public Rect StartRect { get; }
         public Vector2 EndPosition { get; }
+        public float StartOpacity { get; }
     }
 
     internal sealed class RenderSnapshot

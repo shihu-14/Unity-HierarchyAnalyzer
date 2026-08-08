@@ -15,6 +15,7 @@ namespace DependencyAnalyzer.Editor.Tests
             var graph = new DependencyGraph();
             var source = CreateNode("owner", "Assets/Scenes/Main.unity::Player", "Player", "Object", DependencyNodeKind.SceneObject);
             var missing = CreateNode("missing-script", source.Path, "Missing MonoBehaviour", "Script", DependencyNodeKind.Component);
+            missing.MarkAsMissingTarget(MissingTargetKind.MissingScript);
             graph.AddOrUpdateNode(source);
             graph.AddOrUpdateNode(missing);
             graph.AddEdge(new DependencyEdge(
@@ -121,6 +122,7 @@ namespace DependencyAnalyzer.Editor.Tests
             {
                 var source = CreateNode("script-owner-" + i, "Scene::ScriptOwner" + i, "ScriptOwner" + i, "Object", DependencyNodeKind.SceneObject);
                 var missing = CreateNode("missing-script-" + i, source.Path, "Missing MonoBehaviour", "Script", DependencyNodeKind.Component);
+                missing.MarkAsMissingTarget(MissingTargetKind.MissingScript);
                 graph.AddOrUpdateNode(source);
                 graph.AddOrUpdateNode(missing);
                 graph.AddEdge(new DependencyEdge(source.Id, missing.Id, "Missing Component [0]", DependencyReferenceKind.Component, true));
@@ -226,7 +228,7 @@ namespace DependencyAnalyzer.Editor.Tests
             string memberName)
         {
             var missing = CreateNode("missing-" + id, source.Path, memberName, typeName, DependencyNodeKind.Asset);
-            missing.MarkMissingReferences();
+            missing.MarkAsMissingTarget(MissingTargetKind.BrokenReference);
             graph.AddOrUpdateNode(missing);
             graph.AddEdge(new DependencyEdge(
                 source.Id,

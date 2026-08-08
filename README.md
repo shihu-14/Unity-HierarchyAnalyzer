@@ -38,6 +38,8 @@ Unity 6向けのEditor専用依存関係ビューアーです。projectを実行
 - minimap、parent jump、edge click、node highlight
 - `Command + F` / `Ctrl + F`、Enter / Shift + Enter、arrow buttonによる検索移動
 - node name、path、type、asset label、node kind、Missing状態を検索
+- Missing targetはObject typeの色を保ったままopacity 60%で表示し、Missing Scriptだけは専用iconを使用
+- Warning markerはMissing target自身ではなく直接の参照元に表示し、参照元が収納されている場合は最も近い可視親nodeへ伝播
 - 下部`Issues` panelにMissing ScriptとBroken Missing Referenceを種類、参照先Object type、発生場所のフルパスの順で表示
 - node tooltipにはDependencies / Used Byを表示し、Asset Labelsはlabelを持つAssetだけに表示
 
@@ -146,6 +148,7 @@ Edit Mode Testは、次の一般的な依存関係事実を検証します。
 - Missing Script、Missing Object、Missing Material
 - component/scanner失敗後の継続と部分結果保持
 - Missing Script／Broken Missing Referenceの分類、Object type別group、location navigation
+- Missing targetのtype色、半透明state、Missing Script専用icon、直接参照元と可視親へのWarning marker
 - Analyzer diagnosticとUnity Console logがユーザー向けIssue件数へ混入しないこと
 - node tooltipのAsset Labels表示条件、reference count維持、count badge非表示
 

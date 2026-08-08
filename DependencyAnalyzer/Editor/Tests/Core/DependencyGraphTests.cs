@@ -23,6 +23,21 @@ namespace DependencyAnalyzer.Editor.Tests
         }
 
         [Test]
+        public void AddOrUpdateNode_MergesMissingTargetState()
+        {
+            var graph = new DependencyGraph();
+            var existing = CreateNode("node");
+            var duplicate = CreateNode("node");
+            duplicate.MarkAsMissingTarget(MissingTargetKind.BrokenReference);
+
+            graph.AddOrUpdateNode(existing);
+            graph.AddOrUpdateNode(duplicate);
+
+            Assert.IsTrue(existing.IsMissingTarget);
+            Assert.AreEqual(MissingTargetKind.BrokenReference, existing.MissingTargetState);
+        }
+
+        [Test]
         public void AddEdge_DeduplicatesStableRelationship()
         {
             var graph = new DependencyGraph();
@@ -59,6 +74,28 @@ namespace DependencyAnalyzer.Editor.Tests
                 true));
 
             Assert.IsTrue(source.HasMissingReferences);
+        }
+
+        [Test]
+        public void AddEdge_MarksSourceWithoutMakingItAMissingTarget()
+        {
+            var graph = new DependencyGraph();
+            var source = CreateNode("source");
+            var missing = CreateNode("missing");
+            missing.MarkAsMissingTarget(MissingTargetKind.BrokenReference);
+            graph.AddOrUpdateNode(source);
+            graph.AddOrUpdateNode(missing);
+
+            graph.AddEdge(new DependencyEdge(
+                source.Id,
+                missing.Id,
+                "reference",
+                DependencyReferenceKind.SerializedProperty,
+                true));
+
+            Assert.IsTrue(source.HasMissingReferences);
+            Assert.IsFalse(source.IsMissingTarget);
+            Assert.IsTrue(missing.IsMissingTarget);
         }
 
         [Test]

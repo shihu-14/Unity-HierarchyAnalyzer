@@ -34,6 +34,11 @@ namespace DependencyAnalyzer.Editor.Core
                     existing.MarkMissingReferences();
                 }
 
+                if (node.MissingTargetState != MissingTargetKind.None)
+                {
+                    existing.MarkAsMissingTarget(node.MissingTargetState);
+                }
+
                 return existing;
             }
 

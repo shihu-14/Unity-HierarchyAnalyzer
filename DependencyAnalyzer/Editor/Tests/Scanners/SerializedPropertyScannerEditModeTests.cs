@@ -413,7 +413,16 @@ namespace DependencyAnalyzer.Editor.Tests
 
             Assert.NotNull(missingEdge, "Missing edge was not detected for " + prefabName);
             Assert.IsTrue(graph.TryGetNode(missingEdge.TargetNodeId, out var missingNode));
+            Assert.IsTrue(graph.TryGetNode(missingEdge.SourceNodeId, out var sourceNode));
             Assert.IsTrue(missingNode.HasMissingReferences);
+            Assert.IsTrue(missingNode.IsMissingTarget);
+            Assert.IsTrue(sourceNode.HasMissingReferences);
+            Assert.IsFalse(sourceNode.IsMissingTarget);
+            Assert.AreEqual(
+                prefabName == "MissingScript.prefab"
+                    ? MissingTargetKind.MissingScript
+                    : MissingTargetKind.BrokenReference,
+                missingNode.MissingTargetState);
         }
 
         [Test]
@@ -433,6 +442,9 @@ namespace DependencyAnalyzer.Editor.Tests
 
             Assert.AreEqual(1, group.Count);
             Assert.AreEqual(missingEdge.SourceNodeId, location.TargetNodeId);
+            Assert.IsTrue(graph.TryGetNode(missingEdge.SourceNodeId, out var sourceNode));
+            Assert.AreEqual(DependencyNodeKind.SceneObject, sourceNode.Kind);
+            Assert.IsTrue(sourceNode.HasMissingReferences);
             StringAssert.Contains("Missing Component", location.Label);
         }
 
