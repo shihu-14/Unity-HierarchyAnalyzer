@@ -12,6 +12,7 @@
 - Group broken references by issue type, referenced Object type, and one-line full-path location.
 - Simplify the Issues header to a non-interactive Warning count and keep location rows focused on their graph node.
 - Render missing targets with their Object type color at 45% opacity, show the Warning marker on the direct source or nearest visible ancestor, and use a transparent dedicated Missing Script icon.
+- Match graph search queries as case-insensitive contiguous substrings of node display names only.
 - Remove obsolete asset-size metadata and dependency count badges while retaining reference counts in tooltips.
 - Show asset labels in node tooltips only when an Asset has non-empty labels.
 - Rename public graph, node, edge, issue, cache, window, and graph-view element types to reflect their domain responsibilities.
