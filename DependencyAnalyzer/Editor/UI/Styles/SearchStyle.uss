@@ -261,7 +261,7 @@
     background-color: #b8b8b8;
 }
 
-.dependency-zoom-step-control {
+.dependency-depth-control {
     width: 196px;
     flex-direction: row;
     align-items: center;
@@ -269,14 +269,22 @@
     margin-right: 10px;
 }
 
-.dependency-zoom-scale-label {
-    width: 78px;
+.dependency-depth-label {
+    width: 42px;
     margin-right: 4px;
     color: #c7d0dc;
     font-size: 11px;
     -unity-text-align: middle-left;
 }
 
-.dependency-zoom-step-control Slider {
-    width: 108px;
+.dependency-depth-control SliderInt {
+    width: 112px;
+}
+
+.dependency-depth-value {
+    width: 34px;
+    margin-left: 4px;
+    color: #c7d0dc;
+    font-size: 11px;
+    -unity-text-align: middle-center;
 }

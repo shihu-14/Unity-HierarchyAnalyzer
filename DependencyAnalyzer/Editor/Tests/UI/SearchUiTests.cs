@@ -43,6 +43,31 @@ namespace DependencyAnalyzer.Editor.Tests
             StringAssert.Contains("border-top-color: rgba(255, 255, 255, 0.70);", activeRule);
         }
 
+        [Test]
+        public void GraphToolbar_ReplacesZoomScaleWithDiscreteDepthControl()
+        {
+            var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(GraphWindowUxmlPath);
+            Assert.IsNotNull(visualTree);
+            var root = visualTree.CloneTree();
+
+            Assert.IsNull(root.Q("zoom-step-control"));
+            Assert.IsNull(root.Q("zoom-scale-label"));
+            Assert.IsNull(root.Q("zoom-step-slider"));
+
+            var depthSlider = root.Q<SliderInt>("depth-slider");
+            Assert.IsNotNull(depthSlider);
+            Assert.AreEqual(1, depthSlider.lowValue);
+            Assert.AreEqual(6, depthSlider.highValue);
+            Assert.AreEqual(2, depthSlider.value);
+            Assert.IsFalse(depthSlider.showInputField);
+            Assert.AreEqual("Depth", root.Q<Label>("depth-label").text);
+            Assert.AreEqual("2", root.Q<Label>("depth-value-label").text);
+
+            var styleText = File.ReadAllText(SearchStylePath).Replace("\r\n", "\n");
+            var depthControlRule = ExtractStyleRule(styleText, ".dependency-depth-control");
+            StringAssert.Contains("width: 196px;", depthControlRule);
+        }
+
         private static string ExtractStyleRule(string styleText, string selector)
         {
             var signature = "\n" + selector + " {";

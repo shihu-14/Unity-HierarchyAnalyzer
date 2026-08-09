@@ -29,7 +29,8 @@ namespace DependencyAnalyzer.Editor.Controller
         private readonly EditorSelectionSync selectionSync;
         private readonly Button loadButton;
         private readonly Label loadProgressLabel;
-        private readonly Slider zoomStepSlider;
+        private readonly SliderInt depthSlider;
+        private readonly Label depthValueLabel;
         private readonly VisualElement searchControl;
         private readonly TextField searchField;
         private readonly SearchIconElement searchIcon;
@@ -62,6 +63,7 @@ namespace DependencyAnalyzer.Editor.Controller
         private float issuePanelHeight = DefaultIssuePanelHeight;
         private float issueResizeStartMouseY;
         private float issueResizeStartHeight;
+        private int currentExpansionDepth;
         private int suppressedSelectionInstanceId;
 
         public DependencyGraphController(VisualElement root, DependencyGraphView graphView)
@@ -83,7 +85,8 @@ namespace DependencyAnalyzer.Editor.Controller
 
             loadButton = root.Q<Button>("load-button") ?? root.Q<Button>("scan-button");
             loadProgressLabel = root.Q<Label>("load-progress-label");
-            zoomStepSlider = root.Q<Slider>("zoom-step-slider");
+            depthSlider = root.Q<SliderInt>("depth-slider");
+            depthValueLabel = root.Q<Label>("depth-value-label");
             searchControl = root.Q<VisualElement>("search-control");
             searchField = root.Q<TextField>("search-field");
             searchIcon = EnsureSearchIcon(root.Q<VisualElement>("search-field-wrap"));
@@ -157,7 +160,7 @@ namespace DependencyAnalyzer.Editor.Controller
             }
 
             var settings = AnalyzerSettings.LoadOrCreateRuntimeSettings();
-            InitializeZoomFields(settings);
+            InitializeDepthFields(settings);
             ApplyGraphSettings(settings);
             graphView.NodeSelected += HandleNodeSelected;
             Selection.selectionChanged += HandleEditorSelectionChanged;
@@ -190,9 +193,9 @@ namespace DependencyAnalyzer.Editor.Controller
                 loadButton.clicked -= HandleLoadClicked;
             }
 
-            if (zoomStepSlider != null)
+            if (depthSlider != null)
             {
-                zoomStepSlider.UnregisterValueChangedCallback(HandleZoomChanged);
+                depthSlider.UnregisterValueChangedCallback(HandleDepthChanged);
             }
 
             if (searchField != null)
@@ -329,7 +332,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 var scannedGraph = await scanOperation(settings, cache, progress, token);
                 token.ThrowIfCancellationRequested();
                 currentGraph = scannedGraph;
-                graphView.Populate(currentGraph, settings.InitialExpansionDepth);
+                graphView.Populate(currentGraph, currentExpansionDepth);
                 UpdateSearchState(graphView.SetSearch(GetSearchQuery(), IsSearchFilterEnabled(), false));
                 var issueModel = PopulateIssuePanel(currentGraph);
                 hasCompletedLoad = true;
@@ -366,6 +369,7 @@ namespace DependencyAnalyzer.Editor.Controller
 
         internal bool HasPendingRescan => pendingRescan;
         internal DependencyGraph CurrentGraph => currentGraph;
+        internal int CurrentExpansionDepth => currentExpansionDepth;
         internal Task RequestScanAsync() => ScanAsync();
 
         private void HandleNodeSelected(DependencyNode node)

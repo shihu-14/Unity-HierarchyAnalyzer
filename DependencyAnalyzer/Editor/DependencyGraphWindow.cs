@@ -71,11 +71,21 @@ namespace DependencyAnalyzer.Editor
             var loadButton = new Button { name = "load-button", text = "Load" };
             var loadProgressLabel = new Label { name = "load-progress-label" };
             loadProgressLabel.AddToClassList("dependency-load-progress-label");
-            var zoomStepControl = new VisualElement { name = "zoom-step-control" };
-            zoomStepControl.AddToClassList("dependency-zoom-step-control");
-            var zoomScaleLabel = new Label("Zoom Scale") { name = "zoom-scale-label" };
-            zoomScaleLabel.AddToClassList("dependency-zoom-scale-label");
-            var zoomStepSlider = new Slider { name = "zoom-step-slider", lowValue = 0.001f, highValue = 0.03f, value = 0.004f };
+            var depthControl = new VisualElement { name = "depth-control" };
+            depthControl.AddToClassList("dependency-depth-control");
+            var depthLabel = new Label("Depth") { name = "depth-label" };
+            depthLabel.AddToClassList("dependency-depth-label");
+            var depthSlider = new SliderInt
+            {
+                name = "depth-slider",
+                lowValue = DependencyGraphView.MinExpansionDepth,
+                highValue = DependencyGraphView.AllExpansionDepthValue,
+                value = 2,
+                pageSize = 1f,
+                showInputField = false
+            };
+            var depthValueLabel = new Label("2") { name = "depth-value-label" };
+            depthValueLabel.AddToClassList("dependency-depth-value");
             var searchControl = new VisualElement { name = "search-control" };
             searchControl.AddToClassList("dependency-search-control");
             var searchFieldWrap = new VisualElement { name = "search-field-wrap" };
@@ -92,8 +102,9 @@ namespace DependencyAnalyzer.Editor
             var searchDivider = new VisualElement { name = "search-divider" };
             searchDivider.AddToClassList("dependency-search-divider");
 
-            zoomStepControl.Add(zoomScaleLabel);
-            zoomStepControl.Add(zoomStepSlider);
+            depthControl.Add(depthLabel);
+            depthControl.Add(depthSlider);
+            depthControl.Add(depthValueLabel);
             searchFieldWrap.Add(searchField);
             searchFieldWrap.Add(searchSuggestionList);
             searchControl.Add(searchFieldWrap);
@@ -103,7 +114,7 @@ namespace DependencyAnalyzer.Editor
             searchControl.Add(searchNextButton);
             toolbar.Add(loadButton);
             toolbar.Add(loadProgressLabel);
-            toolbar.Add(zoomStepControl);
+            toolbar.Add(depthControl);
             toolbar.Add(searchControl);
             root.Add(toolbar);
 

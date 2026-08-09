@@ -16,11 +16,10 @@ namespace DependencyAnalyzer.Editor.Controller
     {
         private void ApplyGraphSettings(AnalyzerSettings settings)
         {
-            var step = zoomStepSlider == null ? settings.ZoomStep : zoomStepSlider.value;
-
-            step = Mathf.Clamp(step, 0.001f, 0.03f);
-            SetZoomSliderValue(step);
-            graphView.ConfigureZoom(AnalyzerSettings.DefaultZoomMin, AnalyzerSettings.DefaultZoomMax, step);
+            graphView.ConfigureZoom(
+                AnalyzerSettings.DefaultZoomMin,
+                AnalyzerSettings.DefaultZoomMax,
+                settings.ZoomStep);
         }
 
         private void HandleScanProgress(ScanProgress progress, CancellationTokenSource activeCancellation)
@@ -33,28 +32,56 @@ namespace DependencyAnalyzer.Editor.Controller
             SetLoadProgress(progress.Total <= 0 ? 0f : progress.Ratio);
         }
 
-        private void InitializeZoomFields(AnalyzerSettings settings)
+        private void InitializeDepthFields(AnalyzerSettings settings)
         {
-            SetZoomSliderValue(settings.ZoomStep);
-            if (zoomStepSlider != null)
+            currentExpansionDepth = DependencyGraphView.ClampExpansionDepth(settings.InitialExpansionDepth);
+            if (depthSlider != null)
             {
-                zoomStepSlider.RegisterValueChangedCallback(HandleZoomChanged);
+                depthSlider.lowValue = DependencyGraphView.MinExpansionDepth;
+                depthSlider.highValue = DependencyGraphView.AllExpansionDepthValue;
+                depthSlider.pageSize = 1f;
+                depthSlider.showInputField = false;
+                depthSlider.SetValueWithoutNotify(currentExpansionDepth);
+                depthSlider.RegisterValueChangedCallback(HandleDepthChanged);
             }
+
+            UpdateDepthValueLabel();
         }
 
-        private void HandleZoomChanged(ChangeEvent<float> evt)
+        private void HandleDepthChanged(ChangeEvent<int> evt)
         {
-            ApplyGraphSettings(AnalyzerSettings.LoadOrCreateRuntimeSettings());
+            SetExpansionDepth(evt.newValue);
         }
 
-        private void SetZoomSliderValue(float value)
+        internal void SetExpansionDepth(int depth)
         {
-            if (zoomStepSlider == null)
+            var nextDepth = DependencyGraphView.ClampExpansionDepth(depth);
+            if (depthSlider != null && depthSlider.value != nextDepth)
+            {
+                depthSlider.SetValueWithoutNotify(nextDepth);
+            }
+
+            if (currentExpansionDepth == nextDepth)
+            {
+                UpdateDepthValueLabel();
+                return;
+            }
+
+            currentExpansionDepth = nextDepth;
+            UpdateDepthValueLabel();
+            graphView.SetExpansionDepth(currentExpansionDepth);
+        }
+
+        private void UpdateDepthValueLabel()
+        {
+            if (depthValueLabel == null)
             {
                 return;
             }
 
-            zoomStepSlider.SetValueWithoutNotify(value);
+            depthValueLabel.text = currentExpansionDepth == DependencyGraphView.AllExpansionDepthValue
+                ? "All"
+                : currentExpansionDepth.ToString();
         }
 
         internal void CancelActiveScan()

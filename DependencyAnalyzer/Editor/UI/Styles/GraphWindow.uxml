@@ -3,9 +3,10 @@
         <ui:VisualElement name="dependency-toolbar" class="dependency-toolbar">
             <ui:Button name="load-button" text="Load" />
             <ui:Label name="load-progress-label" text="" class="dependency-load-progress-label" />
-            <ui:VisualElement name="zoom-step-control" class="dependency-zoom-step-control">
-                <ui:Label name="zoom-scale-label" text="Zoom Scale" class="dependency-zoom-scale-label" />
-                <ui:Slider name="zoom-step-slider" low-value="0.001" high-value="0.03" value="0.004" />
+            <ui:VisualElement name="depth-control" class="dependency-depth-control">
+                <ui:Label name="depth-label" text="Depth" class="dependency-depth-label" />
+                <ui:SliderInt name="depth-slider" low-value="1" high-value="6" value="2" page-size="1" show-input-field="false" />
+                <ui:Label name="depth-value-label" text="2" class="dependency-depth-value" />
             </ui:VisualElement>
             <ui:VisualElement name="search-control" class="dependency-search-control">
                 <ui:VisualElement name="search-field-wrap" class="dependency-search-field-wrap">

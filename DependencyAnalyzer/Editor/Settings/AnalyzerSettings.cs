@@ -10,6 +10,7 @@ namespace DependencyAnalyzer.Editor.Settings
         public const string AssetPath = "Assets/DependencyAnalyzer/Editor/Settings/AnalyzerSettings.asset";
         public const float DefaultZoomMin = 0.1f;
         public const float DefaultZoomMax = 10f;
+        public const float DefaultZoomStep = 0.004f;
 
         private static AnalyzerSettings runtimeDefaultSettings;
 
@@ -34,18 +35,14 @@ namespace DependencyAnalyzer.Editor.Settings
         private int scanYieldBatchSize = 64;
 
         [SerializeField]
-        [Range(1, 4)]
+        [Range(1, 5)]
         private int initialExpansionDepth = 2;
-
-        [SerializeField]
-        [Range(0.001f, 0.03f)]
-        private float zoomStep = 0.004f;
 
         public IReadOnlyList<string> ExcludedFolderPaths => excludedFolderPaths;
         public IReadOnlyList<string> ExcludedExtensions => excludedExtensions;
         public int ScanYieldBatchSize => Mathf.Max(1, scanYieldBatchSize);
-        public int InitialExpansionDepth => Mathf.Clamp(initialExpansionDepth, 1, 4);
-        public float ZoomStep => Mathf.Clamp(zoomStep, 0.001f, 0.03f);
+        public int InitialExpansionDepth => Mathf.Clamp(initialExpansionDepth, 1, 5);
+        public float ZoomStep => DefaultZoomStep;
 
         public static AnalyzerSettings LoadOrCreateRuntimeSettings()
         {

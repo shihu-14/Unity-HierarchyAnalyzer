@@ -129,6 +129,54 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.IsFalse(controller.HasPendingRescan);
         }
 
+        [Test]
+        public async Task DepthSelection_UpdatesImmediatelyAndPersistsAcrossReloads()
+        {
+            var root = new VisualElement();
+            var depthSlider = new SliderInt { name = "depth-slider", lowValue = 1, highValue = 6, value = 2 };
+            var depthValueLabel = new Label { name = "depth-value-label" };
+            root.Add(depthSlider);
+            root.Add(depthValueLabel);
+            var graphView = new DependencyGraphView();
+            var scanCount = 0;
+            var controller = new DependencyGraphController(
+                root,
+                graphView,
+                (AnalyzerSettings settings,
+                    DependencyNodeCache cache,
+                    IProgress<ScanProgress> progress,
+                    CancellationToken cancellationToken) =>
+                {
+                    scanCount++;
+                    return Task.FromResult(CreateVersionedGraph(scanCount));
+                },
+                false);
+
+            try
+            {
+                controller.SetExpansionDepth(4);
+                Assert.AreEqual(4, controller.CurrentExpansionDepth);
+                Assert.AreEqual(4, graphView.ExpansionDepth);
+                Assert.AreEqual("4", depthValueLabel.text);
+
+                await controller.RequestScanAsync();
+                await controller.RequestScanAsync();
+
+                Assert.AreEqual(2, scanCount);
+                Assert.AreEqual(4, controller.CurrentExpansionDepth);
+                Assert.AreEqual(4, graphView.ExpansionDepth);
+                Assert.AreEqual(AnalyzerSettings.DefaultZoomStep, graphView.ZoomStep);
+
+                controller.SetExpansionDepth(DependencyGraphView.AllExpansionDepthValue);
+                Assert.AreEqual("All", depthValueLabel.text);
+                Assert.AreEqual(DependencyGraphView.AllExpansionDepthValue, graphView.ExpansionDepth);
+            }
+            finally
+            {
+                controller.Dispose();
+            }
+        }
+
         private static DependencyGraphController CreateController(
             Func<CancellationToken, Task<DependencyGraph>> scanOperation)
         {

@@ -461,10 +461,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private bool ShouldCollapseNode(DependencyNode node, string nodeId, int depth)
         {
-            return depth >= initialDepth
+            return initialDepth != AllExpansionDepthValue
+                && (depth >= initialDepth
                 || node.IsHeavyLeafType
                 || IsPrefabAssetNode(node)
-                || IsPrefabInstanceNode(nodeId);
+                || IsPrefabInstanceNode(nodeId));
         }
 
         private bool IsPrefabInstanceNode(string nodeId)

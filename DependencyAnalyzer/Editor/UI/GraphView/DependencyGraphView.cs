@@ -23,6 +23,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const int MaxAnimatedLayoutNodeDelta = 400;
         private const int MaxSearchSuggestions = int.MaxValue;
         internal const string EditorSelectionHighlightClass = "dependency-node-editor-selection-ring";
+        internal const int MinExpansionDepth = 1;
+        internal const int MaxFiniteExpansionDepth = 5;
+        internal const int AllExpansionDepthValue = MaxFiniteExpansionDepth + 1;
 
         private readonly VisualElement contentLayer;
         private readonly VisualElement edgeLayer;
@@ -67,7 +70,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private float zoom = 1f;
         private float minZoom = 0.1f;
         private float maxZoom = 2f;
-        private float zoomStep = 0.05f;
+        private float zoomStep = 0.004f;
         private int initialDepth = 2;
         private string focusedNodeId;
         private string focusedViewId;
@@ -125,6 +128,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         internal string EditorSelectionNodeId => editorSelectionNodeId ?? string.Empty;
         internal IReadOnlyList<DependencyNode> HierarchyRootNodes => rootNodes;
+        internal int ExpansionDepth => initialDepth;
+        internal float ZoomStep => zoomStep;
 
         public void ConfigureZoom(float minimum, float maximum, float step)
         {
@@ -206,10 +211,34 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 editorSelectionNodeId = null;
             }
 
-            initialDepth = Mathf.Clamp(depth, 1, 4);
+            initialDepth = ClampExpansionDepth(depth);
             RebuildSearchIndex(GetCurrentSearchNodeId());
             AddForcedVisiblePath(editorSelectionNodeId);
             Render();
+        }
+
+        internal void SetExpansionDepth(int depth)
+        {
+            var nextDepth = ClampExpansionDepth(depth);
+            if (initialDepth == nextDepth)
+            {
+                return;
+            }
+
+            initialDepth = nextDepth;
+            expandedNodeIds.Clear();
+            collapsedNodeIds.Clear();
+            expandedViewIds.Clear();
+            collapsedViewIds.Clear();
+            if (graph != null)
+            {
+                Render();
+            }
+        }
+
+        internal static int ClampExpansionDepth(int depth)
+        {
+            return Mathf.Clamp(depth, MinExpansionDepth, AllExpansionDepthValue);
         }
 
         public void ExpandNode(string nodeId)

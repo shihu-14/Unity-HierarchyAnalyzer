@@ -47,7 +47,6 @@ namespace DependencyAnalyzer.Editor.Settings
             rootElement.Add(new PropertyField(serializedSettings.FindProperty("excludedFolderPaths"), "Excluded Folders"));
             rootElement.Add(new PropertyField(serializedSettings.FindProperty("excludedExtensions"), "Excluded Extensions"));
             rootElement.Add(new PropertyField(serializedSettings.FindProperty("scanYieldBatchSize"), "Scan Yield Batch Size"));
-            rootElement.Add(new PropertyField(serializedSettings.FindProperty("zoomStep"), "Zoom Step"));
             rootElement.Bind(serializedSettings);
         }
     }
