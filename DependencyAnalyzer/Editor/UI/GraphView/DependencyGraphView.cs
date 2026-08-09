@@ -124,6 +124,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         public event Action<DependencyNode> NodeSelected;
 
         internal string EditorSelectionNodeId => editorSelectionNodeId ?? string.Empty;
+        internal IReadOnlyList<DependencyNode> HierarchyRootNodes => rootNodes;
 
         public void ConfigureZoom(float minimum, float maximum, float step)
         {

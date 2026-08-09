@@ -24,7 +24,7 @@ namespace DependencyAnalyzer.Editor.Controller
 
         private readonly DependencyGraphView graphView;
         private readonly VisualElement root;
-        private readonly ScannerOrchestrator scannerOrchestrator;
+        private readonly Func<AnalyzerSettings, DependencyNodeCache, IProgress<ScanProgress>, CancellationToken, Task<DependencyGraph>> scanOperation;
         private readonly DependencyNodeCache cache;
         private readonly EditorSelectionSync selectionSync;
         private readonly Button loadButton;
@@ -52,6 +52,7 @@ namespace DependencyAnalyzer.Editor.Controller
         private DependencyGraph currentGraph;
         private bool disposed;
         private bool hierarchyRefreshQueued;
+        private bool pendingRescan;
         private bool suppressNextSelectionFocus;
         private bool issueListVisible = true;
         private bool hasCompletedLoad;
@@ -64,10 +65,19 @@ namespace DependencyAnalyzer.Editor.Controller
         private int suppressedSelectionInstanceId;
 
         public DependencyGraphController(VisualElement root, DependencyGraphView graphView)
+            : this(root, graphView, new ScannerOrchestrator().ScanAsync, true)
+        {
+        }
+
+        internal DependencyGraphController(
+            VisualElement root,
+            DependencyGraphView graphView,
+            Func<AnalyzerSettings, DependencyNodeCache, IProgress<ScanProgress>, CancellationToken, Task<DependencyGraph>> scanOperation,
+            bool scheduleInitialScan)
         {
             this.root = root;
             this.graphView = graphView;
-            scannerOrchestrator = new ScannerOrchestrator();
+            this.scanOperation = scanOperation ?? throw new ArgumentNullException(nameof(scanOperation));
             cache = new DependencyNodeCache();
             selectionSync = new EditorSelectionSync();
 
@@ -151,7 +161,10 @@ namespace DependencyAnalyzer.Editor.Controller
             ApplyGraphSettings(settings);
             graphView.NodeSelected += HandleNodeSelected;
             Selection.selectionChanged += HandleEditorSelectionChanged;
-            EditorApplication.delayCall += RequestInitialScan;
+            if (scheduleInitialScan)
+            {
+                EditorApplication.delayCall += RequestInitialScan;
+            }
             EditorApplication.hierarchyChanged += HandleHierarchyChanged;
             root.RegisterCallback<KeyDownEvent>(HandleGlobalKeyDown, TrickleDown.TrickleDown);
             root.RegisterCallback<MouseDownEvent>(HandleRootMouseDown, TrickleDown.TrickleDown);
@@ -164,6 +177,8 @@ namespace DependencyAnalyzer.Editor.Controller
         public void Dispose()
         {
             disposed = true;
+            pendingRescan = false;
+            hierarchyRefreshQueued = false;
             EditorApplication.delayCall -= RequestInitialScan;
             EditorApplication.delayCall -= RunQueuedHierarchyScan;
             EditorApplication.hierarchyChanged -= HandleHierarchyChanged;
@@ -243,7 +258,9 @@ namespace DependencyAnalyzer.Editor.Controller
 
         private void HandleHierarchyChanged()
         {
-            if (disposed || currentGraph == null || hierarchyRefreshQueued)
+            if (disposed
+                || (currentGraph == null && scanCancellation == null)
+                || hierarchyRefreshQueued)
             {
                 return;
             }
@@ -266,11 +283,34 @@ namespace DependencyAnalyzer.Editor.Controller
 
         private async Task ScanAsync()
         {
-            if (scanCancellation != null)
+            if (disposed)
             {
                 return;
             }
 
+            if (scanCancellation != null)
+            {
+                pendingRescan = true;
+                return;
+            }
+
+            do
+            {
+                pendingRescan = false;
+                var wasCanceled = await RunSingleScanAsync();
+                if (wasCanceled)
+                {
+                    pendingRescan = false;
+                    return;
+                }
+            }
+            while (!disposed && pendingRescan);
+
+            pendingRescan = false;
+        }
+
+        private async Task<bool> RunSingleScanAsync()
+        {
             var activeCancellation = new CancellationTokenSource();
             scanCancellation = activeCancellation;
 
@@ -286,7 +326,9 @@ namespace DependencyAnalyzer.Editor.Controller
                 var settings = AnalyzerSettings.LoadOrCreateRuntimeSettings();
                 ApplyGraphSettings(settings);
                 var progress = new Progress<ScanProgress>(scanProgress => HandleScanProgress(scanProgress, activeCancellation));
-                currentGraph = await scannerOrchestrator.ScanAsync(settings, cache, progress, token);
+                var scannedGraph = await scanOperation(settings, cache, progress, token);
+                token.ThrowIfCancellationRequested();
+                currentGraph = scannedGraph;
                 graphView.Populate(currentGraph, settings.InitialExpansionDepth);
                 UpdateSearchState(graphView.SetSearch(GetSearchQuery(), IsSearchFilterEnabled(), false));
                 var issueModel = PopulateIssuePanel(currentGraph);
@@ -295,15 +337,18 @@ namespace DependencyAnalyzer.Editor.Controller
                 SetStatus("Completed: " + currentGraph.Nodes.Count + " nodes, "
                     + currentGraph.Edges.Count + " edges, "
                     + issueModel.WarningCount + " issues");
+                return false;
             }
             catch (OperationCanceledException)
             {
                 SetStatus("Canceled");
+                return true;
             }
             catch (Exception exception)
             {
                 Debug.LogException(exception);
                 SetStatus("Failed: " + exception.Message);
+                return token.IsCancellationRequested;
             }
             finally
             {
@@ -318,6 +363,10 @@ namespace DependencyAnalyzer.Editor.Controller
                 SetLoadControlsEnabled(true);
             }
         }
+
+        internal bool HasPendingRescan => pendingRescan;
+        internal DependencyGraph CurrentGraph => currentGraph;
+        internal Task RequestScanAsync() => ScanAsync();
 
         private void HandleNodeSelected(DependencyNode node)
         {

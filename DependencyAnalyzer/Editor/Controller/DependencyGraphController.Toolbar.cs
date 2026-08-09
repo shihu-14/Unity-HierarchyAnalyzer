@@ -57,8 +57,9 @@ namespace DependencyAnalyzer.Editor.Controller
             zoomStepSlider.SetValueWithoutNotify(value);
         }
 
-        private void CancelActiveScan()
+        internal void CancelActiveScan()
         {
+            pendingRescan = false;
             if (scanCancellation == null || scanCancellation.IsCancellationRequested)
             {
                 return;

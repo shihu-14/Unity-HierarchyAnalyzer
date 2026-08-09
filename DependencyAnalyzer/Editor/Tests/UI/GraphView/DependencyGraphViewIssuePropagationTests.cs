@@ -13,7 +13,7 @@ namespace DependencyAnalyzer.Editor.Tests
         public void CollapseMissingTarget_CreatesTypeColoredGhostAtMissingOpacity()
         {
             var graph = new DependencyGraph();
-            var source = CreateNode("source", "Source", DependencyNodeKind.SceneObject, "Object", "GameObject Icon");
+            var source = CreateNode("source", "Source", DependencyNodeKind.SceneObject, "GameObject", "GameObject Icon", 101);
             var missing = CreateNode("missing", "Missing Material", DependencyNodeKind.Asset, "Material", "Material Icon");
             missing.MarkAsMissingTarget(MissingTargetKind.BrokenReference);
             graph.AddOrUpdateNode(source);
@@ -44,7 +44,7 @@ namespace DependencyAnalyzer.Editor.Tests
         public void CollapseAndExpand_MovesWarningBetweenSourceAndNearestVisibleParent()
         {
             var graph = new DependencyGraph();
-            var parent = CreateNode("parent", "Parent", DependencyNodeKind.SceneObject, "Object", "GameObject Icon");
+            var parent = CreateNode("parent", "Parent", DependencyNodeKind.SceneObject, "GameObject", "GameObject Icon", 101);
             var source = CreateNode("source", "Source", DependencyNodeKind.Component, "Fixture", "cs Script Icon");
             var missing = CreateNode("missing", "Missing Material", DependencyNodeKind.Asset, "Material", "Material Icon");
             missing.MarkAsMissingTarget(MissingTargetKind.BrokenReference);
@@ -104,7 +104,8 @@ namespace DependencyAnalyzer.Editor.Tests
             string displayName,
             DependencyNodeKind kind,
             string typeName,
-            string iconContentName)
+            string iconContentName,
+            int instanceId = 0)
         {
             return new DependencyNode(
                 id,
@@ -112,10 +113,13 @@ namespace DependencyAnalyzer.Editor.Tests
                 "Scene::" + displayName,
                 displayName,
                 typeName,
-                typeName,
+                kind == DependencyNodeKind.SceneObject
+                    ? typeof(UnityEngine.GameObject).FullName
+                    : typeName,
                 Array.Empty<string>(),
                 iconContentName,
-                kind);
+                kind,
+                instanceId);
         }
     }
 }

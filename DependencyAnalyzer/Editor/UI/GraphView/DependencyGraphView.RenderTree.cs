@@ -32,16 +32,18 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             if (graph == null || graph.Nodes.Count == 0)
             {
-                emptyStateLabel.style.display = DisplayStyle.Flex;
-                currentCanvasSize = Vector2.one;
-                SetCanvasSize(currentCanvasSize.x, currentCanvasSize.y);
-                ApplyTransform();
+                ShowEmptyState();
+                return;
+            }
+
+            var roots = BuildRenderTree();
+            if (roots.Count == 0)
+            {
+                ShowEmptyState();
                 return;
             }
 
             emptyStateLabel.style.display = DisplayStyle.None;
-
-            var roots = BuildRenderTree();
             var canvasSize = LayoutNodes(roots, previousNodeRects);
             currentCanvasSize = canvasSize;
             SetCanvasSize(currentCanvasSize.x, currentCanvasSize.y);
@@ -142,20 +144,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 .Where(IsRootNodeFromCache)
                 .OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase));
 
-            if (rootNodes.Count == 0)
-            {
-                rootNodes.AddRange(graph.Nodes
-                    .Where(node => !GetIncomingEdges(node.Id).Any())
-                    .OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase));
-            }
-
-            if (rootNodes.Count == 0)
-            {
-                rootNodes.AddRange(graph.Nodes.OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase));
-            }
-
-            AddDisconnectedIssueSourceRoots();
-
             foreach (var pair in ComputeMinimumRegularDepths(rootNodes))
             {
                 minimumRegularDepths[pair.Key] = pair.Value;
@@ -164,7 +152,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private bool IsRootNodeFromCache(DependencyNode node)
         {
-            if (node.Kind != DependencyNodeKind.SceneObject)
+            if (node.Kind != DependencyNodeKind.SceneObject
+                || node.IsMissingTarget
+                || node.NamespaceQualifiedTypeName != typeof(GameObject).FullName
+                || node.InstanceId == 0)
             {
                 return false;
             }
@@ -181,70 +172,12 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             return true;
         }
 
-        private void AddDisconnectedIssueSourceRoots()
+        private void ShowEmptyState()
         {
-            if (graph == null || rootNodes.Count == 0)
-            {
-                return;
-            }
-
-            var rootIds = new HashSet<string>(rootNodes.Select(node => node.Id), StringComparer.Ordinal);
-            var reachableNodeIds = GetReachableNodeIds(rootNodes);
-            var additionalRoots = new List<DependencyNode>();
-            for (var i = 0; i < graph.Edges.Count; i++)
-            {
-                var edge = graph.Edges[i];
-                if (edge == null
-                    || edge.ReferenceKind != DependencyReferenceKind.Issue
-                    || string.IsNullOrEmpty(edge.SourceNodeId)
-                    || rootIds.Contains(edge.SourceNodeId)
-                    || reachableNodeIds.Contains(edge.SourceNodeId)
-                    || !graph.TryGetNode(edge.SourceNodeId, out var sourceNode)
-                    || sourceNode.Kind == DependencyNodeKind.Issue)
-                {
-                    continue;
-                }
-
-                additionalRoots.Add(sourceNode);
-                rootIds.Add(sourceNode.Id);
-                reachableNodeIds.Add(sourceNode.Id);
-            }
-
-            rootNodes.AddRange(additionalRoots
-                .OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(node => node.Path, StringComparer.OrdinalIgnoreCase));
-        }
-
-        private HashSet<string> GetReachableNodeIds(IReadOnlyList<DependencyNode> roots)
-        {
-            var reachableNodeIds = new HashSet<string>(StringComparer.Ordinal);
-            var stack = new Stack<string>();
-            for (var i = 0; i < roots.Count; i++)
-            {
-                if (roots[i] != null && !string.IsNullOrEmpty(roots[i].Id))
-                {
-                    stack.Push(roots[i].Id);
-                }
-            }
-
-            while (stack.Count > 0)
-            {
-                var current = stack.Pop();
-                if (!reachableNodeIds.Add(current))
-                {
-                    continue;
-                }
-
-                foreach (var edge in GetTreeOutgoingEdges(current))
-                {
-                    if (!string.IsNullOrEmpty(edge.TargetNodeId))
-                    {
-                        stack.Push(edge.TargetNodeId);
-                    }
-                }
-            }
-
-            return reachableNodeIds;
+            emptyStateLabel.style.display = DisplayStyle.Flex;
+            currentCanvasSize = Vector2.one;
+            SetCanvasSize(currentCanvasSize.x, currentCanvasSize.y);
+            ApplyTransform();
         }
 
         private List<RenderNode> BuildRenderTree()
