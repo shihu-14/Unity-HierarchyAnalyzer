@@ -35,13 +35,13 @@ namespace DependencyAnalyzer.Editor.Settings
         private int scanYieldBatchSize = 64;
 
         [SerializeField]
-        [Range(1, 5)]
+        [Range(0, 5)]
         private int initialExpansionDepth = 2;
 
         public IReadOnlyList<string> ExcludedFolderPaths => excludedFolderPaths;
         public IReadOnlyList<string> ExcludedExtensions => excludedExtensions;
         public int ScanYieldBatchSize => Mathf.Max(1, scanYieldBatchSize);
-        public int InitialExpansionDepth => Mathf.Clamp(initialExpansionDepth, 1, 5);
+        public int InitialExpansionDepth => Mathf.Clamp(initialExpansionDepth, 0, 5);
         public float ZoomStep => DefaultZoomStep;
 
         public static AnalyzerSettings LoadOrCreateRuntimeSettings()

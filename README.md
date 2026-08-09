@@ -38,7 +38,7 @@ Unity 6向けのEditor専用依存関係ビューアーです。projectを実行
 - minimap、parent jump、edge click、node highlight
 - `Command + F` / `Ctrl + F`、Enter / Shift + Enter、arrow buttonによる検索移動
 - node名を、大文字小文字を区別しない連続部分文字列で検索
-- toolbarの`Depth`でregular graph treeの初期展開を1〜5または`All`へ即時変更
+- toolbarの`Depth`でregular graph treeの初期展開を0〜5または`All`へ即時変更（0はrootのみ）
 - Missing targetはObject typeの色を保ったままopacity 45%で表示し、Missing Scriptだけは透明背景の専用iconを使用
 - Warning markerはMissing target自身ではなく直接の参照元に表示し、参照元が収納されている場合は最も近い可視親nodeへ伝播
 - 下部`Issues` panelにMissing ScriptとBroken Missing Referenceを種類、参照先Object type、発生場所のフルパスの順で表示

@@ -24,6 +24,19 @@ namespace DependencyAnalyzer.Editor.Tests
         }
 
         [Test]
+        public void Populate_ZeroDepthShowsOnlyRoot()
+        {
+            var graphView = new DependencyGraphView();
+
+            graphView.Populate(CreateRegularChain(2), 0);
+
+            Assert.AreEqual(1, VisibleNodeCount(graphView));
+            Assert.NotNull(FindVisibleNodeView(graphView, "depth:0"));
+            Assert.IsNull(FindVisibleNodeView(graphView, "depth:1"));
+            Assert.AreEqual(0, graphView.ExpansionDepth);
+        }
+
+        [Test]
         public void SetExpansionDepth_RerendersCurrentGraphWithoutAnotherScan()
         {
             var graph = CreateRegularChain(6);
@@ -31,11 +44,20 @@ namespace DependencyAnalyzer.Editor.Tests
             graphView.Populate(graph, 2);
             Assert.AreEqual(3, VisibleNodeCount(graphView));
 
-            graphView.SetExpansionDepth(4);
-            Assert.AreEqual(5, VisibleNodeCount(graphView));
+            graphView.SetExpansionDepth(0);
+            Assert.AreEqual(1, VisibleNodeCount(graphView));
 
-            graphView.SetExpansionDepth(1);
-            Assert.AreEqual(2, VisibleNodeCount(graphView));
+            graphView.SetExpansionDepth(3);
+            Assert.AreEqual(4, VisibleNodeCount(graphView));
+        }
+
+        [TestCase(-1, 0)]
+        [TestCase(0, 0)]
+        [TestCase(5, 5)]
+        [TestCase(6, 6)]
+        public void ClampExpansionDepth_UsesZeroThroughAllRange(int value, int expected)
+        {
+            Assert.AreEqual(expected, DependencyGraphView.ClampExpansionDepth(value));
         }
 
         [Test]

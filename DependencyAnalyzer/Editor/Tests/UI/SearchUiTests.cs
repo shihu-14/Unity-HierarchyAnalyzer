@@ -56,7 +56,7 @@ namespace DependencyAnalyzer.Editor.Tests
 
             var depthSlider = root.Q<SliderInt>("depth-slider");
             Assert.IsNotNull(depthSlider);
-            Assert.AreEqual(1, depthSlider.lowValue);
+            Assert.AreEqual(0, depthSlider.lowValue);
             Assert.AreEqual(6, depthSlider.highValue);
             Assert.AreEqual(2, depthSlider.value);
             Assert.IsFalse(depthSlider.showInputField);

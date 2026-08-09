@@ -23,7 +23,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const int MaxAnimatedLayoutNodeDelta = 400;
         private const int MaxSearchSuggestions = int.MaxValue;
         internal const string EditorSelectionHighlightClass = "dependency-node-editor-selection-ring";
-        internal const int MinExpansionDepth = 1;
+        internal const int MinExpansionDepth = 0;
         internal const int MaxFiniteExpansionDepth = 5;
         internal const int AllExpansionDepthValue = MaxFiniteExpansionDepth + 1;
 

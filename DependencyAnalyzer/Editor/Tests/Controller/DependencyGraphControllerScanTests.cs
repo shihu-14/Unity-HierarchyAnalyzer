@@ -133,7 +133,7 @@ namespace DependencyAnalyzer.Editor.Tests
         public async Task DepthSelection_UpdatesImmediatelyAndPersistsAcrossReloads()
         {
             var root = new VisualElement();
-            var depthSlider = new SliderInt { name = "depth-slider", lowValue = 1, highValue = 6, value = 2 };
+            var depthSlider = new SliderInt { name = "depth-slider", lowValue = 0, highValue = 6, value = 2 };
             var depthValueLabel = new Label { name = "depth-value-label" };
             root.Add(depthSlider);
             root.Add(depthValueLabel);
@@ -154,17 +154,17 @@ namespace DependencyAnalyzer.Editor.Tests
 
             try
             {
-                controller.SetExpansionDepth(4);
-                Assert.AreEqual(4, controller.CurrentExpansionDepth);
-                Assert.AreEqual(4, graphView.ExpansionDepth);
-                Assert.AreEqual("4", depthValueLabel.text);
+                controller.SetExpansionDepth(0);
+                Assert.AreEqual(0, controller.CurrentExpansionDepth);
+                Assert.AreEqual(0, graphView.ExpansionDepth);
+                Assert.AreEqual("0", depthValueLabel.text);
 
                 await controller.RequestScanAsync();
                 await controller.RequestScanAsync();
 
                 Assert.AreEqual(2, scanCount);
-                Assert.AreEqual(4, controller.CurrentExpansionDepth);
-                Assert.AreEqual(4, graphView.ExpansionDepth);
+                Assert.AreEqual(0, controller.CurrentExpansionDepth);
+                Assert.AreEqual(0, graphView.ExpansionDepth);
                 Assert.AreEqual(AnalyzerSettings.DefaultZoomStep, graphView.ZoomStep);
 
                 controller.SetExpansionDepth(DependencyGraphView.AllExpansionDepthValue);

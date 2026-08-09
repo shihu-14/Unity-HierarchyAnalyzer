@@ -5,7 +5,7 @@
             <ui:Label name="load-progress-label" text="" class="dependency-load-progress-label" />
             <ui:VisualElement name="depth-control" class="dependency-depth-control">
                 <ui:Label name="depth-label" text="Depth" class="dependency-depth-label" />
-                <ui:SliderInt name="depth-slider" low-value="1" high-value="6" value="2" page-size="1" show-input-field="false" />
+                <ui:SliderInt name="depth-slider" low-value="0" high-value="6" value="2" page-size="1" show-input-field="false" />
                 <ui:Label name="depth-value-label" text="2" class="dependency-depth-value" />
             </ui:VisualElement>
             <ui:VisualElement name="search-control" class="dependency-search-control">
