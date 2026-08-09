@@ -112,10 +112,14 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         internal static Color GetTypeAccentColor(string typeName)
         {
-            if (string.IsNullOrWhiteSpace(typeName)
-                || string.Equals(typeName, "Object Reference", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(typeName))
             {
                 return GetAccentColorForClass("dependency-node--default");
+            }
+
+            if (string.Equals(typeName, "Object Reference", StringComparison.OrdinalIgnoreCase))
+            {
+                return GetAccentColorForClass("dependency-node--object");
             }
 
             if (string.Equals(typeName, "Script", StringComparison.OrdinalIgnoreCase)

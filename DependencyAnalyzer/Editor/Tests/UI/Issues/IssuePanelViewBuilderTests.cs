@@ -249,8 +249,9 @@ namespace DependencyAnalyzer.Editor.Tests
 
             StringAssert.Contains("padding-left: 32px;", issueChildRule);
             StringAssert.Contains("padding-left: 48px;", objectChildRule);
-            StringAssert.Contains("width: 3px;", markerRule);
-            StringAssert.Contains("height: 19px;", markerRule);
+            StringAssert.Contains("width: 6px;", markerRule);
+            StringAssert.Contains("min-width: 6px;", markerRule);
+            StringAssert.Contains("height: 22px;", markerRule);
             StringAssert.Contains("margin-right: 5px;", markerRule);
             StringAssert.Contains("border-left-width: 0;", rowRule);
         }

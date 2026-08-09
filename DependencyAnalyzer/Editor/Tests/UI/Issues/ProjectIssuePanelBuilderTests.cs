@@ -60,14 +60,21 @@ namespace DependencyAnalyzer.Editor.Tests
             Assert.AreEqual("Broken Missing Reference", group.Title);
             Assert.AreEqual(6, group.Count);
             CollectionAssert.AreEquivalent(
-                new[] { "Material", "Texture", "Mesh", "Script", "Object Reference", "ReferenceFixtureAsset" },
+                new[] { "Material", "Texture", "Mesh", "Script", "Object", "ReferenceFixtureAsset" },
                 group.ObjectGroups.Select(objectGroup => objectGroup.ObjectType));
             Assert.IsTrue(group.ObjectGroups.All(objectGroup => objectGroup.Count == 1));
             AssertBrokenLocationUsesTypeColor(group, "Material", "Material");
             AssertBrokenLocationUsesTypeColor(group, "Texture", "Texture");
             AssertBrokenLocationUsesTypeColor(group, "Mesh", "Mesh");
             AssertBrokenLocationUsesTypeColor(group, "Script", "Script", "cs Script Icon");
-            AssertBrokenLocationUsesTypeColor(group, "Object Reference", "Object Reference");
+            var objectGroup = group.ObjectGroups.Single(candidate => candidate.ObjectType == "Object");
+            Assert.AreEqual("issue:broken-missing-reference:type:object", objectGroup.Id);
+            var objectLocation = objectGroup.Locations.Single();
+            Assert.AreEqual("Object", objectLocation.MissingObjectType);
+            Assert.AreEqual(
+                DependencyNodeStyleResolver.GetTypeAccentColor("Object"),
+                objectLocation.AccentColor);
+            Assert.IsFalse(group.ObjectGroups.Any(candidate => candidate.ObjectType == "Object Reference"));
             var materialLocation = group.ObjectGroups
                 .Single(objectGroup => objectGroup.ObjectType == "Material")
                 .Locations.Single();
@@ -91,6 +98,57 @@ namespace DependencyAnalyzer.Editor.Tests
                 DependencyNodeStyleResolver.GetNodeAccentColor(
                     CreateNode("style-script", string.Empty, "Script", "Script", DependencyNodeKind.Asset, "cs Script Icon")),
                 location.AccentColor);
+        }
+
+        [TestCase("Object")]
+        [TestCase("Object Reference")]
+        [TestCase("Missing")]
+        [TestCase("Missing Reference")]
+        public void Build_NormalizesGenericMissingTypesToObject(string typeName)
+        {
+            var graph = new DependencyGraph();
+            AddMissingReference(graph, "generic", typeName, "objectReference");
+
+            var objectGroup = ProjectIssuePanelBuilder.Build(graph)
+                .Groups.Single()
+                .ObjectGroups.Single();
+            var location = objectGroup.Locations.Single();
+
+            Assert.AreEqual("Object", objectGroup.ObjectType);
+            Assert.AreEqual("issue:broken-missing-reference:type:object", objectGroup.Id);
+            Assert.AreEqual("Object", location.MissingObjectType);
+            Assert.AreEqual(
+                DependencyNodeStyleResolver.GetTypeAccentColor("Object"),
+                location.AccentColor);
+        }
+
+        [Test]
+        public void Build_UsesObjectWhenMissingTargetMetadataIsUnavailable()
+        {
+            var graph = new DependencyGraph();
+            var source = CreateNode(
+                "source",
+                "Assets/Scenes/Main.unity::Root/Component",
+                "Component",
+                "Component",
+                DependencyNodeKind.Component);
+            graph.AddOrUpdateNode(source);
+            graph.AddEdge(new DependencyEdge(
+                source.Id,
+                "unresolved-missing-target",
+                "objectReference",
+                DependencyReferenceKind.SerializedProperty,
+                true));
+
+            var objectGroup = ProjectIssuePanelBuilder.Build(graph)
+                .Groups.Single()
+                .ObjectGroups.Single();
+
+            Assert.AreEqual("Object", objectGroup.ObjectType);
+            Assert.AreEqual("issue:broken-missing-reference:type:object", objectGroup.Id);
+            Assert.AreEqual(
+                DependencyNodeStyleResolver.GetTypeAccentColor("Object"),
+                objectGroup.Locations.Single().AccentColor);
         }
 
         [Test]

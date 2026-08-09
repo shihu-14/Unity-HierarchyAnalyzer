@@ -77,7 +77,89 @@ namespace DependencyAnalyzer.Editor.Tests
             AssertEdge(graph, componentNode, materialNode, DependencyReferenceKind.SerializedProperty, "assetReference");
             AssertEdge(graph, componentNode, materialNode, DependencyReferenceKind.SerializedProperty, "nested.reference");
             AssertEdge(graph, componentNode, childNode, DependencyReferenceKind.SerializedProperty, "references.Array.data[0]");
-            Assert.IsFalse(graph.Edges.Any(edge => edge.MemberName == "m_Script"));
+            Assert.IsFalse(graph.Edges.Any(edge =>
+                edge.MemberName == "m_GameObject"
+                || edge.MemberName == "m_CorrespondingSourceObject"
+                || edge.MemberName == "m_PrefabInstance"
+                || edge.MemberName == "m_PrefabAsset"
+                || edge.MemberName == "m_Father"
+                || edge.MemberName == "m_Script"
+                || edge.MemberName.StartsWith("m_Children.", StringComparison.Ordinal)));
+        }
+
+        [Test]
+        public async Task ScanAsync_CollectsHiddenSerializedObjectReference()
+        {
+            var gameObject = new GameObject("HiddenReference");
+            var fixture = gameObject.AddComponent<ReferenceFixtureComponent>();
+            var material = CreateMaterialAsset("HiddenMaterial.mat");
+            SetHiddenMaterial(fixture, material);
+
+            var graph = await ScanAsync();
+            var sourceNode = FindNode(graph, fixture);
+            var materialNode = FindNode(graph, material);
+
+            AssertEdge(
+                graph,
+                sourceNode,
+                materialNode,
+                DependencyReferenceKind.SerializedProperty,
+                "hiddenMaterial");
+        }
+
+        [Test]
+        public async Task ScanAsync_TreatsHiddenNullReferenceAsNone()
+        {
+            var gameObject = new GameObject("HiddenNoneReference");
+            var fixture = gameObject.AddComponent<ReferenceFixtureComponent>();
+            var reader = new UnitySerializedObjectReferenceReader();
+
+            var references = reader.Read(fixture).ToList();
+            var hiddenReference = references
+                .Single(reference => reference.PropertyPath == "hiddenMaterial");
+            var graph = await ScanAsync();
+
+            Assert.AreEqual(SerializedObjectReferenceState.None, hiddenReference.State);
+            Assert.IsFalse(references.Any(reference => reference.PropertyPath == "m_GameObject"));
+            Assert.IsFalse(references.Any(reference => reference.PropertyPath == "m_Script"));
+            Assert.IsFalse(graph.Edges.Any(edge => edge.MemberName == "hiddenMaterial"));
+            Assert.AreEqual(0, ProjectIssuePanelBuilder.Build(graph).WarningCount);
+        }
+
+        [Test]
+        public async Task ScanAsync_DetectsHiddenMissingObjectReference()
+        {
+            var materialPath = TempFolder + "/HiddenMissingMaterial.mat";
+            var material = CreateMaterialAsset("HiddenMissingMaterial.mat");
+            var source = new GameObject("HiddenMissingReference");
+            var fixture = source.AddComponent<ReferenceFixtureComponent>();
+            SetHiddenMaterial(fixture, material);
+            var prefabPath = TempFolder + "/HiddenMissingReference.prefab";
+            Assert.NotNull(PrefabUtility.SaveAsPrefabAsset(source, prefabPath));
+            UnityEngine.Object.DestroyImmediate(source);
+            Assert.IsTrue(AssetDatabase.DeleteAsset(materialPath));
+            AssetDatabase.ImportAsset(prefabPath, ImportAssetOptions.ForceUpdate);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            Assert.NotNull(prefab);
+            Assert.NotNull(PrefabUtility.InstantiatePrefab(prefab));
+
+            var graph = await ScanAsync();
+            var missingEdge = graph.Edges.Single(edge =>
+                edge.PointsToMissingReference
+                && edge.MemberName == "hiddenMaterial");
+            Assert.IsTrue(graph.TryGetNode(missingEdge.TargetNodeId, out var missingNode));
+            var issueModel = ProjectIssuePanelBuilder.Build(graph);
+            var objectGroup = issueModel.Groups
+                .Single(group => group.Type == ProjectIssueType.BrokenMissingReference)
+                .ObjectGroups.Single();
+            var location = objectGroup.Locations.Single();
+
+            Assert.AreEqual(DependencyReferenceKind.SerializedProperty, missingEdge.ReferenceKind);
+            Assert.AreEqual("Material", missingNode.TypeName);
+            Assert.AreEqual(1, issueModel.WarningCount);
+            Assert.AreEqual("Material", objectGroup.ObjectType);
+            Assert.AreEqual("hiddenMaterial", location.Label);
+            StringAssert.EndsWith("/hiddenMaterial", location.DisplayPath);
         }
 
         [Test]
@@ -457,6 +539,15 @@ namespace DependencyAnalyzer.Editor.Tests
             EnsureFolder(System.IO.Path.GetDirectoryName(assetPath).Replace('\\', '/'));
             AssetDatabase.CreateAsset(material, assetPath);
             return material;
+        }
+
+        private static void SetHiddenMaterial(ReferenceFixtureComponent fixture, Material material)
+        {
+            var serializedFixture = new SerializedObject(fixture);
+            var hiddenMaterial = serializedFixture.FindProperty("hiddenMaterial");
+            Assert.NotNull(hiddenMaterial);
+            hiddenMaterial.objectReferenceValue = material;
+            serializedFixture.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void EnsureFolder(string folderPath)

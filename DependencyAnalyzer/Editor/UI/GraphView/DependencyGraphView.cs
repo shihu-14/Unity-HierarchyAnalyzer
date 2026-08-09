@@ -26,6 +26,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         internal const int MinExpansionDepth = 0;
         internal const int MaxFiniteExpansionDepth = 5;
         internal const int AllExpansionDepthValue = MaxFiniteExpansionDepth + 1;
+        internal const float DefaultZoom = 1.15f;
 
         private readonly VisualElement contentLayer;
         private readonly VisualElement edgeLayer;
@@ -67,7 +68,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private Vector2 pan = new Vector2(24f, 24f);
         private Vector2 lastMousePosition;
         private bool isPanning;
-        private float zoom = 1f;
+        private float zoom = DefaultZoom;
         private float minZoom = 0.1f;
         private float maxZoom = 2f;
         private float zoomStep = 0.004f;
@@ -129,6 +130,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         internal string EditorSelectionNodeId => editorSelectionNodeId ?? string.Empty;
         internal IReadOnlyList<DependencyNode> HierarchyRootNodes => rootNodes;
         internal int ExpansionDepth => initialDepth;
+        internal float Zoom => zoom;
         internal float ZoomStep => zoomStep;
 
         public void ConfigureZoom(float minimum, float maximum, float step)

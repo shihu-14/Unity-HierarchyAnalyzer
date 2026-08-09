@@ -15,7 +15,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             IEnumerable<ProjectIssueLocation> locations)
         {
             Id = id ?? string.Empty;
-            ObjectType = string.IsNullOrWhiteSpace(objectType) ? "Object Reference" : objectType;
+            ObjectType = string.IsNullOrWhiteSpace(objectType) ? "Object" : objectType;
             Icon = icon;
             this.locations = locations == null
                 ? new List<ProjectIssueLocation>()

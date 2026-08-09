@@ -217,7 +217,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private void ResetViewTransform()
         {
             pan = new Vector2(24f, 24f);
-            zoom = Mathf.Clamp(1f, minZoom, maxZoom);
+            zoom = Mathf.Clamp(DefaultZoom, minZoom, maxZoom);
         }
 
         private void ApplyTransform()

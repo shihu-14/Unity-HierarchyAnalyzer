@@ -101,10 +101,11 @@ namespace DependencyAnalyzer.Editor.UI.Issues
         {
             if (string.IsNullOrWhiteSpace(typeName)
                 || string.Equals(typeName, "Object", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(typeName, "Object Reference", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(typeName, "Missing", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(typeName, "Missing Reference", StringComparison.OrdinalIgnoreCase))
             {
-                return "Object Reference";
+                return "Object";
             }
 
             typeName = typeName.Trim();
@@ -128,7 +129,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
         private static string NormalizeIdSegment(string value)
         {
             return string.IsNullOrWhiteSpace(value)
-                ? "object-reference"
+                ? "object"
                 : value.Trim().ToLowerInvariant().Replace(' ', '-');
         }
 
