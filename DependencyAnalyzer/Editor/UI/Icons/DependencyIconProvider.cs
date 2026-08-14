@@ -9,22 +9,14 @@ namespace DependencyAnalyzer.Editor.UI.Icons
     {
         private const string WarningIssueIconPath = "Assets/DependencyAnalyzer/Editor/UI/Icons/issue-warning.png";
         private const string ErrorIssueIconPath = "Assets/DependencyAnalyzer/Editor/UI/Icons/issue-error.png";
-        internal const string MissingScriptIconPath = "Assets/DependencyAnalyzer/Editor/UI/Icons/missing-script.png";
-
         private static Texture warningIssueIcon;
         private static Texture errorIssueIcon;
-        private static Texture missingScriptIcon;
 
         public static Texture GetIcon(DependencyNode node)
         {
             if (node == null)
             {
                 return EditorGUIUtility.IconContent("DefaultAsset Icon").image;
-            }
-
-            if (node.MissingTargetState == MissingTargetKind.MissingScript)
-            {
-                return GetMissingScriptIcon();
             }
 
             if (!string.IsNullOrEmpty(node.Path)
@@ -47,19 +39,6 @@ namespace DependencyAnalyzer.Editor.UI.Icons
         public static Texture GetWarningIcon()
         {
             return GetCustomIssueIcon(WarningIssueIconPath, ref warningIssueIcon, "console.warnicon.sml");
-        }
-
-        internal static Texture GetMissingScriptIcon()
-        {
-            if (missingScriptIcon != null)
-            {
-                return missingScriptIcon;
-            }
-
-            missingScriptIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(MissingScriptIconPath);
-            return missingScriptIcon != null
-                ? missingScriptIcon
-                : EditorGUIUtility.IconContent("cs Script Icon").image;
         }
 
         public static Texture GetIssueIcon(DependencyScanIssueSeverity severity)

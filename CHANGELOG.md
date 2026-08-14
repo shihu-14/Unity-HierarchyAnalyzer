@@ -7,11 +7,11 @@
 - Preserve partial graph results when individual components or scanners fail.
 - Use stable object identity for assets and sub-assets.
 - Remove project-specific component health guesses from production analysis.
-- Limit user-facing Issues to missing scripts and broken serialized object references detected before runtime.
+- Limit user-facing Issues to missing component scripts and broken serialized object references detected before runtime.
 - Remove Unity Console ingestion and keep Analyzer failures as internal developer diagnostics without automatic Console logging.
-- Group broken references by issue type, referenced Object type, and one-line full-path location.
+- Group all missing occurrences directly by referenced Object type, including component and serialized Script references in one Script group.
 - Simplify the Issues header to a non-interactive Warning count and keep location rows focused on their graph node.
-- Render missing targets with their Object type color at 45% opacity, show the Warning marker on the direct source or nearest visible ancestor, and use a transparent dedicated Missing Script icon.
+- Render missing targets with their normal Object type color and icon at 45% opacity, and show the Warning marker on the direct source or nearest visible ancestor.
 - Match graph search queries as case-insensitive contiguous substrings of node display names only.
 - Replace the Zoom Scale control with an immediate 0–5 / All regular-tree depth control, where 0 shows roots only, while keeping wheel zoom at a fixed 0.004 step.
 - Remove obsolete asset-size metadata and dependency count badges while retaining reference counts in tooltips.

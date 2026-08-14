@@ -9,9 +9,9 @@ namespace DependencyAnalyzer.Editor.Scanners
             string id,
             string path,
             string displayName,
-            string typeName = "Missing",
-            string namespaceQualifiedTypeName = "Missing Reference",
-            string iconContentName = "console.warnicon.sml",
+            string typeName = "Unknown Reference",
+            string namespaceQualifiedTypeName = "Unknown Reference",
+            string iconContentName = "DefaultAsset Icon",
             DependencyNodeKind kind = DependencyNodeKind.MissingReference,
             MissingTargetKind missingTargetKind = MissingTargetKind.BrokenReference)
         {

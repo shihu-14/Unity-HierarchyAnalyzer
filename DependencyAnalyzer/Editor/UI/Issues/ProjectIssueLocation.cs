@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace DependencyAnalyzer.Editor.UI.Issues
 {
@@ -12,9 +11,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             IEnumerable<string> parentSegments,
             string label,
             string sourceObjectName,
-            string missingObjectType,
-            string targetNodeId,
-            Color accentColor)
+            string targetNodeId)
         {
             this.parentSegments = parentSegments == null
                 ? new List<string>()
@@ -26,22 +23,15 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             SourceObjectName = string.IsNullOrWhiteSpace(sourceObjectName)
                 ? "No related node"
                 : sourceObjectName.Trim();
-            MissingObjectType = string.IsNullOrWhiteSpace(missingObjectType)
-                ? string.Empty
-                : missingObjectType.Trim();
             TargetNodeId = targetNodeId ?? string.Empty;
-            AccentColor = accentColor;
         }
 
         public IReadOnlyList<string> ParentSegments => parentSegments;
         public string Label { get; }
         public string SourceObjectName { get; }
-        public string MissingObjectType { get; }
-        public bool HasMissingObjectType => !string.IsNullOrEmpty(MissingObjectType);
         public string DisplayPath => "Path: " + string.Join("/", parentSegments.Concat(new[] { Label }));
         public string TargetNodeId { get; }
         public bool HasRelatedNode => !string.IsNullOrEmpty(TargetNodeId);
-        public Color AccentColor { get; }
         public string SortKey => string.Join("/", parentSegments) + "\u001f" + Label;
     }
 }

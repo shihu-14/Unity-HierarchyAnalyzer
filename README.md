@@ -19,12 +19,12 @@ Unity 6向けのEditor専用依存関係ビューアーです。projectを実行
 - Assetとsub-asset
   - GUIDとlocal file IDに基づき、同一path内の別sub-assetを別nodeとして識別
 - Broken data
-  - Missing Script
-  - Broken Missing Reference（Material、Texture、Mesh、GameObject、Component、Scriptなど）
+  - Missing Component Scriptとbroken serialized referenceを、Script、Material、Texture、Mesh、AudioClip、GameObjectなどの参照先Object type別に分類
+  - declared typeが`UnityEngine.Object`の場合は`Object Reference`、型情報を取得できない場合は`Unknown Reference`として区別
   - 未設定の`None`はMissingとして扱わない
   - Component/property/追加scanner単位の失敗では取得済みの部分graphを保持して続行
 
-ユーザー向けIssues panelに表示するのはMissing ScriptとBroken Missing Referenceだけで、どちらもWarningとして扱います。Runtime Exception、compiler/runtime Console log、`Debug.LogError`、`Debug.LogWarning`はUnity Console側の責務であり、このツールへ取り込みません。property/component/scanner単位の解析失敗はdeveloper diagnosticとしてgraph内部に保持し、Issues panelや通常のUnity Console Warning/Errorへ自動出力しません。ただしscan処理全体が未処理例外で失敗した場合は、調査可能にするためUnity Consoleへexceptionを出力します。
+ユーザー向けIssues panelに表示するのは、Missing Component Scriptとbroken serialized referenceから確認できるMissing occurrenceだけで、参照先Object type別のWarningとして扱います。Runtime Exception、compiler/runtime Console log、`Debug.LogError`、`Debug.LogWarning`はUnity Console側の責務であり、このツールへ取り込みません。property/component/scanner単位の解析失敗はdeveloper diagnosticとしてgraph内部に保持し、Issues panelや通常のUnity Console Warning/Errorへ自動出力しません。ただしscan処理全体が未処理例外で失敗した場合は、調査可能にするためUnity Consoleへexceptionを出力します。
 
 このツールが判定するのはserialized referenceとして確認できる一般的な事実です。「このAudioSourceにはAudioClipが必要」や、`None`のfieldがrequiredかoptionalかなど、プロジェクト固有の用途や正しさは診断しません。
 
@@ -39,9 +39,9 @@ Unity 6向けのEditor専用依存関係ビューアーです。projectを実行
 - `Command + F` / `Ctrl + F`、Enter / Shift + Enter、arrow buttonによる検索移動
 - node名を、大文字小文字を区別しない連続部分文字列で検索
 - toolbarの`Depth`でregular graph treeの初期展開を0〜5または`All`へ即時変更（0はrootのみ）
-- Missing targetはObject typeの色を保ったままopacity 45%で表示し、Missing Scriptだけは透明背景の専用iconを使用
+- Missing targetはObject typeの通常色とiconを保ったままopacity 45%で表示
 - Warning markerはMissing target自身ではなく直接の参照元に表示し、参照元が収納されている場合は最も近い可視親nodeへ伝播
-- 下部`Issues` panelにMissing ScriptとBroken Missing Referenceを種類、参照先Object type、発生場所のフルパスの順で表示
+- 下部`Issues` panelにMissing occurrenceを参照先Object type別にまとめ、source object名と発生場所のフルパスを表示
 - node tooltipにはDependencies / Used Byを表示し、Asset Labelsはlabelを持つAssetだけに表示
 
 toolbarの操作は次のとおりです。
@@ -146,10 +146,10 @@ Edit Mode Testは、次の一般的な依存関係事実を検証します。
 - inactive GameObject、disabled Component、additive Scene
 - Prefab source、override、nested Prefab
 - main asset path内のsub-asset identity
-- Missing Script、Missing Object、Missing Material
+- Missing Component Script、Missing Object Reference、Missing Material
 - component/scanner失敗後の継続と部分結果保持
-- Missing Script／Broken Missing Referenceの分類、Object type別group、location navigation
-- Missing targetのtype色、半透明state、Missing Script専用icon、直接参照元と可視親へのWarning marker
+- Missing Component Scriptとserialized Script MissingのScript group統合、Object type別group、location navigation
+- Missing targetのtype色、通常Object icon、半透明state、直接参照元と可視親へのWarning marker
 - Analyzer diagnosticとUnity Console logがユーザー向けIssue件数へ混入しないこと
 - node tooltipのAsset Labels表示条件、reference count維持、count badge非表示
 

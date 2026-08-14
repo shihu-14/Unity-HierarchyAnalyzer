@@ -94,8 +94,7 @@
     border-bottom-color: #30363e;
 }
 
-.dependency-issue-group-row,
-.dependency-issue-object-group-row {
+.dependency-issue-group-row {
     min-height: 31px;
     flex-direction: row;
     align-items: center;
@@ -119,41 +118,34 @@
     background-color: #252a30;
 }
 
-.dependency-issue-object-group-row {
-    padding-left: 24px;
-    background-color: #22272d;
-}
-
 .dependency-issue-group-row:hover,
-.dependency-issue-object-group-row:hover,
 .dependency-issue-location-row:hover {
     background-color: #303943;
 }
 
-.dependency-issue-group-chevron,
-.dependency-issue-object-group-chevron {
+.dependency-issue-group-chevron {
     width: 24px;
     height: 22px;
     margin-right: 3px;
     flex-shrink: 0;
 }
 
-.dependency-issue-group-warning-icon {
-    width: 14px;
-    height: 14px;
-    margin-right: 6px;
+.dependency-issue-group-accent {
+    width: 6px;
+    min-width: 6px;
+    height: 18px;
+    margin-right: 5px;
     flex-shrink: 0;
 }
 
-.dependency-issue-object-group-icon {
+.dependency-issue-group-icon {
     width: 18px;
     height: 18px;
     margin-right: 6px;
     flex-shrink: 0;
 }
 
-.dependency-issue-group-title,
-.dependency-issue-object-group-title {
+.dependency-issue-group-title {
     min-width: 0;
     flex-grow: 0;
     flex-shrink: 1;
@@ -169,8 +161,7 @@
     -unity-font-style: bold;
 }
 
-.dependency-issue-group-count,
-.dependency-issue-object-group-count {
+.dependency-issue-group-count {
     min-width: 0;
     margin-left: 6px;
     flex-shrink: 0;
@@ -185,12 +176,8 @@
     background-color: #20242a;
 }
 
-.dependency-issue-location-list--issue-child .dependency-issue-location-row {
+.dependency-issue-location-list--group-child .dependency-issue-location-row {
     padding-left: 32px;
-}
-
-.dependency-issue-location-list--object-child .dependency-issue-location-row {
-    padding-left: 48px;
 }
 
 .dependency-issue-location-row {
@@ -215,28 +202,6 @@
 
 .dependency-issue-location-row--disabled {
     opacity: 0.62;
-}
-
-.dependency-issue-location-accent {
-    width: 6px;
-    height: 22px;
-    min-width: 6px;
-    margin-right: 5px;
-    flex-shrink: 0;
-}
-
-.dependency-issue-location-type {
-    min-width: 58px;
-    max-width: 120px;
-    margin-right: 10px;
-    flex-shrink: 0;
-    color: #d8dee7;
-    font-size: 11px;
-    -unity-font-style: normal;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    -unity-text-align: middle-left;
 }
 
 .dependency-issue-location-source-name {

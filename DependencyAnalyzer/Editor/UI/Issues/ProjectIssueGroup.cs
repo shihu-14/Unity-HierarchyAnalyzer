@@ -1,42 +1,34 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace DependencyAnalyzer.Editor.UI.Issues
 {
-    internal enum ProjectIssueType
-    {
-        MissingScript,
-        BrokenMissingReference
-    }
-
     internal sealed class ProjectIssueGroup
     {
         private readonly List<ProjectIssueLocation> locations;
-        private readonly List<ProjectIssueObjectGroup> objectGroups;
 
         public ProjectIssueGroup(
             string id,
-            ProjectIssueType type,
-            string title,
-            IEnumerable<ProjectIssueLocation> locations,
-            IEnumerable<ProjectIssueObjectGroup> objectGroups)
+            string objectType,
+            Texture icon,
+            Color accentColor,
+            IEnumerable<ProjectIssueLocation> locations)
         {
             Id = id ?? string.Empty;
-            Type = type;
-            Title = title ?? string.Empty;
+            ObjectType = string.IsNullOrWhiteSpace(objectType) ? "Unknown Reference" : objectType.Trim();
+            Icon = icon;
+            AccentColor = accentColor;
             this.locations = locations == null
                 ? new List<ProjectIssueLocation>()
-                : locations.ToList();
-            this.objectGroups = objectGroups == null
-                ? new List<ProjectIssueObjectGroup>()
-                : objectGroups.ToList();
+                : locations.OrderBy(location => location.SortKey, System.StringComparer.OrdinalIgnoreCase).ToList();
         }
 
         public string Id { get; }
-        public ProjectIssueType Type { get; }
-        public string Title { get; }
+        public string ObjectType { get; }
+        public Texture Icon { get; }
+        public Color AccentColor { get; }
         public IReadOnlyList<ProjectIssueLocation> Locations => locations;
-        public IReadOnlyList<ProjectIssueObjectGroup> ObjectGroups => objectGroups;
-        public int Count => locations.Count + objectGroups.Sum(group => group.Count);
+        public int Count => locations.Count;
     }
 }

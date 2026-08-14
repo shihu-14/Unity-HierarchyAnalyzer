@@ -149,9 +149,7 @@ namespace DependencyAnalyzer.Editor.Tests
                 && edge.MemberName == "hiddenMaterial");
             Assert.IsTrue(graph.TryGetNode(missingEdge.TargetNodeId, out var missingNode));
             var issueModel = ProjectIssuePanelBuilder.Build(graph);
-            var objectGroup = issueModel.Groups
-                .Single(group => group.Type == ProjectIssueType.BrokenMissingReference)
-                .ObjectGroups.Single();
+            var objectGroup = issueModel.Groups.Single();
             var location = objectGroup.Locations.Single();
 
             Assert.AreEqual(DependencyReferenceKind.SerializedProperty, missingEdge.ReferenceKind);
@@ -438,6 +436,27 @@ namespace DependencyAnalyzer.Editor.Tests
         }
 
         [Test]
+        public async Task ScanAsync_PreservesGameObjectObjectAudioClipAndUnknownMissingTypes()
+        {
+            var owner = new GameObject("MissingTypeReferences");
+            owner.AddComponent<ReferenceFixtureComponent>();
+            var scanner = new SerializedPropertyScanner(new MissingTypesReferenceReader(owner));
+
+            var graph = await ScanAsync(scanner);
+            var missingEdges = graph.Edges
+                .Where(edge => edge.PointsToMissingReference)
+                .ToDictionary(edge => edge.MemberName);
+
+            AssertMissingTargetType(graph, missingEdges["gameObjectReference"], "GameObject", "UnityEngine.GameObject");
+            AssertMissingTargetType(graph, missingEdges["objectReference"], "Object Reference", "UnityEngine.Object");
+            AssertMissingTargetType(graph, missingEdges["audioClipReference"], "AudioClip", "UnityEngine.AudioClip");
+            AssertMissingTargetType(graph, missingEdges["unknownReference"], "Unknown Reference", "Unknown Reference");
+            CollectionAssert.AreEquivalent(
+                new[] { "AudioClip", "GameObject", "Object Reference", "Unknown Reference" },
+                ProjectIssuePanelBuilder.Build(graph).Groups.Select(group => group.ObjectType));
+        }
+
+        [Test]
         public async Task ScannerOrchestrator_RetainsSceneGraphWhenExtensionScannerFails()
         {
             var gameObject = new GameObject("SceneResultBeforeFailure");
@@ -519,7 +538,7 @@ namespace DependencyAnalyzer.Editor.Tests
                 edge.PointsToMissingReference
                 && edge.ReferenceKind == DependencyReferenceKind.Component);
             var model = ProjectIssuePanelBuilder.Build(graph);
-            var group = model.Groups.Single(candidate => candidate.Type == ProjectIssueType.MissingScript);
+            var group = model.Groups.Single(candidate => candidate.ObjectType == "Script");
             var location = group.Locations.Single();
 
             Assert.AreEqual(1, group.Count);
@@ -610,6 +629,17 @@ namespace DependencyAnalyzer.Editor.Tests
                 "Expected edge was not found: " + source.DisplayName + " -> " + target.DisplayName + " (" + kind + ", " + memberName + ")");
         }
 
+        private static void AssertMissingTargetType(
+            DependencyGraph graph,
+            DependencyEdge edge,
+            string expectedTypeName,
+            string expectedNamespaceQualifiedTypeName)
+        {
+            Assert.IsTrue(graph.TryGetNode(edge.TargetNodeId, out var target));
+            Assert.AreEqual(expectedTypeName, target.TypeName);
+            Assert.AreEqual(expectedNamespaceQualifiedTypeName, target.NamespaceQualifiedTypeName);
+        }
+
         private sealed class FaultInjectingReferenceReader : ISerializedObjectReferenceReader
         {
             private readonly GameObject failingOwner;
@@ -683,6 +713,44 @@ namespace DependencyAnalyzer.Editor.Tests
                 {
                     yield return reference;
                 }
+            }
+        }
+
+        private sealed class MissingTypesReferenceReader : ISerializedObjectReferenceReader
+        {
+            private readonly GameObject owner;
+
+            public MissingTypesReferenceReader(GameObject owner)
+            {
+                this.owner = owner;
+            }
+
+            public IEnumerable<SerializedObjectReferenceInfo> Read(Component component)
+            {
+                if (component.gameObject != owner || !(component is ReferenceFixtureComponent))
+                {
+                    yield break;
+                }
+
+                yield return CreateMissing("gameObjectReference", "PPtr<$GameObject>", 1);
+                yield return CreateMissing("objectReference", "PPtr<$Object>", 2);
+                yield return CreateMissing("audioClipReference", "PPtr<$AudioClip>", 3);
+                yield return CreateMissing("unknownReference", string.Empty, 4);
+            }
+
+            private static SerializedObjectReferenceInfo CreateMissing(
+                string propertyPath,
+                string serializedTypeName,
+                int missingInstanceId)
+            {
+                return new SerializedObjectReferenceInfo(
+                    propertyPath,
+                    serializedTypeName,
+                    SerializedObjectReferenceState.Missing,
+                    null,
+                    missingInstanceId,
+                    string.Empty,
+                    "Missing");
             }
         }
 

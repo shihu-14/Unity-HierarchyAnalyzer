@@ -8,10 +8,8 @@ namespace DependencyAnalyzer.Editor.UI.Issues
 {
     internal static class IssuePanelViewBuilder
     {
-        private const string IssueChildLocationListClass =
-            "dependency-issue-location-list--issue-child";
-        private const string ObjectChildLocationListClass =
-            "dependency-issue-location-list--object-child";
+        private const string GroupChildLocationListClass =
+            "dependency-issue-location-list--group-child";
 
         public static void ConfigureWarningStatus(Image icon, Label count, int warningCount)
         {
@@ -24,7 +22,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             if (count != null)
             {
                 count.text = warningCount.ToString();
-                count.tooltip = "Missing scripts and broken serialized references";
+                count.tooltip = "Missing references grouped by Object type";
             }
         }
 
@@ -37,35 +35,20 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             var container = new VisualElement();
             container.AddToClassList("dependency-issue-group");
             var isExpanded = expandedGroupIds != null && expandedGroupIds.Contains(group.Id);
-            container.Add(CreateIssueTypeRow(group, isExpanded, toggleGroup));
+            container.Add(CreateObjectTypeRow(group, isExpanded, toggleGroup));
             if (!isExpanded)
             {
                 return container;
             }
 
-            if (group.Type == ProjectIssueType.MissingScript)
-            {
-                container.Add(CreateLocationList(
-                    group.Locations,
-                    focusNode,
-                    IssueChildLocationListClass));
-                return container;
-            }
-
-            var objectGroupList = new VisualElement();
-            objectGroupList.AddToClassList("dependency-issue-object-group-list");
-            for (var i = 0; i < group.ObjectGroups.Count; i++)
-            {
-                var objectGroup = group.ObjectGroups[i];
-                var objectGroupExpanded = expandedGroupIds != null && expandedGroupIds.Contains(objectGroup.Id);
-                objectGroupList.Add(CreateObjectGroupView(objectGroup, objectGroupExpanded, toggleGroup, focusNode));
-            }
-
-            container.Add(objectGroupList);
+            container.Add(CreateLocationList(
+                group.Locations,
+                focusNode,
+                GroupChildLocationListClass));
             return container;
         }
 
-        private static VisualElement CreateIssueTypeRow(
+        private static VisualElement CreateObjectTypeRow(
             ProjectIssueGroup group,
             bool isExpanded,
             Action<string> toggleGroup)
@@ -73,17 +56,25 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             var row = new Button(() => toggleGroup?.Invoke(group.Id));
             row.text = string.Empty;
             row.AddToClassList("dependency-issue-group-row");
-            row.tooltip = group.Title;
+            row.tooltip = group.ObjectType;
 
             var chevron = ChevronIcon.CreateIssuePanel(isExpanded);
             chevron.AddToClassList("dependency-issue-group-chevron");
             row.Add(chevron);
 
-            var warningIcon = new Image { image = DependencyIconProvider.GetWarningIcon() };
-            warningIcon.AddToClassList("dependency-issue-group-warning-icon");
-            row.Add(warningIcon);
+            var accent = new VisualElement();
+            accent.AddToClassList("dependency-issue-group-accent");
+            accent.style.backgroundColor = group.AccentColor;
+            row.Add(accent);
 
-            var title = new Label(group.Title);
+            if (group.Icon != null)
+            {
+                var icon = new Image { image = group.Icon };
+                icon.AddToClassList("dependency-issue-group-icon");
+                row.Add(icon);
+            }
+
+            var title = new Label(group.ObjectType);
             title.AddToClassList("dependency-issue-group-title");
             row.Add(title);
 
@@ -91,51 +82,6 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             count.AddToClassList("dependency-issue-group-count");
             row.Add(count);
             return row;
-        }
-
-        private static VisualElement CreateObjectGroupView(
-            ProjectIssueObjectGroup group,
-            bool isExpanded,
-            Action<string> toggleGroup,
-            Action<string> focusNode)
-        {
-            var container = new VisualElement();
-            container.AddToClassList("dependency-issue-object-group");
-
-            var row = new Button(() => toggleGroup?.Invoke(group.Id));
-            row.text = string.Empty;
-            row.AddToClassList("dependency-issue-object-group-row");
-            row.tooltip = group.ObjectType;
-
-            var chevron = ChevronIcon.CreateIssuePanel(isExpanded);
-            chevron.AddToClassList("dependency-issue-object-group-chevron");
-            row.Add(chevron);
-
-            if (group.Icon != null)
-            {
-                var icon = new Image { image = group.Icon };
-                icon.AddToClassList("dependency-issue-object-group-icon");
-                row.Add(icon);
-            }
-
-            var label = new Label(group.ObjectType);
-            label.AddToClassList("dependency-issue-object-group-title");
-            row.Add(label);
-
-            var count = new Label("(" + group.Count + ")");
-            count.AddToClassList("dependency-issue-object-group-count");
-            row.Add(count);
-            container.Add(row);
-
-            if (isExpanded)
-            {
-                container.Add(CreateLocationList(
-                    group.Locations,
-                    focusNode,
-                    ObjectChildLocationListClass));
-            }
-
-            return container;
         }
 
         private static VisualElement CreateLocationList(
@@ -164,18 +110,6 @@ namespace DependencyAnalyzer.Editor.UI.Issues
             row.text = string.Empty;
             row.AddToClassList("dependency-issue-location-row");
             row.tooltip = location.DisplayPath;
-
-            var accent = new VisualElement();
-            accent.AddToClassList("dependency-issue-location-accent");
-            accent.style.backgroundColor = location.AccentColor;
-            row.Add(accent);
-
-            if (location.HasMissingObjectType)
-            {
-                var missingObjectType = new Label(location.MissingObjectType);
-                missingObjectType.AddToClassList("dependency-issue-location-type");
-                row.Add(missingObjectType);
-            }
 
             var sourceObjectName = new Label(location.SourceObjectName);
             sourceObjectName.AddToClassList("dependency-issue-location-source-name");

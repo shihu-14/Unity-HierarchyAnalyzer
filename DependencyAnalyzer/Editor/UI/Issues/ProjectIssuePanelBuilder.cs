@@ -11,9 +11,6 @@ namespace DependencyAnalyzer.Editor.UI.Issues
 {
     internal static class ProjectIssuePanelBuilder
     {
-        private const string MissingScriptGroupId = "issue:missing-script";
-        private const string BrokenReferenceGroupId = "issue:broken-missing-reference";
-
         public static ProjectIssuePanelModel Build(DependencyGraph graph)
         {
             if (graph == null)
@@ -21,94 +18,91 @@ namespace DependencyAnalyzer.Editor.UI.Issues
                 return new ProjectIssuePanelModel(null);
             }
 
-            var missingScripts = new List<ProjectIssueLocation>();
-            var brokenReferences = new Dictionary<string, ObjectGroupAccumulator>(StringComparer.OrdinalIgnoreCase);
+            var groupsByType = new Dictionary<string, ObjectGroupAccumulator>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var edge in graph.Edges.Where(edge => edge != null && edge.PointsToMissingReference))
             {
                 graph.TryGetNode(edge.SourceNodeId, out var sourceNode);
                 graph.TryGetNode(edge.TargetNodeId, out var missingNode);
-                if (IsMissingScript(edge, missingNode))
-                {
-                    missingScripts.Add(BuildLocation(
-                        sourceNode,
-                        edge.MemberName,
-                        string.Empty,
-                        sourceNode == null
-                            ? new Color(0.38f, 0.42f, 0.47f)
-                            : DependencyNodeStyleResolver.GetNodeAccentColor(sourceNode)));
-                    continue;
-                }
-
-                var objectType = NormalizeObjectType(missingNode == null ? string.Empty : missingNode.TypeName);
-                if (!brokenReferences.TryGetValue(objectType, out var accumulator))
+                var objectType = GetCanonicalObjectType(edge, missingNode);
+                if (!groupsByType.TryGetValue(objectType, out var accumulator))
                 {
                     accumulator = new ObjectGroupAccumulator(
                         objectType,
-                        missingNode == null ? null : DependencyIconProvider.GetIcon(missingNode),
+                        DependencyIconProvider.GetIcon(missingNode),
                         DependencyNodeStyleResolver.GetTypeAccentColor(objectType));
-                    brokenReferences.Add(objectType, accumulator);
+                    groupsByType.Add(objectType, accumulator);
                 }
 
-                accumulator.Locations.Add(BuildLocation(
-                    sourceNode,
-                    edge.MemberName,
-                    objectType,
-                    accumulator.AccentColor));
+                accumulator.Locations.Add(BuildLocation(sourceNode, edge.MemberName));
             }
 
-            var groups = new List<ProjectIssueGroup>();
-            if (missingScripts.Count > 0)
-            {
-                groups.Add(new ProjectIssueGroup(
-                    MissingScriptGroupId,
-                    ProjectIssueType.MissingScript,
-                    "Missing Script",
-                    missingScripts.OrderBy(location => location.SortKey, StringComparer.OrdinalIgnoreCase),
-                    null));
-            }
-
-            if (brokenReferences.Count > 0)
-            {
-                var objectGroups = brokenReferences.Values
-                    .OrderBy(group => group.ObjectType, StringComparer.OrdinalIgnoreCase)
-                    .Select(group => new ProjectIssueObjectGroup(
-                        BrokenReferenceGroupId + ":type:" + NormalizeIdSegment(group.ObjectType),
-                        group.ObjectType,
-                        group.Icon,
-                        group.Locations))
-                    .ToList();
-                groups.Add(new ProjectIssueGroup(
-                    BrokenReferenceGroupId,
-                    ProjectIssueType.BrokenMissingReference,
-                    "Broken Missing Reference",
-                    null,
-                    objectGroups));
-            }
+            var groups = groupsByType.Values
+                .OrderBy(group => group.ObjectType, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new ProjectIssueGroup(
+                    "issue:type:" + NormalizeIdSegment(group.ObjectType),
+                    group.ObjectType,
+                    group.Icon,
+                    group.AccentColor,
+                    group.Locations))
+                .ToList();
 
             return new ProjectIssuePanelModel(groups);
         }
 
-        private static bool IsMissingScript(DependencyEdge edge, DependencyNode missingNode)
+        private static string GetCanonicalObjectType(DependencyEdge edge, DependencyNode missingNode)
+        {
+            if (missingNode != null
+                && (missingNode.MissingTargetState == MissingTargetKind.MissingScript
+                    || IsLegacyMissingScript(edge, missingNode)))
+            {
+                return "Script";
+            }
+
+            return NormalizeObjectType(
+                missingNode == null ? string.Empty : missingNode.TypeName,
+                missingNode == null ? string.Empty : missingNode.NamespaceQualifiedTypeName);
+        }
+
+        private static bool IsLegacyMissingScript(DependencyEdge edge, DependencyNode missingNode)
         {
             return edge.ReferenceKind == DependencyReferenceKind.Component
-                && missingNode != null
                 && missingNode.Kind == DependencyNodeKind.Component
                 && string.Equals(missingNode.TypeName, "Script", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static string NormalizeObjectType(string typeName)
+        private static string NormalizeObjectType(string typeName, string namespaceQualifiedTypeName)
         {
             if (string.IsNullOrWhiteSpace(typeName)
-                || string.Equals(typeName, "Object", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(typeName, "Object Reference", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(typeName, "Unknown", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(typeName, "Missing", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(typeName, "Missing Reference", StringComparison.OrdinalIgnoreCase))
             {
-                return "Object";
+                return "Unknown Reference";
             }
 
             typeName = typeName.Trim();
+            if (string.Equals(typeName, "Object", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Equals(
+                    namespaceQualifiedTypeName,
+                    "UnityEngine.GameObject",
+                    StringComparison.OrdinalIgnoreCase)
+                    ? "GameObject"
+                    : "Object Reference";
+            }
+
+            if (string.Equals(typeName, "Object Reference", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Object Reference";
+            }
+
+            if (string.Equals(typeName, "GameObject", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(namespaceQualifiedTypeName, "UnityEngine.GameObject", StringComparison.OrdinalIgnoreCase))
+            {
+                return "GameObject";
+            }
+
             if (string.Equals(typeName, "Texture2D", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(typeName, "Texture3D", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(typeName, "Cubemap", StringComparison.OrdinalIgnoreCase))
@@ -135,9 +129,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
 
         private static ProjectIssueLocation BuildLocation(
             DependencyNode sourceNode,
-            string memberName,
-            string missingObjectType,
-            Color accentColor)
+            string memberName)
         {
             if (sourceNode == null)
             {
@@ -145,9 +137,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
                     null,
                     "No related node",
                     "No related node",
-                    missingObjectType,
-                    string.Empty,
-                    accentColor);
+                    string.Empty);
             }
 
             var path = (sourceNode.Path ?? string.Empty).Replace('\\', '/');
@@ -177,9 +167,7 @@ namespace DependencyAnalyzer.Editor.UI.Issues
                 segments,
                 label,
                 sourceNode.DisplayName,
-                missingObjectType,
-                sourceNode.Id,
-                accentColor);
+                sourceNode.Id);
         }
 
         private static List<string> SplitPath(string path)
