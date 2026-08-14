@@ -110,6 +110,12 @@ namespace DependencyAnalyzer.Editor.UI.Issues
                 return "Texture";
             }
 
+            if (string.Equals(typeName, "RuntimeAnimatorController", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(typeName, "AnimatorController", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Animator";
+            }
+
             if (string.Equals(typeName, "MonoScript", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(typeName, "MonoBehaviour", StringComparison.OrdinalIgnoreCase)
                 || typeName.EndsWith("Script", StringComparison.OrdinalIgnoreCase))

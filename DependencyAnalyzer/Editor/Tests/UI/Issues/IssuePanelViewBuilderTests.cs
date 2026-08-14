@@ -253,7 +253,16 @@ namespace DependencyAnalyzer.Editor.Tests
                 "SimulateSingleClick",
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             Assert.IsNotNull(method, "Clickable.SimulateSingleClick was not available in this Unity version.");
-            method.Invoke(button.clickable, null);
+            var parameters = method.GetParameters();
+            var arguments = new object[parameters.Length];
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                arguments[i] = parameters[i].ParameterType.IsValueType
+                    ? Activator.CreateInstance(parameters[i].ParameterType)
+                    : null;
+            }
+
+            method.Invoke(button.clickable, arguments);
         }
     }
 }
