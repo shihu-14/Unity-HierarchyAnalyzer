@@ -34,61 +34,24 @@
     -unity-text-align: middle-left;
 }
 
-.dependency-issue-filter-controls {
-    flex-direction: row;
-    align-items: center;
-    margin-left: 8px;
+.dependency-issue-warning-status {
     flex-grow: 1;
-}
-
-.dependency-issue-filter-button {
-    min-width: 40px;
-    width: 40px;
-    height: 21px;
     flex-direction: row;
     align-items: center;
-    justify-content: center;
-    margin-left: 0;
-    margin-right: 0;
-    padding-left: 2px;
-    padding-right: 2px;
-    padding-top: 0;
-    padding-bottom: 0;
-    border-top-width: 1px;
-    border-right-width: 1px;
-    border-bottom-width: 1px;
-    border-left-width: 1px;
-    border-top-color: #535860;
-    border-right-color: #202328;
-    border-bottom-color: #191c20;
-    border-left-color: #535860;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    background-color: #3a3e44;
+    margin-left: 12px;
 }
 
-.dependency-issue-filter-button:hover {
-    background-color: #454a51;
-}
-
-.dependency-issue-filter-button--off {
-    opacity: 0.42;
-}
-
-.dependency-issue-filter-icon {
-    width: 17px;
-    height: 17px;
-    margin-left: -1px;
-    margin-right: 4px;
+.dependency-issue-warning-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
     flex-shrink: 0;
 }
 
-.dependency-issue-filter-count {
-    color: #cfd3d8;
-    font-size: 13px;
-    margin-left: -1px;
+.dependency-issue-warning-count {
+    min-width: 20px;
+    color: #cfd5dd;
+    font-size: 12px;
     -unity-text-align: middle-left;
 }
 
@@ -106,27 +69,6 @@
     border-bottom-width: 0;
     border-left-width: 0;
     background-color: rgba(0, 0, 0, 0);
-}
-
-.dependency-issue-header .dependency-issue-filter-button {
-    min-width: 40px;
-    width: 40px;
-    height: 21px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    margin-right: 0;
-    padding-left: 2px;
-    padding-right: 2px;
-    border-top-width: 1px;
-    border-right-width: 1px;
-    border-bottom-width: 1px;
-    border-left-width: 1px;
-    border-top-color: #535860;
-    border-right-color: #202328;
-    border-bottom-color: #191c20;
-    border-left-color: #535860;
-    background-color: #3a3e44;
 }
 
 .dependency-issue-toggle-button {
@@ -147,94 +89,143 @@
     -unity-text-align: middle-left;
 }
 
-.dependency-issue-section-header {
-    min-height: 25px;
-    flex-direction: row;
-    align-items: center;
-    padding-left: 8px;
-    padding-right: 10px;
+.dependency-issue-group {
     border-bottom-width: 1px;
     border-bottom-color: #30363e;
+}
+
+.dependency-issue-group-row {
+    min-height: 31px;
+    flex-direction: row;
+    align-items: center;
+    padding-right: 10px;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-left: 0;
+    margin-right: 0;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.dependency-issue-group-row {
+    padding-left: 8px;
     background-color: #252a30;
 }
 
-.dependency-issue-section-icon {
-    width: 14px;
-    height: 14px;
+.dependency-issue-group-row:hover,
+.dependency-issue-location-row:hover {
+    background-color: #303943;
+}
+
+.dependency-issue-group-chevron {
+    width: 24px;
+    height: 22px;
+    margin-right: 3px;
+    flex-shrink: 0;
+}
+
+.dependency-issue-group-accent {
+    width: 6px;
+    min-width: 6px;
+    height: 18px;
+    margin-right: 5px;
+    flex-shrink: 0;
+}
+
+.dependency-issue-group-icon {
+    width: 18px;
+    height: 18px;
     margin-right: 6px;
     flex-shrink: 0;
 }
 
-.dependency-issue-section-label {
-    color: #dce2ea;
+.dependency-issue-group-title {
+    min-width: 0;
+    flex-grow: 0;
+    flex-shrink: 1;
+    color: #eef2f7;
+    font-size: 11px;
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dependency-issue-group-title {
     -unity-font-style: bold;
+}
+
+.dependency-issue-group-count {
+    min-width: 0;
+    margin-left: 6px;
+    flex-shrink: 0;
+    color: #b8c1cc;
     font-size: 11px;
     -unity-text-align: middle-left;
 }
 
-.dependency-issue-row {
-    min-height: 42px;
+.dependency-issue-location-list {
+    padding-top: 3px;
+    padding-bottom: 3px;
+    background-color: #20242a;
+}
+
+.dependency-issue-location-list--group-child .dependency-issue-location-row {
+    padding-left: 32px;
+}
+
+.dependency-issue-location-row {
+    min-height: 28px;
     flex-direction: row;
     align-items: center;
-    padding-left: 10px;
     padding-right: 10px;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    border-left-width: 5.4px;
-    border-bottom-width: 1px;
-    border-bottom-color: #30363e;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    margin-left: 0;
+    margin-right: 0;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    background-color: rgba(0, 0, 0, 0);
 }
 
-.dependency-issue-row:hover {
-    background-color: #303943;
-}
-
-.dependency-issue-row--info {
-}
-
-.dependency-issue-row--warning {
-}
-
-.dependency-issue-row--error {
-}
-
-.dependency-issue-row--disabled {
+.dependency-issue-location-row--disabled {
     opacity: 0.62;
 }
 
-.dependency-issue-severity-icon {
-    width: 17px;
-    height: 17px;
-    margin-right: 7px;
-    flex-shrink: 0;
-}
-
-.dependency-issue-node-icon {
-    width: 18px;
-    height: 18px;
-    margin-right: 7px;
-    flex-shrink: 0;
-}
-
-.dependency-issue-text {
-    flex-grow: 1;
+.dependency-issue-location-source-name {
+    max-width: 220px;
     min-width: 0;
-}
-
-.dependency-issue-main {
-    color: #f2f4f7;
+    margin-right: 12px;
+    flex-shrink: 1;
+    color: #eef2f7;
     font-size: 11px;
-    -unity-font-style: bold;
+    -unity-font-style: normal;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    -unity-text-align: middle-left;
 }
 
-.dependency-issue-detail {
+.dependency-issue-location-label {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
     color: #aeb8c4;
-    font-size: 10px;
-    margin-top: 2px;
+    font-size: 11px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    -unity-text-align: middle-left;
 }

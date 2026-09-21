@@ -12,6 +12,9 @@ namespace DependencyAnalyzer.Editor.Tests
 
     public sealed class ReferenceFixtureComponent : MonoBehaviour
     {
+        [SerializeField, HideInInspector]
+        private Material hiddenMaterial;
+
         public GameObject gameObjectReference;
         public Component componentReference;
         public UnityEngine.Object assetReference;

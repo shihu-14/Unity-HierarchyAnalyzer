@@ -22,6 +22,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private const int MaxAnimatedLayoutNodeCount = 600;
         private const int MaxAnimatedLayoutNodeDelta = 400;
         private const int MaxSearchSuggestions = int.MaxValue;
+        internal const string EditorSelectionHighlightClass = "dependency-node-editor-selection-ring";
+        internal const int MinExpansionDepth = 0;
+        internal const int MaxFiniteExpansionDepth = 5;
+        internal const int AllExpansionDepthValue = MaxFiniteExpansionDepth + 1;
+        internal const float DefaultZoom = 1.15f;
 
         private readonly VisualElement contentLayer;
         private readonly VisualElement edgeLayer;
@@ -43,35 +48,26 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private readonly HashSet<string> expandedMenuNodeIds = new HashSet<string>();
         private readonly HashSet<string> manuallyMovedViewIds = new HashSet<string>();
         private readonly HashSet<string> searchMatchNodeIds = new HashSet<string>();
-        private readonly HashSet<string> searchVisibleNodeIds = new HashSet<string>();
-        private readonly HashSet<string> forcedVisibleNodeIds = new HashSet<string>();
         private readonly List<string> searchResultNodeIds = new List<string>();
-        private readonly Dictionary<string, List<DependencyEdge>> outgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
-        private readonly Dictionary<string, List<DependencyEdge>> incomingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
-        private readonly Dictionary<string, List<DependencyEdge>> treeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
-        private readonly Dictionary<string, List<DependencyEdge>> regularTreeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
-        private readonly Dictionary<string, List<DependencyEdge>> menuTreeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
-        private readonly Dictionary<int, DependencyNode> nodeByInstanceId = new Dictionary<int, DependencyNode>();
         private readonly Dictionary<string, bool> missingReferenceSubtreeCache = new Dictionary<string, bool>();
         private readonly Dictionary<string, SubtreeIssueState> issueSubtreeCache = new Dictionary<string, SubtreeIssueState>();
-        private readonly Dictionary<string, int> minimumRegularDepths = new Dictionary<string, int>();
-        private readonly List<DependencyNode> rootNodes = new List<DependencyNode>();
         private static readonly List<DependencyEdge> EmptyEdges = new List<DependencyEdge>();
 
+        private readonly GraphViewIndex graphIndex = new GraphViewIndex();
         private DependencyGraph graph;
         private Vector2 currentCanvasSize = Vector2.one;
         private Vector2 pan = new Vector2(24f, 24f);
         private Vector2 lastMousePosition;
         private bool isPanning;
-        private float zoom = 1f;
+        private float zoom = DefaultZoom;
         private float minZoom = 0.1f;
         private float maxZoom = 2f;
-        private float zoomStep = 0.05f;
+        private float zoomStep = 0.004f;
         private int initialDepth = 2;
         private string focusedNodeId;
         private string focusedViewId;
+        private string editorSelectionNodeId;
         private string searchQuery = string.Empty;
-        private bool searchFilterEnabled;
         private int currentSearchResultIndex = -1;
         private IVisualElementScheduledItem activeAnimation;
 
@@ -121,6 +117,12 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         public event Action<DependencyNode> NodeSelected;
 
+        internal string EditorSelectionNodeId => editorSelectionNodeId ?? string.Empty;
+        internal IReadOnlyList<DependencyNode> HierarchyRootNodes => graphIndex.RootNodes;
+        internal int ExpansionDepth => initialDepth;
+        internal float Zoom => zoom;
+        internal float ZoomStep => zoomStep;
+
         public void ConfigureZoom(float minimum, float maximum, float step)
         {
             minZoom = Mathf.Clamp(minimum, 0.05f, 1f);
@@ -130,12 +132,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             ApplyTransform();
         }
 
-        public SearchResultState SetSearch(string query, bool filterEnabled, bool focusCurrent)
+        public SearchResultState SetSearch(string query, bool focusCurrent)
         {
             var previousCurrentNodeId = GetCurrentSearchNodeId();
             searchQuery = query ?? string.Empty;
-            searchFilterEnabled = filterEnabled;
-            forcedVisibleNodeIds.Clear();
             RebuildSearchIndex(previousCurrentNodeId);
             Render();
 
@@ -193,10 +193,42 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
 
             graph = graphData;
-            RebuildGraphCaches();
-            initialDepth = Mathf.Clamp(depth, 1, 4);
+            graphIndex.Rebuild(graph);
+            missingReferenceSubtreeCache.Clear();
+            issueSubtreeCache.Clear();
+            if (!string.IsNullOrEmpty(editorSelectionNodeId)
+                && (graph == null || !graph.TryGetNode(editorSelectionNodeId, out _)))
+            {
+                editorSelectionNodeId = null;
+            }
+
+            initialDepth = ClampExpansionDepth(depth);
             RebuildSearchIndex(GetCurrentSearchNodeId());
             Render();
+        }
+
+        internal void SetExpansionDepth(int depth)
+        {
+            var nextDepth = ClampExpansionDepth(depth);
+            if (initialDepth == nextDepth)
+            {
+                return;
+            }
+
+            initialDepth = nextDepth;
+            expandedNodeIds.Clear();
+            collapsedNodeIds.Clear();
+            expandedViewIds.Clear();
+            collapsedViewIds.Clear();
+            if (graph != null)
+            {
+                Render();
+            }
+        }
+
+        internal static int ClampExpansionDepth(int depth)
+        {
+            return Mathf.Clamp(depth, MinExpansionDepth, AllExpansionDepthValue);
         }
 
         public void ExpandNode(string nodeId)
@@ -235,15 +267,40 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         {
             if (instanceId == 0 || graph == null)
             {
+                ClearEditorSelectionHighlight();
                 return false;
             }
 
-            if (!nodeByInstanceId.TryGetValue(instanceId, out var node))
+            if (!graphIndex.TryGetNodeByInstanceId(instanceId, out var node))
+            {
+                ClearEditorSelectionHighlight();
+                return false;
+            }
+
+            editorSelectionNodeId = node.Id;
+            ExpandAncestors(node.Id);
+            Render();
+
+            if (!TryGetVisibleNodeRect(node.Id, out var targetRect))
             {
                 return false;
             }
 
-            return FocusNode(node.Id, true);
+            CenterViewOnIfNeeded(targetRect);
+            return true;
+        }
+
+        internal void ClearEditorSelectionHighlight()
+        {
+            editorSelectionNodeId = null;
+            foreach (var view in nodeViews.Values)
+            {
+                var rings = view.Query<VisualElement>(className: EditorSelectionHighlightClass).ToList();
+                for (var i = 0; i < rings.Count; i++)
+                {
+                    rings[i].RemoveFromHierarchy();
+                }
+            }
         }
 
         public bool FocusNode(string nodeId, bool centerView)
@@ -255,7 +312,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             focusedNodeId = nodeId;
             focusedViewId = null;
-            AddForcedVisiblePath(nodeId);
             ExpandAncestors(nodeId);
             Render();
 
@@ -265,19 +321,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return true;
             }
 
-            var targetRect = Rect.zero;
-            if (renderNodesByNodeId.TryGetValue(nodeId, out var visibleNodes))
-            {
-                for (var i = 0; i < visibleNodes.Count; i++)
-                {
-                    if (nodeRects.TryGetValue(visibleNodes[i].ViewId, out targetRect))
-                    {
-                        break;
-                    }
-                }
-            }
-
-            if (targetRect.width <= 0f || targetRect.height <= 0f)
+            if (!TryGetVisibleNodeRect(nodeId, out var targetRect))
             {
                 return false;
             }
@@ -285,6 +329,24 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             var movedView = CenterViewOnIfNeeded(targetRect);
             FlashFocusedNode(movedView);
             return true;
+        }
+
+        private bool TryGetVisibleNodeRect(string nodeId, out Rect targetRect)
+        {
+            targetRect = Rect.zero;
+            if (!string.IsNullOrEmpty(nodeId)
+                && renderNodesByNodeId.TryGetValue(nodeId, out var visibleNodes))
+            {
+                for (var i = 0; i < visibleNodes.Count; i++)
+                {
+                    if (nodeRects.TryGetValue(visibleNodes[i].ViewId, out targetRect))
+                    {
+                        return targetRect.width > 0f && targetRect.height > 0f;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public struct SearchResultState

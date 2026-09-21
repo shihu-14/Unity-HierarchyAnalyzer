@@ -3,9 +3,10 @@
         <ui:VisualElement name="dependency-toolbar" class="dependency-toolbar">
             <ui:Button name="load-button" text="Load" />
             <ui:Label name="load-progress-label" text="" class="dependency-load-progress-label" />
-            <ui:VisualElement name="zoom-step-control" class="dependency-zoom-step-control">
-                <ui:Label name="zoom-scale-label" text="Zoom Scale" class="dependency-zoom-scale-label" />
-                <ui:Slider name="zoom-step-slider" low-value="0.001" high-value="0.03" value="0.004" />
+            <ui:VisualElement name="depth-control" class="dependency-depth-control">
+                <ui:Label name="depth-label" text="Depth" class="dependency-depth-label" />
+                <ui:SliderInt name="depth-slider" low-value="0" high-value="6" value="2" page-size="1" show-input-field="false" />
+                <ui:Label name="depth-value-label" text="2" class="dependency-depth-value" />
             </ui:VisualElement>
             <ui:VisualElement name="search-control" class="dependency-search-control">
                 <ui:VisualElement name="search-field-wrap" class="dependency-search-field-wrap">
@@ -22,10 +23,10 @@
         <ui:VisualElement name="issue-panel" class="dependency-issue-panel">
             <ui:VisualElement name="issue-resize-handle" class="dependency-issue-resize-handle" />
             <ui:VisualElement name="issue-panel-header" class="dependency-issue-header">
-                <ui:Label name="issue-title-label" text="Issues | Console E: 0 W: 0 | Analyzer E: 0 W: 0" class="dependency-issue-title" />
-                <ui:VisualElement name="issue-filter-controls" class="dependency-issue-filter-controls">
-                    <ui:Button name="issue-warning-filter-button" text="" class="dependency-issue-filter-button" />
-                    <ui:Button name="issue-error-filter-button" text="" class="dependency-issue-filter-button" />
+                <ui:Label name="issue-title-label" text="Issues" class="dependency-issue-title" />
+                <ui:VisualElement name="issue-warning-status" class="dependency-issue-warning-status">
+                    <ui:Image name="issue-warning-icon" class="dependency-issue-warning-icon" />
+                    <ui:Label name="issue-warning-count-label" text="0" class="dependency-issue-warning-count" />
                 </ui:VisualElement>
                 <ui:Button name="issue-toggle-button" text="" />
             </ui:VisualElement>

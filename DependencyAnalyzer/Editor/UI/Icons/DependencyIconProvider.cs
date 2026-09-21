@@ -9,7 +9,6 @@ namespace DependencyAnalyzer.Editor.UI.Icons
     {
         private const string WarningIssueIconPath = "Assets/DependencyAnalyzer/Editor/UI/Icons/issue-warning.png";
         private const string ErrorIssueIconPath = "Assets/DependencyAnalyzer/Editor/UI/Icons/issue-error.png";
-
         private static Texture warningIssueIcon;
         private static Texture errorIssueIcon;
 

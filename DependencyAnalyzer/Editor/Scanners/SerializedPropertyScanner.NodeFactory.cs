@@ -134,7 +134,7 @@ namespace DependencyAnalyzer.Editor.Scanners
         {
             if (string.IsNullOrEmpty(serializedPropertyType))
             {
-                return "Missing Reference";
+                return "Unknown Reference";
             }
 
             const string pointerPrefix = "PPtr<";
@@ -157,7 +157,7 @@ namespace DependencyAnalyzer.Editor.Scanners
         {
             if (string.IsNullOrEmpty(typeName))
             {
-                return "Missing Reference";
+                return "Unknown Reference";
             }
 
             var lastDot = typeName.LastIndexOf('.');
@@ -166,22 +166,39 @@ namespace DependencyAnalyzer.Editor.Scanners
                 typeName = typeName.Substring(lastDot + 1);
             }
 
-            if (typeName == "MonoScript" || typeName == "MonoBehaviour" || typeName.EndsWith("Script", StringComparison.Ordinal))
+            if (string.Equals(typeName, "MonoScript", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(typeName, "MonoBehaviour", StringComparison.OrdinalIgnoreCase)
+                || typeName.EndsWith("Script", StringComparison.OrdinalIgnoreCase))
             {
                 return "Script";
             }
 
-            if (typeName == "GameObject")
+            if (string.Equals(typeName, "GameObject", StringComparison.OrdinalIgnoreCase))
             {
-                return "Object";
+                return "GameObject";
             }
 
-            if (typeName == "Texture2D" || typeName == "Texture3D" || typeName == "Cubemap")
+            if (string.Equals(typeName, "Object", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Object Reference";
+            }
+
+            if (string.Equals(typeName, "Missing", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(typeName, "Missing Reference", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(typeName, "Unknown", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Unknown Reference";
+            }
+
+            if (string.Equals(typeName, "Texture2D", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(typeName, "Texture3D", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(typeName, "Cubemap", StringComparison.OrdinalIgnoreCase))
             {
                 return "Texture";
             }
 
-            if (typeName == "RuntimeAnimatorController" || typeName == "AnimatorController")
+            if (string.Equals(typeName, "RuntimeAnimatorController", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(typeName, "AnimatorController", StringComparison.OrdinalIgnoreCase))
             {
                 return "Animator";
             }
@@ -195,10 +212,12 @@ namespace DependencyAnalyzer.Editor.Scanners
             {
                 case "Script":
                     return "UnityEngine.MonoBehaviour";
-                case "Object":
+                case "GameObject":
                     return "UnityEngine.GameObject";
-                case "Missing Reference":
-                    return "Missing Reference";
+                case "Object Reference":
+                    return "UnityEngine.Object";
+                case "Unknown Reference":
+                    return "Unknown Reference";
                 default:
                     return "UnityEngine." + typeName;
             }
@@ -210,7 +229,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             {
                 case "Script":
                     return "cs Script Icon";
-                case "Object":
+                case "GameObject":
                     return "GameObject Icon";
                 case "Material":
                     return "Material Icon";
@@ -238,13 +257,15 @@ namespace DependencyAnalyzer.Editor.Scanners
             switch (typeName)
             {
                 case "Script":
+                case "Component":
                     return DependencyNodeKind.Component;
-                case "Object":
+                case "GameObject":
                 case "Camera":
                 case "Canvas":
                 case "Light":
                     return DependencyNodeKind.SceneObject;
-                case "Missing Reference":
+                case "Object Reference":
+                case "Unknown Reference":
                     return DependencyNodeKind.MissingReference;
                 default:
                     return DependencyNodeKind.Asset;

@@ -113,11 +113,6 @@ namespace DependencyAnalyzer.Editor.Scanners
 
             if (reference.State == SerializedObjectReferenceState.Unreadable)
             {
-                graph.AddIssue(new DependencyScanIssue(
-                    ScannerName,
-                    sourceNode.Path,
-                    "Failed to read " + memberName + ": " + reference.ErrorMessage,
-                    DependencyScanIssueSeverity.Warning));
                 return;
             }
 
@@ -156,7 +151,7 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
 
             var missingReferenceType = GetMissingReferenceTypeName(reference.SerializedTypeName);
-            var missingNode = DiagnosticNodeFactory.CreateMissingNode(
+            var missingNode = MissingReferenceNodeFactory.CreateMissingNode(
                 "missing:property:" + sourceNode.Id + ":" + memberName + ":" + reference.MissingInstanceId,
                 sourceNode.Path,
                 memberName,

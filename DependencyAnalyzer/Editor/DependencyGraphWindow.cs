@@ -71,11 +71,21 @@ namespace DependencyAnalyzer.Editor
             var loadButton = new Button { name = "load-button", text = "Load" };
             var loadProgressLabel = new Label { name = "load-progress-label" };
             loadProgressLabel.AddToClassList("dependency-load-progress-label");
-            var zoomStepControl = new VisualElement { name = "zoom-step-control" };
-            zoomStepControl.AddToClassList("dependency-zoom-step-control");
-            var zoomScaleLabel = new Label("Zoom Scale") { name = "zoom-scale-label" };
-            zoomScaleLabel.AddToClassList("dependency-zoom-scale-label");
-            var zoomStepSlider = new Slider { name = "zoom-step-slider", lowValue = 0.001f, highValue = 0.03f, value = 0.004f };
+            var depthControl = new VisualElement { name = "depth-control" };
+            depthControl.AddToClassList("dependency-depth-control");
+            var depthLabel = new Label("Depth") { name = "depth-label" };
+            depthLabel.AddToClassList("dependency-depth-label");
+            var depthSlider = new SliderInt
+            {
+                name = "depth-slider",
+                lowValue = DependencyGraphView.MinExpansionDepth,
+                highValue = DependencyGraphView.AllExpansionDepthValue,
+                value = 2,
+                pageSize = 1f,
+                showInputField = false
+            };
+            var depthValueLabel = new Label("2") { name = "depth-value-label" };
+            depthValueLabel.AddToClassList("dependency-depth-value");
             var searchControl = new VisualElement { name = "search-control" };
             searchControl.AddToClassList("dependency-search-control");
             var searchFieldWrap = new VisualElement { name = "search-field-wrap" };
@@ -92,8 +102,9 @@ namespace DependencyAnalyzer.Editor
             var searchDivider = new VisualElement { name = "search-divider" };
             searchDivider.AddToClassList("dependency-search-divider");
 
-            zoomStepControl.Add(zoomScaleLabel);
-            zoomStepControl.Add(zoomStepSlider);
+            depthControl.Add(depthLabel);
+            depthControl.Add(depthSlider);
+            depthControl.Add(depthValueLabel);
             searchFieldWrap.Add(searchField);
             searchFieldWrap.Add(searchSuggestionList);
             searchControl.Add(searchFieldWrap);
@@ -103,7 +114,7 @@ namespace DependencyAnalyzer.Editor
             searchControl.Add(searchNextButton);
             toolbar.Add(loadButton);
             toolbar.Add(loadProgressLabel);
-            toolbar.Add(zoomStepControl);
+            toolbar.Add(depthControl);
             toolbar.Add(searchControl);
             root.Add(toolbar);
 
@@ -117,21 +128,21 @@ namespace DependencyAnalyzer.Editor
             issueResizeHandle.AddToClassList("dependency-issue-resize-handle");
             var issueHeader = new VisualElement { name = "issue-panel-header" };
             issueHeader.AddToClassList("dependency-issue-header");
-            var issueTitleLabel = new Label("Issues | Console E: 0 W: 0 | Analyzer E: 0 W: 0") { name = "issue-title-label" };
+            var issueTitleLabel = new Label("Issues") { name = "issue-title-label" };
             issueTitleLabel.AddToClassList("dependency-issue-title");
-            var issueFilterControls = new VisualElement { name = "issue-filter-controls" };
-            issueFilterControls.AddToClassList("dependency-issue-filter-controls");
-            var issueWarningFilterButton = new Button { name = "issue-warning-filter-button" };
-            issueWarningFilterButton.AddToClassList("dependency-issue-filter-button");
-            var issueErrorFilterButton = new Button { name = "issue-error-filter-button" };
-            issueErrorFilterButton.AddToClassList("dependency-issue-filter-button");
+            var issueWarningStatus = new VisualElement { name = "issue-warning-status" };
+            issueWarningStatus.AddToClassList("dependency-issue-warning-status");
+            var issueWarningIcon = new Image { name = "issue-warning-icon" };
+            issueWarningIcon.AddToClassList("dependency-issue-warning-icon");
+            var issueWarningCountLabel = new Label("0") { name = "issue-warning-count-label" };
+            issueWarningCountLabel.AddToClassList("dependency-issue-warning-count");
             var issueToggleButton = new Button { name = "issue-toggle-button" };
             var issueList = new ScrollView { name = "issue-list" };
             issueList.AddToClassList("dependency-issue-list");
-            issueFilterControls.Add(issueWarningFilterButton);
-            issueFilterControls.Add(issueErrorFilterButton);
+            issueWarningStatus.Add(issueWarningIcon);
+            issueWarningStatus.Add(issueWarningCountLabel);
             issueHeader.Add(issueTitleLabel);
-            issueHeader.Add(issueFilterControls);
+            issueHeader.Add(issueWarningStatus);
             issueHeader.Add(issueToggleButton);
             issuePanel.Add(issueResizeHandle);
             issuePanel.Add(issueHeader);

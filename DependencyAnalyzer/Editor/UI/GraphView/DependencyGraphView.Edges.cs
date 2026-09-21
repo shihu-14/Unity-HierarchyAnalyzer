@@ -78,55 +78,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 sourceRect.height);
         }
 
-        private List<DependencyEdge> GetTreeOutgoingEdges(string nodeId)
-        {
-            return !string.IsNullOrEmpty(nodeId) && treeOutgoingEdgesByNodeId.TryGetValue(nodeId, out var edges)
-                ? edges
-                : EmptyEdges;
-        }
-
-        private List<DependencyEdge> GetRegularTreeOutgoingEdges(string nodeId)
-        {
-            return !string.IsNullOrEmpty(nodeId) && regularTreeOutgoingEdgesByNodeId.TryGetValue(nodeId, out var edges)
-                ? edges
-                : EmptyEdges;
-        }
-
-        private List<DependencyEdge> GetMenuTreeOutgoingEdges(string nodeId)
-        {
-            return !string.IsNullOrEmpty(nodeId) && menuTreeOutgoingEdgesByNodeId.TryGetValue(nodeId, out var edges)
-                ? edges
-                : EmptyEdges;
-        }
-
-        private List<DependencyEdge> GetOutgoingEdges(string nodeId)
-        {
-            return !string.IsNullOrEmpty(nodeId) && outgoingEdgesByNodeId.TryGetValue(nodeId, out var edges)
-                ? edges
-                : EmptyEdges;
-        }
-
-        private List<DependencyEdge> GetIncomingEdges(string nodeId)
-        {
-            return !string.IsNullOrEmpty(nodeId) && incomingEdgesByNodeId.TryGetValue(nodeId, out var edges)
-                ? edges
-                : EmptyEdges;
-        }
-
-        private string GetNodeSortName(string nodeId)
-        {
-            return graph != null && graph.TryGetNode(nodeId, out var node)
-                ? node.DisplayName
-                : string.Empty;
-        }
-
-        private string GetNodeSortType(string nodeId)
-        {
-            return graph != null && graph.TryGetNode(nodeId, out var node)
-                ? node.TypeName
-                : string.Empty;
-        }
-
         private bool TryFocusEdgeAt(Vector2 viewportPosition)
         {
             if (edgeRoutes.Count == 0)
@@ -234,23 +185,5 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 + t * t * t * points.End;
         }
 
-        private static int GetEdgeSortPriority(DependencyReferenceKind kind)
-        {
-            switch (kind)
-            {
-                case DependencyReferenceKind.Hierarchy:
-                    return 0;
-                case DependencyReferenceKind.Component:
-                    return 1;
-                case DependencyReferenceKind.SerializedProperty:
-                    return 2;
-                case DependencyReferenceKind.Issue:
-                    return 3;
-                case DependencyReferenceKind.PrefabInstance:
-                    return 4;
-                default:
-                    return 5;
-            }
-        }
     }
 }

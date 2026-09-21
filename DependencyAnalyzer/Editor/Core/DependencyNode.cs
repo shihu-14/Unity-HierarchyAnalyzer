@@ -4,6 +4,13 @@ using UnityEditor;
 
 namespace DependencyAnalyzer.Editor.Core
 {
+    internal enum MissingTargetKind
+    {
+        None,
+        MissingScript,
+        BrokenReference
+    }
+
     public enum DependencyNodeKind
     {
         Asset,
@@ -59,6 +66,9 @@ namespace DependencyAnalyzer.Editor.Core
         public DependencyScanIssueSeverity? IssueSeverity { get; }
         public string IssueMessage { get; }
         public bool HasMissingReferences { get; private set; }
+        internal MissingTargetKind MissingTargetState { get; private set; }
+        internal bool IsMissingTarget => MissingTargetState != MissingTargetKind.None
+            || Kind == DependencyNodeKind.MissingReference;
         public int DependencyCount { get; private set; }
         public int UsedByCount { get; private set; }
         public bool HasIssue => IssueSeverity.HasValue;
@@ -83,6 +93,17 @@ namespace DependencyAnalyzer.Editor.Core
         public void MarkMissingReferences()
         {
             HasMissingReferences = true;
+        }
+
+        internal void MarkAsMissingTarget(MissingTargetKind missingTargetKind)
+        {
+            if (missingTargetKind == MissingTargetKind.None)
+            {
+                return;
+            }
+
+            MissingTargetState = missingTargetKind;
+            MarkMissingReferences();
         }
 
         public void SetReferenceCounts(int dependencyCount, int usedByCount)

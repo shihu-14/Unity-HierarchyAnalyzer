@@ -23,6 +23,6 @@
 
 ## Cache Rules
 
-- Recompute propagation after expand, collapse, filter, search visibility, or full rescan.
+- Recompute propagation after expand, collapse, depth changes, focus-driven expansion, or full rescan.
 - Keep direct issue data immutable during propagation.
 - Store propagated display as derived state.

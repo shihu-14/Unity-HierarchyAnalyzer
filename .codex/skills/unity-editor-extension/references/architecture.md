@@ -29,8 +29,10 @@
 
 ## Dependency Direction
 
-- UI can depend on Controller and Core.
-- Controller can depend on Core and Scanners.
+- The EditorWindow constructs the Controller and GraphView.
+- Controller depends on Core, Scanners, Settings, and UI.
+- UI depends on Core and Unity Editor/UI Toolkit APIs, not Controller. Views emit user intent through events; the Controller coordinates the response.
+- GraphViewIndex derives traversal data from the collected graph without collecting Unity state.
 - Scanners can depend on Core and UnityEditor APIs.
 - Core should not depend on Controller, UI, or Scanners.
 

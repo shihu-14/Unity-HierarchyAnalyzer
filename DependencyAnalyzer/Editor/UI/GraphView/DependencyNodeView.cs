@@ -87,9 +87,15 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             style.position = Position.Absolute;
             style.width = nodeWidth;
             style.height = nodeHeight;
+            style.opacity = TargetOpacity;
 
             AddToClassList("dependency-node");
             AddToClassList(DependencyNodeStyleResolver.GetNodeTypeClass(data));
+            if (data.IsMissingTarget)
+            {
+                AddToClassList(DependencyNodeStyleResolver.MissingTargetClass);
+            }
+
             AddToClassList(GetImpactClass(data));
             if (HasHiddenChildren)
             {
@@ -107,6 +113,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         public string ViewId { get; }
         public DependencyNode Data { get; }
         public bool HasHiddenChildren { get; }
+        internal float TargetOpacity => DependencyNodeStyleResolver.GetNodeOpacity(Data);
         public float HiddenStackOffset => HasHiddenChildren ? GetHiddenStackOffset(nodeScale) : 0f;
         public bool IsExpanded => isExpanded;
         public event Action<DependencyNode> NodeSelected;
@@ -269,9 +276,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private bool ShouldShowIssueMarker()
         {
-            return Data.HasIssue
-                || Data.HasMissingReferences
-                || Data.Kind == DependencyNodeKind.MissingReference;
+            return !Data.IsMissingTarget
+                && (Data.HasIssue || Data.HasMissingReferences);
         }
 
         private string BuildIssueMarkerTooltip(DependencyScanIssueSeverity severity)

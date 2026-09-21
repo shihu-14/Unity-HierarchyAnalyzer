@@ -56,7 +56,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 if (!isNewNode && (startRect.position - finalRect.position).sqrMagnitude <= 0.5f)
                 {
                     nodeView.SetGraphPosition(finalRect.position);
-                    nodeView.style.opacity = 1f;
+                    nodeView.style.opacity = nodeView.TargetOpacity;
                     nodeRects[pair.Key] = finalRect;
                     continue;
                 }
@@ -85,7 +85,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     animation.View.SetGraphPosition(position);
                     if (animation.FadeIn)
                     {
-                        animation.View.style.opacity = eased;
+                        animation.View.style.opacity = eased * animation.View.TargetOpacity;
                     }
 
                     if (finalRects.TryGetValue(animation.ViewId, out var finalRect))
@@ -100,7 +100,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     var position = Vector2.Lerp(animation.StartRect.position, animation.EndPosition, eased);
                     animation.View.style.left = position.x;
                     animation.View.style.top = position.y;
-                    animation.View.style.opacity = 1f - eased;
+                    animation.View.style.opacity = animation.StartOpacity * (1f - eased);
                 }
 
                 RefreshEdges();
@@ -115,7 +115,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 {
                     var animation = nodeAnimations[i];
                     animation.View.SetGraphPosition(animation.EndPosition);
-                    animation.View.style.opacity = 1f;
+                    animation.View.style.opacity = animation.View.TargetOpacity;
                     if (finalRects.TryGetValue(animation.ViewId, out var finalRect))
                     {
                         nodeRects[animation.ViewId] = finalRect;
@@ -173,13 +173,20 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 var ghost = new VisualElement();
                 ghost.AddToClassList("dependency-node-ghost");
                 ghost.AddToClassList(DependencyNodeStyleResolver.GetNodeTypeClass(snapshot.Node));
+                if (snapshot.Node.IsMissingTarget)
+                {
+                    ghost.AddToClassList(DependencyNodeStyleResolver.MissingTargetClass);
+                }
+
+                var startOpacity = DependencyNodeStyleResolver.GetNodeOpacity(snapshot.Node);
                 ghost.style.position = Position.Absolute;
                 ghost.style.left = pair.Value.x;
                 ghost.style.top = pair.Value.y;
                 ghost.style.width = pair.Value.width;
                 ghost.style.height = pair.Value.height;
+                ghost.style.opacity = startOpacity;
                 animationLayer.Add(ghost);
-                ghosts.Add(new GhostAnimation(ghost, pair.Value, endPosition));
+                ghosts.Add(new GhostAnimation(ghost, pair.Value, endPosition, startOpacity));
             }
 
             return ghosts;

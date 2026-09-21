@@ -1,8 +1,6 @@
 # Unity Dependency Analyzer
 
-Unity 6向けのEditor専用依存関係ビューアーです。現在ロードされているSceneを起点に、GameObject、Component、Inspector上のObject参照、Prefab Instanceとsource Prefabの関係をグラフ表示します。
-
-現在の開発バージョンは`0.1.0-dev`です。変更内容は[CHANGELOG.md](CHANGELOG.md)を参照してください。
+Unity 6向けのEditor専用依存関係ビューアーです。projectを実行せずに、現在ロードされているSceneのHierarchy、Component、Serialized Reference構造と、実行前に客観的に確認できる壊れた参照をグラフ表示します。
 
 ## Supported Analysis
 
@@ -19,18 +17,14 @@ Unity 6向けのEditor専用依存関係ビューアーです。現在ロード�
 - Assetとsub-asset
   - GUIDとlocal file IDに基づき、同一path内の別sub-assetを別nodeとして識別
 - Broken data
-  - Missing Script
-  - Missing Object Reference（Material、Meshなど）
+  - Missing Component Scriptとbroken serialized referenceを、Script、Material、Texture、Mesh、AudioClip、GameObjectなどの参照先Object type別に分類
+  - declared typeが`UnityEngine.Object`の場合は`Object Reference`、型情報を取得できない場合は`Unknown Reference`として区別
   - 未設定の`None`はMissingとして扱わない
-  - Component/property/追加scanner単位の失敗をIssue化し、取得済みの部分graphを保持して続行
-- 現在のUnity Consoleに表示されるwarning/errorとの連携
-  - ConsoleをClearして再解析すると、Consoleから消えたlogはIssues panelにも残らない
-  - context objectやAsset pathから特定できるlogはgraph nodeへ関連付ける
-  - nodeを特定できないlogも、クリック不能な`No related node`行としてIssues panelへ保持
-  - `Editor.log`は解析対象にしない
-  - Issues headerでConsole由来とAnalyzer独自のerror/warning件数を分けて表示
+  - Component/property/追加scanner単位の失敗では取得済みの部分graphを保持して続行
 
-このツールが判定するのはserialized referenceとして確認できる一般的な事実です。「このAudioSourceにはAudioClipが必要」など、プロジェクト固有の用途や正しさは診断しません。
+ユーザー向けIssues panelに表示するのは、Missing Component Scriptとbroken serialized referenceから確認できるMissing occurrenceだけで、参照先Object type別のWarningとして扱います。Runtime Exception、compiler/runtime Console log、`Debug.LogError`、`Debug.LogWarning`はUnity Console側の責務であり、このツールへ取り込みません。property/component/scanner単位の解析失敗はdeveloper diagnosticとしてgraph内部に保持し、Issues panelや通常のUnity Console Warning/Errorへ自動出力しません。ただしscan処理全体が未処理例外で失敗した場合は、調査可能にするためUnity Consoleへexceptionを出力します。
+
+このツールが判定するのはserialized referenceとして確認できる一般的な事実です。「このAudioSourceにはAudioClipが必要」や、`None`のfieldがrequiredかoptionalかなど、プロジェクト固有の用途や正しさは診断しません。
 
 ## Graph UI
 
@@ -41,8 +35,11 @@ Unity 6向けのEditor専用依存関係ビューアーです。現在ロード�
 - 左クリックまたは中クリックのdragでpan、wheelでzoom
 - minimap、parent jump、edge click、node highlight
 - `Command + F` / `Ctrl + F`、Enter / Shift + Enter、arrow buttonによる検索移動
-- node name、path、type、asset label、node kind、Missing状態を検索
-- 下部`Issues` panelにMissing Referenceとscanner issueを表示
+- node名を、大文字小文字を区別しない連続部分文字列で検索
+- toolbarの`Depth`でregular graph treeの初期展開を0〜5または`All`へ即時変更（0はrootのみ）
+- Missing targetはObject typeの通常色とiconを保ったままopacity 45%で表示
+- Warning markerはMissing target自身ではなく直接の参照元に表示し、参照元が収納されている場合は最も近い可視親nodeへ伝播
+- 下部`Issues` panelにMissing occurrenceを参照先Object type別にまとめ、source object名と発生場所のフルパスを表示
 - node tooltipにはDependencies / Used Byを表示し、Asset Labelsはlabelを持つAssetだけに表示
 
 toolbarの操作は次のとおりです。
@@ -50,7 +47,6 @@ toolbarの操作は次のとおりです。
 - 初回は`Load`、完了後は`Reload`で再解析
 - 実行中は進捗を表示し、buttonを無効化
 - 公開されたCancel buttonはありません
-- 検索結果だけへ絞る`Filter`処理は内部にありますが、現在のUIにはtoggleを提供していません
 
 Hierarchy変更時は、開いているwindowの解析を自動更新します。
 
@@ -109,10 +105,8 @@ DependencyAnalyzer/
 │   ├── DependencyGraphWindow.cs
 │   ├── UnityTempDirectoryGuard.cs
 │   ├── Controller/
-│   │   └── Issues/
 │   ├── Core/
 │   ├── Scanners/
-│   │   └── Issues/
 │   ├── Settings/
 │   ├── Tests/
 │   │   ├── Controller/
@@ -130,12 +124,16 @@ DependencyAnalyzer/
     └── Runtime/
 ```
 
-- `Core`: dependency graph/node/edge/issueとnode cache
-- `Scanners`: Scene、serialized reference、Asset、Console issueの収集とnode生成
-- `Controller`: scan orchestration、状態、検索、selection sync、Issues panel
-- `UI`: UI Toolkitによるgraph/node/edge/toolbar/panel
+- `Core`: dependency graph/node/edge、Analyzer diagnosticとnode cache
+- `Scanners`: Scene、serialized reference、Assetの収集とnode生成
+- `Controller`: scan lifecycle、再解析要求の集約、selection sync、検索・Issue操作の調整
+- `UI/Controls`: `GraphToolbarView`と`GraphSearchView`による表示・入力・イベント管理
+- `UI/Issues`: Issueの表示model生成、`IssuePanelView`による展開・開閉・高さ変更
+- `UI/GraphView`: graph描画・操作と、`GraphViewIndex`による隣接辺・root・最小深さの索引
 - `Editor/Tests`: production責務別のEdit Mode Testと壊れたPrefab Fixture
 - `Tests/Runtime`: GameObjectへattachするテスト専用Component assembly
+
+WindowがControllerとGraphViewを構築し、Controllerが各Viewの操作イベントを処理します。UIはControllerへ依存せず、索引は収集済みgraphだけから作ります。
 
 production codeは`DependencyAnalyzer.Editor.asmdef`に分離され、Runtime buildには含まれません。`DependencyAnalyzer.TestFixtures`はUnity Test FrameworkのTest Assemblyとしてのみ利用します。
 
@@ -149,11 +147,14 @@ Edit Mode Testは、次の一般的な依存関係事実を検証します。
 - inactive GameObject、disabled Component、additive Scene
 - Prefab source、override、nested Prefab
 - main asset path内のsub-asset identity
-- Missing Script、Missing Object、Missing Material
+- Missing Component Script、Missing Object Reference、Missing Material
 - component/scanner失敗後の継続と部分結果保持
-- Missing nodeのIssues panel登録
-- 現在のUnity Console snapshot、Console Clear後の再解析、node未特定log、重複log
+- Missing Component Scriptとserialized Script MissingのScript group統合、Object type別group、location navigation
+- Missing targetのtype色、通常Object icon、半透明state、直接参照元と可視親へのWarning marker
+- Analyzer diagnosticとUnity Console logがユーザー向けIssue件数へ混入しないこと
 - node tooltipのAsset Labels表示条件、reference count維持、count badge非表示
+- toolbar・検索・Issueパネルの表示更新と破棄時のイベント解除
+- graph索引の重複参照、循環、最小深さ、再構築時の旧データ除去
 
 通常fixtureはtest中に生成して削除します。コードだけで安定再現しにくいMissing状態は、`Editor/Tests/Fixtures`の小さなPrefab YAMLと固定`.meta`で保持します。
 
@@ -166,13 +167,39 @@ GitHub ActionsはAssets-copy導入を再現する最小`TestProject`を作り、
 - Prefab source componentとのproperty単位の対応表は作りません。
 - Addressables、`Resources.Load`、独自文字列IDなどの非serialized参照は対象外です。
 - Package内scriptなど、表示policyから外れるComponentはnodeを省略する場合があります。serialized参照自体は所有GameObjectをsourceとして解析します。
-- Console連携はUnity内部APIをreflectionで読み取ります。内部API取得に失敗した場合は、原因を`Unity Console Reader` Issueとして表示します。
-- Console件数は現在のConsole snapshotに含まれるwarning/error行数です。Collapseが有効な場合は1表示行を1件とし、発生回数は`Occurrences`として詳細へ保持します。Missing Reference、scanner issue、Console Reader failureはAnalyzer件数へ含めます。
-- 検索`Filter` toggleとscanのCancel buttonはUI未提供です。
+- Runtime Exception、compiler/runtime Console log、`Debug.LogError`、`Debug.LogWarning`はIssues panelの対象外です。
+- property/component/scanner単位の解析失敗は内部diagnosticとして保持し、Unity Consoleへ通常のWarning/Errorとして自動出力せず、Issues panelのWarning件数にも含めません。scan処理全体が未処理例外で失敗した場合だけ、調査用にUnity Consoleへexceptionを出力します。
+- 検索は結果への移動とハイライトを行い、非一致nodeを非表示にはしません。scanのCancel buttonはUI未提供です。
 - UPM package化と`package.json`追加は行っていません。配布方式はAssets folder copyです。
+
+## API Migration
+
+旧バージョンから更新する場合、次の型名変更に合わせて呼び出し側を更新してください。互換alias・wrapper・`MovedFrom`は提供しません。
+
+| Previous public type | Replacement or status |
+|---|---|
+| `DependencyGraphData` | `DependencyGraph` |
+| `DependencyNodeData` | `DependencyNode` |
+| `DependencyEdgeData` | `DependencyEdge` |
+| `DependencyScanIssueData` | `DependencyScanIssue` |
+| `DependencyCache` | `DependencyNodeCache` |
+| `DependencyWindow` | `DependencyGraphWindow` |
+| `CustomNodeView` | `DependencyNodeView` |
+| `CustomEdgeView` | `DependencyEdgeView` |
+| `AssetScanner` | Replaced by internal `AssetNodeFactory` and `MissingReferenceNodeFactory` helpers |
+| `IconUtility` | Replaced by internal icon-name, icon-loading, and node-style helpers |
+
+検索Filterは廃止しました。`DependencyGraphView.SetSearch(query, filterEnabled, focusCurrent)`は`SetSearch(query, focusCurrent)`へ置き換えてください。旧`filterEnabled: true`に相当する絞り込み機能はありません。
+
+## Contributors
+
+- [shihu-14](https://github.com/shihu-14): 開発・仕様・検証。
+- [Codex](https://github.com/codex): コード整理、テスト、文書整備の支援。
+
+Codexが関与する新しいコミットには`Co-authored-by: Codex <267193182+codex@users.noreply.github.com>`を記載します。
 
 ## Distribution Status
 
-全Unity assetの`.meta`、最小Test Project、Edit Mode CI、CHANGELOGはrepositoryに含まれます。
+全Unity assetの`.meta`、最小Test Project、Edit Mode CIはrepositoryに含まれます。導入・仕様・移行情報はこのREADMEに集約しています。
 
 ScreenshotとLicense本文は未提供です。License本文が追加・承認されるまで、release/tag作成やAsset Store提出を行わないでください。

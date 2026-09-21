@@ -5,15 +5,47 @@ namespace DependencyAnalyzer.Editor.UI.Controls
 {
     internal sealed class ChevronIcon : VisualElement
     {
+        internal const float IssuePanelVerticalScale = 0.59f;
+
         private readonly bool pointsUp;
         private readonly float verticalScale;
+        private readonly Color strokeColor;
 
         public ChevronIcon(bool pointsUp, float verticalScale)
+            : this(pointsUp, verticalScale, new Color(0.72f, 0.72f, 0.72f, 1f))
+        {
+        }
+
+        private ChevronIcon(bool pointsUp, float verticalScale, Color strokeColor)
         {
             this.pointsUp = pointsUp;
             this.verticalScale = Mathf.Clamp(verticalScale, 0.25f, 1f);
+            this.strokeColor = strokeColor;
             pickingMode = PickingMode.Ignore;
             generateVisualContent += DrawChevron;
+        }
+
+        internal float VerticalScale => verticalScale;
+        internal Color StrokeColor => strokeColor;
+        internal static Color IssuePanelStrokeColor => new Color(0.64f, 0.64f, 0.64f, 0.90f);
+
+        internal static ChevronIcon CreateIssuePanel(bool pointsUp)
+        {
+            return new ChevronIcon(pointsUp, IssuePanelVerticalScale, IssuePanelStrokeColor);
+        }
+
+        internal static void SetIssuePanelButtonIcon(Button button, bool pointsUp)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.text = string.Empty;
+            button.Clear();
+            var icon = CreateIssuePanel(pointsUp);
+            icon.StretchToParentSize();
+            button.Add(icon);
         }
 
         private void DrawChevron(MeshGenerationContext context)
@@ -33,7 +65,7 @@ namespace DependencyAnalyzer.Editor.UI.Controls
             var right = new Vector2(centerX + halfWidth, pointsUp ? centerY + halfHeight : centerY - halfHeight);
 
             var painter = context.painter2D;
-            painter.strokeColor = new Color(0.72f, 0.72f, 0.72f, 1f);
+            painter.strokeColor = strokeColor;
             painter.lineWidth = 3f;
             painter.lineCap = LineCap.Round;
             painter.lineJoin = LineJoin.Round;

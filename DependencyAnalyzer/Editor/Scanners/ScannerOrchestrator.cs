@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Scanners.Issues;
 using DependencyAnalyzer.Editor.Settings;
 
 namespace DependencyAnalyzer.Editor.Scanners
@@ -45,9 +44,6 @@ namespace DependencyAnalyzer.Editor.Scanners
                 mergedGraph.MergeFrom(graph);
             }
 
-            mergedGraph.RecalculateReferenceCounts();
-            ConsoleIssueScanner.AddConsoleIssues(mergedGraph, cache);
-            IssueNodeLinker.AddIssueNodes(mergedGraph, cache);
             mergedGraph.RecalculateReferenceCounts();
             progress?.Report(new ScanProgress("Dependency Analyzer", "Completed", 1, 1));
             return mergedGraph;

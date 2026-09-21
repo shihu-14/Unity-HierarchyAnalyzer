@@ -23,9 +23,9 @@ namespace DependencyAnalyzer.Editor.Scanners
                 serializedObject.UpdateIfRequiredOrScript();
                 using (var property = serializedObject.GetIterator())
                 {
-                    while (MoveNextVisible(property, component))
+                    while (MoveNextSerializedProperty(property, component))
                     {
-                        if (!ComponentScanPolicy.ShouldScanInspectorObjectReference(component, property))
+                        if (!ComponentScanPolicy.ShouldScanSerializedObjectReference(component, property))
                         {
                             continue;
                         }
@@ -74,11 +74,11 @@ namespace DependencyAnalyzer.Editor.Scanners
             }
         }
 
-        private static bool MoveNextVisible(SerializedProperty property, Component component)
+        private static bool MoveNextSerializedProperty(SerializedProperty property, Component component)
         {
             try
             {
-                return property.NextVisible(true);
+                return property.Next(true);
             }
             catch (Exception exception)
             {

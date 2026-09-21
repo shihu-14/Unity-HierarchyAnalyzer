@@ -6,16 +6,14 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 {
     internal static class DependencyNodeStyleResolver
     {
+        internal const string MissingTargetClass = "dependency-node--missing-target";
+        internal const float MissingTargetOpacity = 0.45f;
+
         public static string GetNodeTypeClass(DependencyNode node)
         {
             if (node == null)
             {
                 return "dependency-node--default";
-            }
-
-            if (node.Kind == DependencyNodeKind.MissingReference)
-            {
-                return "dependency-node--missing";
             }
 
             if (node.Kind == DependencyNodeKind.Issue)
@@ -104,7 +102,94 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         public static Color GetNodeAccentColor(DependencyNode node)
         {
-            var className = GetNodeTypeClass(node);
+            return GetAccentColorForClass(GetNodeTypeClass(node));
+        }
+
+        internal static float GetNodeOpacity(DependencyNode node)
+        {
+            return node != null && node.IsMissingTarget ? MissingTargetOpacity : 1f;
+        }
+
+        internal static Color GetTypeAccentColor(string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(typeName))
+            {
+                return GetAccentColorForClass("dependency-node--default");
+            }
+
+            if (string.Equals(typeName, "Object Reference", StringComparison.OrdinalIgnoreCase))
+            {
+                return GetAccentColorForClass("dependency-node--object");
+            }
+
+            if (string.Equals(typeName, "Script", StringComparison.OrdinalIgnoreCase)
+                || typeName.IndexOf("MonoScript", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return GetAccentColorForClass("dependency-node--csharp");
+            }
+
+            if (typeName.IndexOf("Prefab", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return GetAccentColorForClass("dependency-node--prefab");
+            }
+
+            if (typeName.IndexOf("Material", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return GetAccentColorForClass("dependency-node--material");
+            }
+
+            if (typeName.IndexOf("Texture", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return GetAccentColorForClass("dependency-node--texture");
+            }
+
+            if (typeName.IndexOf("Audio", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return GetAccentColorForClass("dependency-node--audio");
+            }
+
+            if (typeName.IndexOf("Animator", StringComparison.OrdinalIgnoreCase) >= 0
+                || typeName.IndexOf("Animation", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return GetAccentColorForClass("dependency-node--animator");
+            }
+
+            if (typeName.IndexOf("Mesh", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return GetAccentColorForClass("dependency-node--mesh");
+            }
+
+            if (typeName.IndexOf("ScriptableObject", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return GetAccentColorForClass("dependency-node--scriptable-object");
+            }
+
+            if (typeName.IndexOf("Camera", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return GetAccentColorForClass("dependency-node--camera");
+            }
+
+            if (typeName.IndexOf("Canvas", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return GetAccentColorForClass("dependency-node--canvas");
+            }
+
+            if (typeName.IndexOf("Light", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return GetAccentColorForClass("dependency-node--light");
+            }
+
+            if (string.Equals(typeName, "Object", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(typeName, "GameObject", StringComparison.OrdinalIgnoreCase))
+            {
+                return GetAccentColorForClass("dependency-node--object");
+            }
+
+            return GetAccentColorForClass("dependency-node--default");
+        }
+
+        private static Color GetAccentColorForClass(string className)
+        {
             switch (className)
             {
                 case "dependency-node--prefab":
@@ -134,8 +219,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     return new Color(0.89f, 0.41f, 0.68f);
                 case "dependency-node--light":
                     return new Color(0.85f, 0.78f, 0.40f);
-                case "dependency-node--missing":
-                    return new Color(0.87f, 0.39f, 0.39f);
                 case "dependency-node--issue-error":
                     return new Color(0.93f, 0.31f, 0.31f);
                 case "dependency-node--issue-warning":

@@ -6,7 +6,7 @@ namespace DependencyAnalyzer.Editor.Scanners
 {
     internal static class ComponentScanPolicy
     {
-        internal static bool ShouldScanInspectorObjectReference(Component component, SerializedProperty property)
+        internal static bool ShouldScanSerializedObjectReference(Component component, SerializedProperty property)
         {
             if (property.propertyType != SerializedPropertyType.ObjectReference)
             {

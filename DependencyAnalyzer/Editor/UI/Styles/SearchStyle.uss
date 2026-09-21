@@ -148,12 +148,51 @@
     -unity-text-align: middle-center;
 }
 
-.dependency-search-arrow-button {
-    margin-top: 4px;
+.dependency-search-control .dependency-search-arrow-button {
+    min-width: 22px;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 3px;
     padding-left: 0;
     padding-right: 0;
     padding-top: 0;
     padding-bottom: 0;
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0);
+    border-right-color: rgba(255, 255, 255, 0);
+    border-bottom-color: rgba(255, 255, 255, 0);
+    border-left-color: rgba(255, 255, 255, 0);
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.dependency-search-control .dependency-search-arrow-button:enabled:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-top-color: rgba(255, 255, 255, 0.35);
+    border-right-color: rgba(255, 255, 255, 0.35);
+    border-bottom-color: rgba(255, 255, 255, 0.35);
+    border-left-color: rgba(255, 255, 255, 0.35);
+}
+
+.dependency-search-control .dependency-search-arrow-button:enabled:active {
+    background-color: rgba(255, 255, 255, 0.28);
+    border-top-color: rgba(255, 255, 255, 0.70);
+    border-right-color: rgba(255, 255, 255, 0.70);
+    border-bottom-color: rgba(255, 255, 255, 0.70);
+    border-left-color: rgba(255, 255, 255, 0.70);
+}
+
+#search-previous-button {
+    margin-left: 4px;
+    margin-right: 6px;
 }
 
 .dependency-search-suggestion-list {
@@ -222,7 +261,7 @@
     background-color: #b8b8b8;
 }
 
-.dependency-zoom-step-control {
+.dependency-depth-control {
     width: 196px;
     flex-direction: row;
     align-items: center;
@@ -230,14 +269,22 @@
     margin-right: 10px;
 }
 
-.dependency-zoom-scale-label {
-    width: 78px;
+.dependency-depth-label {
+    width: 42px;
     margin-right: 4px;
     color: #c7d0dc;
     font-size: 11px;
     -unity-text-align: middle-left;
 }
 
-.dependency-zoom-step-control Slider {
-    width: 108px;
+.dependency-depth-control SliderInt {
+    width: 112px;
+}
+
+.dependency-depth-value {
+    width: 34px;
+    margin-left: 4px;
+    color: #c7d0dc;
+    font-size: 11px;
+    -unity-text-align: middle-center;
 }

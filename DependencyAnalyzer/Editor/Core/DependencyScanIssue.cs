@@ -9,6 +9,10 @@ namespace DependencyAnalyzer.Editor.Core
         Error
     }
 
+    /// <summary>
+    /// Describes an Analyzer diagnostic produced when a scanner cannot fully inspect Unity data.
+    /// These diagnostics are not project issues and are not shown in the Issues panel.
+    /// </summary>
     [Serializable]
     public sealed class DependencyScanIssue
     {
