@@ -35,14 +35,14 @@ namespace DependencyAnalyzer.Editor.Tests
 
                 using (var key = KeyDownEvent.GetPooled(new Event { type = EventType.KeyDown, keyCode = KeyCode.Return, modifiers = EventModifiers.Shift }))
                 {
-                    field.SendEvent(key);
+                    SendEvent(field, key);
                 }
 
                 Assert.AreEqual(1, navigationCount);
                 Assert.IsTrue(reverse);
                 using (var key = KeyDownEvent.GetPooled(new Event { type = EventType.KeyDown, keyCode = KeyCode.F, modifiers = EventModifiers.Control }))
                 {
-                    root.SendEvent(key);
+                    SendEvent(root, key);
                 }
 
                 var focused = field.focusController.focusedElement as VisualElement;
@@ -53,7 +53,7 @@ namespace DependencyAnalyzer.Editor.Tests
                 }));
                 using (var click = MouseDownEvent.GetPooled(new Event { type = EventType.MouseDown, button = 0 }))
                 {
-                    root.Q(className: "dependency-search-suggestion-row").SendEvent(click);
+                    SendEvent(root.Q(className: "dependency-search-suggestion-row"), click);
                 }
 
                 Assert.AreEqual("audio", selectedId);
@@ -61,7 +61,7 @@ namespace DependencyAnalyzer.Editor.Tests
                 Assert.AreEqual(1, queryChanges);
                 using (var key = KeyDownEvent.GetPooled(new Event { type = EventType.KeyDown, keyCode = KeyCode.Escape }))
                 {
-                    field.SendEvent(key);
+                    SendEvent(field, key);
                 }
 
                 Assert.AreEqual(string.Empty, query);
@@ -71,7 +71,7 @@ namespace DependencyAnalyzer.Editor.Tests
                 field.value = "After disposal";
                 using (var key = KeyDownEvent.GetPooled(new Event { type = EventType.KeyDown, keyCode = KeyCode.Return }))
                 {
-                    field.SendEvent(key);
+                    SendEvent(field, key);
                 }
 
                 Assert.AreEqual(changesBeforeDispose, queryChanges);
@@ -98,20 +98,20 @@ namespace DependencyAnalyzer.Editor.Tests
                 var panel = root.Q("issue-panel");
                 using (var down = MouseDownEvent.GetPooled(new Event { type = EventType.MouseDown, button = 0, mousePosition = new Vector2(5, 200) }))
                 {
-                    handle.SendEvent(down);
+                    SendEvent(handle, down);
                 }
 
                 Assert.IsTrue(MouseCaptureController.HasMouseCapture(handle));
                 using (var move = MouseMoveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = new Vector2(5, -1000) }))
                 {
-                    handle.SendEvent(move);
+                    SendEvent(handle, move);
                 }
 
                 Assert.Greater(panel.style.height.value.value, 148f);
                 Assert.LessOrEqual(panel.style.height.value.value, 460f);
                 using (var move = MouseMoveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = new Vector2(5, 2000) }))
                 {
-                    handle.SendEvent(move);
+                    SendEvent(handle, move);
                 }
 
                 Assert.AreEqual(64f, panel.style.height.value.value);
@@ -119,7 +119,7 @@ namespace DependencyAnalyzer.Editor.Tests
                 Assert.IsFalse(MouseCaptureController.HasMouseCapture(handle));
                 using (var move = MouseMoveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = new Vector2(5, -1000) }))
                 {
-                    handle.SendEvent(move);
+                    SendEvent(handle, move);
                 }
 
                 Assert.AreEqual(64f, panel.style.height.value.value);
@@ -318,6 +318,12 @@ namespace DependencyAnalyzer.Editor.Tests
             panel.Add(new Button { name = "issue-toggle-button" });
             root.Add(panel);
             return root;
+        }
+
+        private static void SendEvent(VisualElement target, EventBase evt)
+        {
+            evt.target = target;
+            target.SendEvent(evt);
         }
 
         private static void Click(Button button)
