@@ -14,7 +14,7 @@ namespace DependencyAnalyzer.Editor.Controller
     {
         private void HandleSearchChanged(ChangeEvent<string> evt)
         {
-            UpdateSearchState(graphView.SetSearch(evt.newValue, IsSearchFilterEnabled(), true));
+            UpdateSearchState(graphView.SetSearch(evt.newValue, true));
             UpdateSearchIconVisibility();
         }
 
@@ -40,11 +40,6 @@ namespace DependencyAnalyzer.Editor.Controller
             searchField?.Focus();
             evt.PreventDefault();
             evt.StopPropagation();
-        }
-
-        private void HandleSearchFilterChanged(ChangeEvent<bool> evt)
-        {
-            UpdateSearchState(graphView.SetSearch(GetSearchQuery(), evt.newValue, true));
         }
 
         private void HandleSearchPreviousClicked()
@@ -97,11 +92,6 @@ namespace DependencyAnalyzer.Editor.Controller
         private string GetSearchQuery()
         {
             return searchField == null ? string.Empty : searchField.value;
-        }
-
-        private bool IsSearchFilterEnabled()
-        {
-            return searchFilterToggle != null && searchFilterToggle.value;
         }
 
         private static SearchIconElement EnsureSearchIcon(VisualElement searchFieldWrap)
@@ -202,7 +192,7 @@ namespace DependencyAnalyzer.Editor.Controller
             }
 
             searchField.SetValueWithoutNotify(suggestion.DisplayName);
-            UpdateSearchState(graphView.SetSearch(suggestion.DisplayName, IsSearchFilterEnabled(), false));
+            UpdateSearchState(graphView.SetSearch(suggestion.DisplayName, false));
             graphView.FocusNode(suggestion.NodeId, true);
             HideSearchSuggestions();
             searchField.Focus();

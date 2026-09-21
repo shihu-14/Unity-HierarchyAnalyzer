@@ -48,8 +48,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private readonly HashSet<string> expandedMenuNodeIds = new HashSet<string>();
         private readonly HashSet<string> manuallyMovedViewIds = new HashSet<string>();
         private readonly HashSet<string> searchMatchNodeIds = new HashSet<string>();
-        private readonly HashSet<string> searchVisibleNodeIds = new HashSet<string>();
-        private readonly HashSet<string> forcedVisibleNodeIds = new HashSet<string>();
         private readonly List<string> searchResultNodeIds = new List<string>();
         private readonly Dictionary<string, List<DependencyEdge>> outgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
         private readonly Dictionary<string, List<DependencyEdge>> incomingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
@@ -77,7 +75,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private string focusedViewId;
         private string editorSelectionNodeId;
         private string searchQuery = string.Empty;
-        private bool searchFilterEnabled;
         private int currentSearchResultIndex = -1;
         private IVisualElementScheduledItem activeAnimation;
 
@@ -142,14 +139,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             ApplyTransform();
         }
 
-        public SearchResultState SetSearch(string query, bool filterEnabled, bool focusCurrent)
+        public SearchResultState SetSearch(string query, bool focusCurrent)
         {
             var previousCurrentNodeId = GetCurrentSearchNodeId();
             searchQuery = query ?? string.Empty;
-            searchFilterEnabled = filterEnabled;
-            forcedVisibleNodeIds.Clear();
             RebuildSearchIndex(previousCurrentNodeId);
-            AddForcedVisiblePath(editorSelectionNodeId);
             Render();
 
             if (focusCurrent && searchResultNodeIds.Count > 0)
@@ -215,7 +209,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             initialDepth = ClampExpansionDepth(depth);
             RebuildSearchIndex(GetCurrentSearchNodeId());
-            AddForcedVisiblePath(editorSelectionNodeId);
             Render();
         }
 
@@ -290,7 +283,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
 
             editorSelectionNodeId = node.Id;
-            AddForcedVisiblePath(node.Id);
             ExpandAncestors(node.Id);
             Render();
 
@@ -325,7 +317,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             focusedNodeId = nodeId;
             focusedViewId = null;
-            AddForcedVisiblePath(nodeId);
             ExpandAncestors(nodeId);
             Render();
 

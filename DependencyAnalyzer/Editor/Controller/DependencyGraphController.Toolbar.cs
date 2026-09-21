@@ -143,13 +143,5 @@ namespace DependencyAnalyzer.Editor.Controller
             button.Add(icon);
         }
 
-        private void SetStatus(string message)
-        {
-            if (statusLabel != null)
-            {
-                statusLabel.text = message;
-            }
-        }
-
     }
 }

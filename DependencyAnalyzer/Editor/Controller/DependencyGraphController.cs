@@ -38,8 +38,6 @@ namespace DependencyAnalyzer.Editor.Controller
         private readonly Button searchPreviousButton;
         private readonly Button searchNextButton;
         private readonly Label searchCountLabel;
-        private readonly Toggle searchFilterToggle;
-        private readonly Label statusLabel;
         private readonly VisualElement issuePanel;
         private readonly VisualElement issueResizeHandle;
         private readonly ScrollView issueList;
@@ -83,7 +81,7 @@ namespace DependencyAnalyzer.Editor.Controller
             cache = new DependencyNodeCache();
             selectionSync = new EditorSelectionSync();
 
-            loadButton = root.Q<Button>("load-button") ?? root.Q<Button>("scan-button");
+            loadButton = root.Q<Button>("load-button");
             loadProgressLabel = root.Q<Label>("load-progress-label");
             depthSlider = root.Q<SliderInt>("depth-slider");
             depthValueLabel = root.Q<Label>("depth-value-label");
@@ -94,8 +92,6 @@ namespace DependencyAnalyzer.Editor.Controller
             searchPreviousButton = root.Q<Button>("search-previous-button");
             searchNextButton = root.Q<Button>("search-next-button");
             searchCountLabel = root.Q<Label>("search-count-label");
-            searchFilterToggle = root.Q<Toggle>("search-filter-toggle");
-            statusLabel = root.Q<Label>("status-label");
             issuePanel = root.Q<VisualElement>("issue-panel");
             issueResizeHandle = root.Q<VisualElement>("issue-resize-handle");
             issueList = root.Q<ScrollView>("issue-list");
@@ -140,11 +136,6 @@ namespace DependencyAnalyzer.Editor.Controller
                 searchNextButton.clicked += HandleSearchNextClicked;
             }
 
-            if (searchFilterToggle != null)
-            {
-                searchFilterToggle.RegisterValueChangedCallback(HandleSearchFilterChanged);
-            }
-
             if (issueToggleButton != null)
             {
                 issueToggleButton.AddToClassList("dependency-issue-toggle-button");
@@ -174,7 +165,6 @@ namespace DependencyAnalyzer.Editor.Controller
             UpdateSearchState(new DependencyGraphView.SearchResultState(-1, 0));
             PopulateIssuePanel(null);
             ApplyIssuePanelHeight();
-            SetStatus("Ready");
         }
 
         public void Dispose()
@@ -219,11 +209,6 @@ namespace DependencyAnalyzer.Editor.Controller
             if (searchNextButton != null)
             {
                 searchNextButton.clicked -= HandleSearchNextClicked;
-            }
-
-            if (searchFilterToggle != null)
-            {
-                searchFilterToggle.UnregisterValueChangedCallback(HandleSearchFilterChanged);
             }
 
             if (issueToggleButton != null)
@@ -322,7 +307,6 @@ namespace DependencyAnalyzer.Editor.Controller
             isLoading = true;
             SetLoadControlsEnabled(false);
             SetLoadProgress(0f);
-            SetStatus(string.Empty);
 
             try
             {
@@ -333,24 +317,19 @@ namespace DependencyAnalyzer.Editor.Controller
                 token.ThrowIfCancellationRequested();
                 currentGraph = scannedGraph;
                 graphView.Populate(currentGraph, currentExpansionDepth);
-                UpdateSearchState(graphView.SetSearch(GetSearchQuery(), IsSearchFilterEnabled(), false));
-                var issueModel = PopulateIssuePanel(currentGraph);
+                UpdateSearchState(graphView.SetSearch(GetSearchQuery(), false));
+                PopulateIssuePanel(currentGraph);
                 hasCompletedLoad = true;
                 UpdateLoadButtonText();
-                SetStatus("Completed: " + currentGraph.Nodes.Count + " nodes, "
-                    + currentGraph.Edges.Count + " edges, "
-                    + issueModel.WarningCount + " issues");
                 return false;
             }
             catch (OperationCanceledException)
             {
-                SetStatus("Canceled");
                 return true;
             }
             catch (Exception exception)
             {
                 Debug.LogException(exception);
-                SetStatus("Failed: " + exception.Message);
                 return token.IsCancellationRequested;
             }
             finally

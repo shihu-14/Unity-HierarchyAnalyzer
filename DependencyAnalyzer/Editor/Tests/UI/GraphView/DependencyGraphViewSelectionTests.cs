@@ -51,7 +51,7 @@ namespace DependencyAnalyzer.Editor.Tests
             graphView.Populate(graph, 4);
 
             graphView.FocusNodeByInstanceId(alpha.InstanceId);
-            graphView.SetSearch("Alpha", false, false);
+            graphView.SetSearch("Alpha", false);
             var alphaView = FindView(graphView, alpha.Id);
 
             Assert.IsNotNull(alphaView.Q<VisualElement>(className: "dependency-node-search-ring"));

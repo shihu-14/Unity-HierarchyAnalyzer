@@ -225,12 +225,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return null;
             }
 
-            var isSearchFiltering = IsSearchFilteringActive();
-            if (isSearchFiltering && !IsSearchVisibleNode(nodeId))
-            {
-                return null;
-            }
-
             var renderNode = new RenderNode(
                 viewId,
                 nodeId,
@@ -242,14 +236,13 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 GetDepthNodeScale(depth) * siblingCountScale);
             renderNode.Size = DependencyNodeView.GetPreferredSize(node, renderNode.SizeScale);
             var childPath = new HashSet<string>(path) { nodeId };
-            var regularEdges = GetRenderableChildEdges(GetRegularTreeOutgoingEdges(nodeId), childPath, isSearchFiltering);
-            var menuEdges = GetRenderableChildEdges(GetMenuTreeOutgoingEdges(nodeId), childPath, isSearchFiltering);
+            var regularEdges = GetRenderableChildEdges(GetRegularTreeOutgoingEdges(nodeId), childPath);
+            var menuEdges = GetRenderableChildEdges(GetMenuTreeOutgoingEdges(nodeId), childPath);
 
             var isExpanded = expandedViewIds.Contains(viewId) || expandedNodeIds.Contains(nodeId);
             var isCollapsedByRule = ShouldCollapseNode(node, nodeId, depth);
             var isMenuExpanded = expandedMenuViewIds.Contains(viewId)
-                || expandedMenuNodeIds.Contains(nodeId)
-                || (isSearchFiltering && menuEdges.Count > 0);
+                || expandedMenuNodeIds.Contains(nodeId);
             var isDuplicateDefaultCollapsed = ShouldCollapseDuplicateByDefault(
                 nodeId,
                 depth,
@@ -260,7 +253,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             renderNode.HasMenuChildren = menuEdges.Count > 0;
             renderNode.IsMenuExpanded = renderNode.HasMenuChildren && isMenuExpanded;
             var isCollapsed = renderNode.CanToggleChildren
-                && !isSearchFiltering
                 && (collapsedViewIds.Contains(viewId)
                     || collapsedNodeIds.Contains(nodeId)
                     || isDuplicateDefaultCollapsed
@@ -356,8 +348,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private List<DependencyEdge> GetRenderableChildEdges(
             IReadOnlyList<DependencyEdge> sourceEdges,
-            HashSet<string> childPath,
-            bool isSearchFiltering)
+            HashSet<string> childPath)
         {
             if (sourceEdges == null || sourceEdges.Count == 0)
             {
@@ -369,8 +360,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             {
                 var edge = sourceEdges[i];
                 if (edge == null
-                    || childPath.Contains(edge.TargetNodeId)
-                    || (isSearchFiltering && !IsSearchVisibleNode(edge.TargetNodeId)))
+                    || childPath.Contains(edge.TargetNodeId))
                 {
                     continue;
                 }

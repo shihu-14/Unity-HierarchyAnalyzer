@@ -12,7 +12,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private void RebuildSearchIndex(string preferredNodeId)
         {
             searchMatchNodeIds.Clear();
-            searchVisibleNodeIds.Clear();
             searchResultNodeIds.Clear();
 
             if (graph == null || string.IsNullOrWhiteSpace(searchQuery))
@@ -32,11 +31,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
                 searchResultNodeIds.Add(node.Id);
                 searchMatchNodeIds.Add(node.Id);
-            }
-
-            for (var i = 0; i < searchResultNodeIds.Count; i++)
-            {
-                AddNodeAndAncestors(searchResultNodeIds[i], searchVisibleNodeIds);
             }
 
             if (searchResultNodeIds.Count == 0)
@@ -63,53 +57,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 && !string.IsNullOrEmpty(node.DisplayName)
                 && !string.IsNullOrEmpty(query)
                 && node.DisplayName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        private void AddNodeAndAncestors(string nodeId, HashSet<string> target)
-        {
-            if (graph == null || string.IsNullOrEmpty(nodeId) || target == null)
-            {
-                return;
-            }
-
-            var stack = new Stack<string>();
-            stack.Push(nodeId);
-            while (stack.Count > 0)
-            {
-                var current = stack.Pop();
-                if (string.IsNullOrEmpty(current) || !target.Add(current))
-                {
-                    continue;
-                }
-
-                foreach (var edge in GetIncomingEdges(current))
-                {
-                    if (!string.IsNullOrEmpty(edge.SourceNodeId))
-                    {
-                        stack.Push(edge.SourceNodeId);
-                    }
-                }
-            }
-        }
-
-        private void AddForcedVisiblePath(string nodeId)
-        {
-            if (!IsSearchFilteringActive())
-            {
-                return;
-            }
-
-            AddNodeAndAncestors(nodeId, forcedVisibleNodeIds);
-        }
-
-        private bool IsSearchFilteringActive()
-        {
-            return searchFilterEnabled && !string.IsNullOrWhiteSpace(searchQuery);
-        }
-
-        private bool IsSearchVisibleNode(string nodeId)
-        {
-            return searchVisibleNodeIds.Contains(nodeId) || forcedVisibleNodeIds.Contains(nodeId);
         }
 
         private void FocusCurrentSearchResult()

@@ -17,7 +17,7 @@ namespace DependencyAnalyzer.Editor.Tests
         {
             var graphView = CreateGraphView(CreateNode("candidate", displayName));
 
-            var state = graphView.SetSearch(query, false, false);
+            var state = graphView.SetSearch(query, false);
 
             Assert.AreEqual(1, state.Total);
             Assert.AreEqual("candidate", state.Suggestions[0].NodeId);
@@ -30,7 +30,7 @@ namespace DependencyAnalyzer.Editor.Tests
         {
             var graphView = CreateGraphView(CreateNode("candidate", displayName));
 
-            var state = graphView.SetSearch(query, false, false);
+            var state = graphView.SetSearch(query, false);
 
             Assert.AreEqual(0, state.Total);
         }
@@ -50,9 +50,9 @@ namespace DependencyAnalyzer.Editor.Tests
             missingOnly.MarkAsMissingTarget(MissingTargetKind.BrokenReference);
             var graphView = CreateGraphView(pathOnly, typeOnly, labelOnly, kindOnly, missingOnly);
 
-            Assert.AreEqual(0, graphView.SetSearch("Audio Source", false, false).Total);
-            Assert.AreEqual(0, graphView.SetSearch("Asset", false, false).Total);
-            Assert.AreEqual(0, graphView.SetSearch("missing:true", false, false).Total);
+            Assert.AreEqual(0, graphView.SetSearch("Audio Source", false).Total);
+            Assert.AreEqual(0, graphView.SetSearch("Asset", false).Total);
+            Assert.AreEqual(0, graphView.SetSearch("missing:true", false).Total);
         }
 
         [Test]
@@ -62,7 +62,7 @@ namespace DependencyAnalyzer.Editor.Tests
             var literalName = CreateNode("literal", "type:Audio Controller");
             var graphView = CreateGraphView(typeMetadataOnly, literalName);
 
-            var state = graphView.SetSearch("type:Audio", false, false);
+            var state = graphView.SetSearch("type:Audio", false);
 
             Assert.AreEqual(1, state.Total);
             Assert.AreEqual(literalName.Id, state.Suggestions[0].NodeId);
@@ -76,7 +76,7 @@ namespace DependencyAnalyzer.Editor.Tests
             var third = CreateNode("third", "My Audio Source");
             var graphView = CreateGraphView(first, second, third);
 
-            var initial = graphView.SetSearch("Audio Source", false, false);
+            var initial = graphView.SetSearch("Audio Source", false);
             var next = graphView.FocusNextSearchResult(false);
             var previous = graphView.FocusNextSearchResult(true);
             var wrappedPrevious = graphView.FocusNextSearchResult(true);
