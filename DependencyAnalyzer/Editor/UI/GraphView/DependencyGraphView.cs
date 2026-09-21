@@ -49,18 +49,11 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         private readonly HashSet<string> manuallyMovedViewIds = new HashSet<string>();
         private readonly HashSet<string> searchMatchNodeIds = new HashSet<string>();
         private readonly List<string> searchResultNodeIds = new List<string>();
-        private readonly Dictionary<string, List<DependencyEdge>> outgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
-        private readonly Dictionary<string, List<DependencyEdge>> incomingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
-        private readonly Dictionary<string, List<DependencyEdge>> treeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
-        private readonly Dictionary<string, List<DependencyEdge>> regularTreeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
-        private readonly Dictionary<string, List<DependencyEdge>> menuTreeOutgoingEdgesByNodeId = new Dictionary<string, List<DependencyEdge>>();
-        private readonly Dictionary<int, DependencyNode> nodeByInstanceId = new Dictionary<int, DependencyNode>();
         private readonly Dictionary<string, bool> missingReferenceSubtreeCache = new Dictionary<string, bool>();
         private readonly Dictionary<string, SubtreeIssueState> issueSubtreeCache = new Dictionary<string, SubtreeIssueState>();
-        private readonly Dictionary<string, int> minimumRegularDepths = new Dictionary<string, int>();
-        private readonly List<DependencyNode> rootNodes = new List<DependencyNode>();
         private static readonly List<DependencyEdge> EmptyEdges = new List<DependencyEdge>();
 
+        private readonly GraphViewIndex graphIndex = new GraphViewIndex();
         private DependencyGraph graph;
         private Vector2 currentCanvasSize = Vector2.one;
         private Vector2 pan = new Vector2(24f, 24f);
@@ -125,7 +118,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         public event Action<DependencyNode> NodeSelected;
 
         internal string EditorSelectionNodeId => editorSelectionNodeId ?? string.Empty;
-        internal IReadOnlyList<DependencyNode> HierarchyRootNodes => rootNodes;
+        internal IReadOnlyList<DependencyNode> HierarchyRootNodes => graphIndex.RootNodes;
         internal int ExpansionDepth => initialDepth;
         internal float Zoom => zoom;
         internal float ZoomStep => zoomStep;
@@ -200,7 +193,9 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             }
 
             graph = graphData;
-            RebuildGraphCaches();
+            graphIndex.Rebuild(graph);
+            missingReferenceSubtreeCache.Clear();
+            issueSubtreeCache.Clear();
             if (!string.IsNullOrEmpty(editorSelectionNodeId)
                 && (graph == null || !graph.TryGetNode(editorSelectionNodeId, out _)))
             {
@@ -276,7 +271,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return false;
             }
 
-            if (!nodeByInstanceId.TryGetValue(instanceId, out var node))
+            if (!graphIndex.TryGetNodeByInstanceId(instanceId, out var node))
             {
                 ClearEditorSelectionHighlight();
                 return false;

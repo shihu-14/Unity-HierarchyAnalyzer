@@ -1,20 +1,112 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using DependencyAnalyzer.Editor.Core;
-using DependencyAnalyzer.Editor.Settings;
-using DependencyAnalyzer.Editor.UI.Controls;
 using DependencyAnalyzer.Editor.UI.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace DependencyAnalyzer.Editor.Controller
+namespace DependencyAnalyzer.Editor.UI.Controls
 {
-    public sealed partial class DependencyGraphController
+    internal sealed class GraphSearchView : IDisposable
     {
+        private readonly VisualElement root;
+        private readonly VisualElement searchControl;
+        private readonly TextField searchField;
+        private readonly SearchIconElement searchIcon;
+        private readonly VisualElement searchSuggestionList;
+        private readonly Button searchPreviousButton;
+        private readonly Button searchNextButton;
+        private readonly Label searchCountLabel;
+        private bool isSearchFieldFocused;
+
+        public GraphSearchView(VisualElement root)
+        {
+            this.root = root;
+            searchControl = root.Q("search-control");
+            searchField = root.Q<TextField>("search-field");
+            searchIcon = EnsureSearchIcon(root.Q("search-field-wrap"));
+            searchSuggestionList = root.Q("search-suggestion-list");
+            searchPreviousButton = root.Q<Button>("search-previous-button");
+            searchNextButton = root.Q<Button>("search-next-button");
+            searchCountLabel = root.Q<Label>("search-count-label");
+            if (searchField != null)
+            {
+                searchField.RegisterValueChangedCallback(HandleSearchChanged);
+                searchField.RegisterCallback<KeyDownEvent>(HandleSearchKeyDown, TrickleDown.TrickleDown);
+                searchField.RegisterCallback<FocusInEvent>(HandleSearchFocusIn);
+                searchField.RegisterCallback<FocusOutEvent>(HandleSearchFocusOut);
+            }
+
+            searchIcon?.RegisterCallback<MouseDownEvent>(HandleSearchIconMouseDown);
+            ConfigureArrow(searchPreviousButton, true);
+            ConfigureArrow(searchNextButton, false);
+            if (searchPreviousButton != null)
+            {
+                searchPreviousButton.clicked += HandleSearchPreviousClicked;
+            }
+
+            if (searchNextButton != null)
+            {
+                searchNextButton.clicked += HandleSearchNextClicked;
+            }
+
+            root.RegisterCallback<KeyDownEvent>(HandleGlobalKeyDown, TrickleDown.TrickleDown);
+            root.RegisterCallback<MouseDownEvent>(HandleRootMouseDown, TrickleDown.TrickleDown);
+            UpdateSearchIconVisibility();
+            SetSearchState(new DependencyGraphView.SearchResultState(-1, 0));
+        }
+
+        public event Action<string> QueryChanged;
+        public event Action<bool> NavigationRequested;
+        public event Action<DependencyGraphView.SearchSuggestion> SuggestionSelected;
+        public string Query => GetSearchQuery();
+
+        public void Dispose()
+        {
+            if (searchField != null)
+            {
+                searchField.UnregisterValueChangedCallback(HandleSearchChanged);
+                searchField.UnregisterCallback<KeyDownEvent>(HandleSearchKeyDown, TrickleDown.TrickleDown);
+                searchField.UnregisterCallback<FocusInEvent>(HandleSearchFocusIn);
+                searchField.UnregisterCallback<FocusOutEvent>(HandleSearchFocusOut);
+            }
+
+            searchIcon?.UnregisterCallback<MouseDownEvent>(HandleSearchIconMouseDown);
+            if (searchPreviousButton != null)
+            {
+                searchPreviousButton.clicked -= HandleSearchPreviousClicked;
+            }
+
+            if (searchNextButton != null)
+            {
+                searchNextButton.clicked -= HandleSearchNextClicked;
+            }
+
+            root.UnregisterCallback<KeyDownEvent>(HandleGlobalKeyDown, TrickleDown.TrickleDown);
+            root.UnregisterCallback<MouseDownEvent>(HandleRootMouseDown, TrickleDown.TrickleDown);
+            searchSuggestionList?.Clear();
+            QueryChanged = null;
+            NavigationRequested = null;
+            SuggestionSelected = null;
+        }
+
+        private static void ConfigureArrow(Button button, bool previous)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.text = string.Empty;
+            button.Clear();
+            var icon = new ChevronIcon(previous, 0.45f);
+            icon.StretchToParentSize();
+            button.Add(icon);
+            button.tooltip = previous ? "Previous" : "Next";
+        }
+
         private void HandleSearchChanged(ChangeEvent<string> evt)
         {
-            UpdateSearchState(graphView.SetSearch(evt.newValue, true));
+            QueryChanged?.Invoke(evt.newValue);
             UpdateSearchIconVisibility();
         }
 
@@ -44,19 +136,19 @@ namespace DependencyAnalyzer.Editor.Controller
 
         private void HandleSearchPreviousClicked()
         {
-            UpdateSearchState(graphView.FocusNextSearchResult(true));
+            NavigationRequested?.Invoke(true);
         }
 
         private void HandleSearchNextClicked()
         {
-            UpdateSearchState(graphView.FocusNextSearchResult(false));
+            NavigationRequested?.Invoke(false);
         }
 
         private void HandleSearchKeyDown(KeyDownEvent evt)
         {
             if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
             {
-                UpdateSearchState(graphView.FocusNextSearchResult((evt.modifiers & EventModifiers.Shift) != 0));
+                NavigationRequested?.Invoke((evt.modifiers & EventModifiers.Shift) != 0);
                 evt.PreventDefault();
                 evt.StopPropagation();
                 return;
@@ -127,7 +219,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 : DisplayStyle.None;
         }
 
-        private void UpdateSearchState(DependencyGraphView.SearchResultState state)
+        public void SetSearchState(DependencyGraphView.SearchResultState state)
         {
             if (searchCountLabel != null)
             {
@@ -192,8 +284,7 @@ namespace DependencyAnalyzer.Editor.Controller
             }
 
             searchField.SetValueWithoutNotify(suggestion.DisplayName);
-            UpdateSearchState(graphView.SetSearch(suggestion.DisplayName, false));
-            graphView.FocusNode(suggestion.NodeId, true);
+            SuggestionSelected?.Invoke(suggestion);
             HideSearchSuggestions();
             searchField.Focus();
         }

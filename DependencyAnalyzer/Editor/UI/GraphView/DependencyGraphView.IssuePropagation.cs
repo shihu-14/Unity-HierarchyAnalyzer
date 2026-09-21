@@ -15,7 +15,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             for (var i = 0; i < renderNodes.Count; i++)
             {
                 var renderNode = renderNodes[i];
-                var outgoingEdges = GetTreeOutgoingEdges(renderNode.NodeId);
+                var outgoingEdges = graphIndex.GetTreeOutgoingEdges(renderNode.NodeId);
                 for (var edgeIndex = 0; edgeIndex < outgoingEdges.Count; edgeIndex++)
                 {
                     var edge = outgoingEdges[edgeIndex];
@@ -108,7 +108,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return true;
             }
 
-            foreach (var edge in GetTreeOutgoingEdges(nodeId))
+            foreach (var edge in graphIndex.GetTreeOutgoingEdges(nodeId))
             {
                 if (SubtreeContainsMissingReference(edge.TargetNodeId, visited))
                 {
@@ -152,7 +152,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     GetIssueSourceNodeId(node.Id));
             }
 
-            foreach (var edge in GetTreeOutgoingEdges(nodeId))
+            foreach (var edge in graphIndex.GetTreeOutgoingEdges(nodeId))
             {
                 var childIssue = FindSubtreeIssue(edge.TargetNodeId, visited);
                 if (childIssue.HasIssue && (!bestIssue.HasIssue || IsMoreSevere(childIssue.Severity, bestIssue.Severity)))
@@ -172,7 +172,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 return string.Empty;
             }
 
-            var incomingEdges = GetIncomingEdges(issueNodeId);
+            var incomingEdges = graphIndex.GetIncomingEdges(issueNodeId);
             for (var i = 0; i < incomingEdges.Count; i++)
             {
                 var edge = incomingEdges[i];

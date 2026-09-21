@@ -284,13 +284,13 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private DependencyEdge GetPrimaryIncomingEdge(string nodeId)
         {
-            var incomingEdges = GetIncomingEdges(nodeId);
+            var incomingEdges = graphIndex.GetIncomingEdges(nodeId);
             DependencyEdge bestEdge = null;
             var bestPriority = int.MaxValue;
             for (var i = 0; i < incomingEdges.Count; i++)
             {
                 var edge = incomingEdges[i];
-                var priority = GetEdgeSortPriority(edge.ReferenceKind);
+                var priority = GraphViewIndex.GetEdgeSortPriority(edge.ReferenceKind);
                 if (priority >= bestPriority)
                 {
                     continue;
@@ -312,7 +312,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
             var visited = new HashSet<string> { nodeId };
             var stack = new Stack<string>();
-            foreach (var edge in GetTreeOutgoingEdges(nodeId))
+            foreach (var edge in graphIndex.GetTreeOutgoingEdges(nodeId))
             {
                 stack.Push(edge.TargetNodeId);
             }
@@ -328,7 +328,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 expandedNodeIds.Remove(current);
                 collapsedNodeIds.Remove(current);
 
-                foreach (var edge in GetTreeOutgoingEdges(current))
+                foreach (var edge in graphIndex.GetTreeOutgoingEdges(current))
                 {
                     stack.Push(edge.TargetNodeId);
                 }

@@ -53,125 +53,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
             ApplyTransform();
         }
 
-        private void RebuildGraphCaches()
-        {
-            outgoingEdgesByNodeId.Clear();
-            incomingEdgesByNodeId.Clear();
-            treeOutgoingEdgesByNodeId.Clear();
-            regularTreeOutgoingEdgesByNodeId.Clear();
-            menuTreeOutgoingEdgesByNodeId.Clear();
-            nodeByInstanceId.Clear();
-            missingReferenceSubtreeCache.Clear();
-            issueSubtreeCache.Clear();
-            minimumRegularDepths.Clear();
-            rootNodes.Clear();
-
-            if (graph == null)
-            {
-                return;
-            }
-
-            for (var i = 0; i < graph.Nodes.Count; i++)
-            {
-                var node = graph.Nodes[i];
-                if (node.InstanceId != 0 && !nodeByInstanceId.ContainsKey(node.InstanceId))
-                {
-                    nodeByInstanceId.Add(node.InstanceId, node);
-                }
-            }
-
-            for (var i = 0; i < graph.Edges.Count; i++)
-            {
-                var edge = graph.Edges[i];
-                if (edge == null)
-                {
-                    continue;
-                }
-
-                if (!outgoingEdgesByNodeId.TryGetValue(edge.SourceNodeId, out var outgoingEdges))
-                {
-                    outgoingEdges = new List<DependencyEdge>();
-                    outgoingEdgesByNodeId.Add(edge.SourceNodeId, outgoingEdges);
-                }
-
-                outgoingEdges.Add(edge);
-
-                if (!incomingEdgesByNodeId.TryGetValue(edge.TargetNodeId, out var incomingEdges))
-                {
-                    incomingEdges = new List<DependencyEdge>();
-                    incomingEdgesByNodeId.Add(edge.TargetNodeId, incomingEdges);
-                }
-
-                incomingEdges.Add(edge);
-            }
-
-            foreach (var pair in outgoingEdgesByNodeId)
-            {
-                var treeEdges = pair.Value
-                    .Where(edge => graph.TryGetNode(edge.TargetNodeId, out _))
-                    .GroupBy(edge => edge.TargetNodeId)
-                    .Select(group => group
-                        .OrderBy(edge => GetEdgeSortPriority(edge.ReferenceKind))
-                        .ThenBy(edge => edge.MemberName, StringComparer.OrdinalIgnoreCase)
-                        .First())
-                    .OrderBy(edge => GetNodeSortName(edge.TargetNodeId), StringComparer.OrdinalIgnoreCase)
-                    .ThenBy(edge => GetNodeSortType(edge.TargetNodeId), StringComparer.OrdinalIgnoreCase)
-                    .ThenBy(edge => GetEdgeSortPriority(edge.ReferenceKind))
-                    .ThenBy(edge => edge.MemberName, StringComparer.OrdinalIgnoreCase)
-                    .ThenBy(edge => edge.TargetNodeId, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-                treeOutgoingEdgesByNodeId[pair.Key] = treeEdges;
-                var regularEdges = new List<DependencyEdge>();
-                var menuEdges = new List<DependencyEdge>();
-                for (var i = 0; i < treeEdges.Count; i++)
-                {
-                    var edge = treeEdges[i];
-                    if (IsMenuEdge(edge))
-                    {
-                        menuEdges.Add(edge);
-                    }
-                    else
-                    {
-                        regularEdges.Add(edge);
-                    }
-                }
-
-                regularTreeOutgoingEdgesByNodeId[pair.Key] = regularEdges;
-                menuTreeOutgoingEdgesByNodeId[pair.Key] = menuEdges;
-            }
-
-            rootNodes.AddRange(graph.Nodes
-                .Where(IsRootNodeFromCache)
-                .OrderBy(node => node.DisplayName, StringComparer.OrdinalIgnoreCase));
-
-            foreach (var pair in ComputeMinimumRegularDepths(rootNodes))
-            {
-                minimumRegularDepths[pair.Key] = pair.Value;
-            }
-        }
-
-        private bool IsRootNodeFromCache(DependencyNode node)
-        {
-            if (node.Kind != DependencyNodeKind.SceneObject
-                || node.IsMissingTarget
-                || node.NamespaceQualifiedTypeName != typeof(GameObject).FullName
-                || node.InstanceId == 0)
-            {
-                return false;
-            }
-
-            var incomingEdges = GetIncomingEdges(node.Id);
-            for (var i = 0; i < incomingEdges.Count; i++)
-            {
-                if (incomingEdges[i].ReferenceKind == DependencyReferenceKind.Hierarchy)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
         private void ShowEmptyState()
         {
             emptyStateLabel.style.display = DisplayStyle.Flex;
@@ -184,10 +65,10 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
         {
             var defaultExpandedNodeIds = new HashSet<string>();
             var renderRoots = new List<RenderNode>();
-            for (var i = 0; i < rootNodes.Count; i++)
+            for (var i = 0; i < graphIndex.RootNodes.Count; i++)
             {
                 var root = BuildRenderNode(
-                    rootNodes[i].Id,
+                    graphIndex.RootNodes[i].Id,
                     null,
                     null,
                     0,
@@ -196,7 +77,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     new HashSet<string>(),
                     false,
                     1f,
-                    minimumRegularDepths,
+                    graphIndex.MinimumRegularDepths,
                     defaultExpandedNodeIds);
                 if (root != null)
                 {
@@ -236,8 +117,8 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 GetDepthNodeScale(depth) * siblingCountScale);
             renderNode.Size = DependencyNodeView.GetPreferredSize(node, renderNode.SizeScale);
             var childPath = new HashSet<string>(path) { nodeId };
-            var regularEdges = GetRenderableChildEdges(GetRegularTreeOutgoingEdges(nodeId), childPath);
-            var menuEdges = GetRenderableChildEdges(GetMenuTreeOutgoingEdges(nodeId), childPath);
+            var regularEdges = GetRenderableChildEdges(graphIndex.GetRegularTreeOutgoingEdges(nodeId), childPath);
+            var menuEdges = GetRenderableChildEdges(graphIndex.GetMenuTreeOutgoingEdges(nodeId), childPath);
 
             var isExpanded = expandedViewIds.Contains(viewId) || expandedNodeIds.Contains(nodeId);
             var isCollapsedByRule = ShouldCollapseNode(node, nodeId, depth);
@@ -334,7 +215,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                     childPath,
                     forceCollapseChildren,
                     childSiblingScale,
-                    minimumRegularDepths,
+                    graphIndex.MinimumRegularDepths,
                     defaultExpandedNodeIds);
                 if (child == null)
                 {
@@ -392,41 +273,6 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
                 || node.Path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase);
         }
 
-        private bool IsMenuEdge(DependencyEdge edge)
-        {
-            return edge != null && edge.ReferenceKind == DependencyReferenceKind.SerializedProperty;
-        }
-
-        private Dictionary<string, int> ComputeMinimumRegularDepths(IReadOnlyList<DependencyNode> roots)
-        {
-            var minimumDepths = new Dictionary<string, int>();
-            var queue = new Queue<NodeDepth>();
-            for (var i = 0; i < roots.Count; i++)
-            {
-                if (roots[i] != null)
-                {
-                    queue.Enqueue(new NodeDepth(roots[i].Id, 0));
-                }
-            }
-
-            while (queue.Count > 0)
-            {
-                var current = queue.Dequeue();
-                if (minimumDepths.TryGetValue(current.NodeId, out var knownDepth) && knownDepth <= current.Depth)
-                {
-                    continue;
-                }
-
-                minimumDepths[current.NodeId] = current.Depth;
-                foreach (var edge in GetRegularTreeOutgoingEdges(current.NodeId))
-                {
-                    queue.Enqueue(new NodeDepth(edge.TargetNodeId, current.Depth + 1));
-                }
-            }
-
-            return minimumDepths;
-        }
-
         private static bool ShouldCollapseDuplicateByDefault(
             string nodeId,
             int depth,
@@ -460,7 +306,7 @@ namespace DependencyAnalyzer.Editor.UI.GraphView
 
         private bool IsPrefabInstanceNode(string nodeId)
         {
-            var outgoingEdges = GetOutgoingEdges(nodeId);
+            var outgoingEdges = graphIndex.GetOutgoingEdges(nodeId);
             for (var i = 0; i < outgoingEdges.Count; i++)
             {
                 if (outgoingEdges[i].ReferenceKind == DependencyReferenceKind.PrefabInstance)

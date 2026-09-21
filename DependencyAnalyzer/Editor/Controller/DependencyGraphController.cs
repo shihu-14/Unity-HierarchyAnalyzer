@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DependencyAnalyzer.Editor.Core;
@@ -15,52 +13,23 @@ using UnityEngine.UIElements;
 
 namespace DependencyAnalyzer.Editor.Controller
 {
-    public sealed partial class DependencyGraphController : IDisposable
+    public sealed class DependencyGraphController : IDisposable
     {
-        private const float DefaultIssuePanelHeight = 148f;
-        private const float CollapsedIssuePanelHeight = 36f;
-        private const float MinimumIssuePanelHeight = 64f;
-        private const float MaximumIssuePanelHeight = 460f;
-
         private readonly DependencyGraphView graphView;
-        private readonly VisualElement root;
+        private readonly GraphToolbarView toolbarView;
+        private readonly GraphSearchView searchView;
+        private readonly IssuePanelView issuePanelView;
         private readonly Func<AnalyzerSettings, DependencyNodeCache, IProgress<ScanProgress>, CancellationToken, Task<DependencyGraph>> scanOperation;
         private readonly DependencyNodeCache cache;
         private readonly EditorSelectionSync selectionSync;
-        private readonly Button loadButton;
-        private readonly Label loadProgressLabel;
-        private readonly SliderInt depthSlider;
-        private readonly Label depthValueLabel;
-        private readonly VisualElement searchControl;
-        private readonly TextField searchField;
-        private readonly SearchIconElement searchIcon;
-        private readonly VisualElement searchSuggestionList;
-        private readonly Button searchPreviousButton;
-        private readonly Button searchNextButton;
-        private readonly Label searchCountLabel;
-        private readonly VisualElement issuePanel;
-        private readonly VisualElement issueResizeHandle;
-        private readonly ScrollView issueList;
-        private readonly Label issueTitleLabel;
-        private readonly Image issueWarningIcon;
-        private readonly Label issueWarningCountLabel;
-        private readonly Button issueToggleButton;
-        private readonly HashSet<string> expandedIssueGroupIds = new HashSet<string>(StringComparer.Ordinal);
-
         private CancellationTokenSource scanCancellation;
         private DependencyGraph currentGraph;
         private bool disposed;
         private bool hierarchyRefreshQueued;
         private bool pendingRescan;
         private bool suppressNextSelectionFocus;
-        private bool issueListVisible = true;
         private bool hasCompletedLoad;
         private bool isLoading;
-        private bool isResizingIssuePanel;
-        private bool isSearchFieldFocused;
-        private float issuePanelHeight = DefaultIssuePanelHeight;
-        private float issueResizeStartMouseY;
-        private float issueResizeStartHeight;
         private int currentExpansionDepth;
         private int suppressedSelectionInstanceId;
 
@@ -75,83 +44,23 @@ namespace DependencyAnalyzer.Editor.Controller
             Func<AnalyzerSettings, DependencyNodeCache, IProgress<ScanProgress>, CancellationToken, Task<DependencyGraph>> scanOperation,
             bool scheduleInitialScan)
         {
-            this.root = root;
             this.graphView = graphView;
             this.scanOperation = scanOperation ?? throw new ArgumentNullException(nameof(scanOperation));
             cache = new DependencyNodeCache();
             selectionSync = new EditorSelectionSync();
-
-            loadButton = root.Q<Button>("load-button");
-            loadProgressLabel = root.Q<Label>("load-progress-label");
-            depthSlider = root.Q<SliderInt>("depth-slider");
-            depthValueLabel = root.Q<Label>("depth-value-label");
-            searchControl = root.Q<VisualElement>("search-control");
-            searchField = root.Q<TextField>("search-field");
-            searchIcon = EnsureSearchIcon(root.Q<VisualElement>("search-field-wrap"));
-            searchSuggestionList = root.Q<VisualElement>("search-suggestion-list");
-            searchPreviousButton = root.Q<Button>("search-previous-button");
-            searchNextButton = root.Q<Button>("search-next-button");
-            searchCountLabel = root.Q<Label>("search-count-label");
-            issuePanel = root.Q<VisualElement>("issue-panel");
-            issueResizeHandle = root.Q<VisualElement>("issue-resize-handle");
-            issueList = root.Q<ScrollView>("issue-list");
-            issueTitleLabel = root.Q<Label>("issue-title-label");
-            issueWarningIcon = root.Q<Image>("issue-warning-icon");
-            issueWarningCountLabel = root.Q<Label>("issue-warning-count-label");
-            issueToggleButton = root.Q<Button>("issue-toggle-button");
-
-            if (loadButton != null)
-            {
-                loadButton.clicked += HandleLoadClicked;
-                UpdateLoadButtonText();
-            }
-
-            HideLoadProgress();
-
-            if (searchField != null)
-            {
-                searchField.RegisterValueChangedCallback(HandleSearchChanged);
-                searchField.RegisterCallback<KeyDownEvent>(HandleSearchKeyDown, TrickleDown.TrickleDown);
-                searchField.RegisterCallback<FocusInEvent>(HandleSearchFocusIn);
-                searchField.RegisterCallback<FocusOutEvent>(HandleSearchFocusOut);
-            }
-
-            if (searchIcon != null)
-            {
-                searchIcon.RegisterCallback<MouseDownEvent>(HandleSearchIconMouseDown);
-                UpdateSearchIconVisibility();
-            }
-
-            if (searchPreviousButton != null)
-            {
-                SetSearchArrowIcon(searchPreviousButton, true);
-                searchPreviousButton.tooltip = "Previous";
-                searchPreviousButton.clicked += HandleSearchPreviousClicked;
-            }
-
-            if (searchNextButton != null)
-            {
-                SetSearchArrowIcon(searchNextButton, false);
-                searchNextButton.tooltip = "Next";
-                searchNextButton.clicked += HandleSearchNextClicked;
-            }
-
-            if (issueToggleButton != null)
-            {
-                issueToggleButton.AddToClassList("dependency-issue-toggle-button");
-                issueToggleButton.clicked += ToggleIssueList;
-                UpdateIssueToggleIcon();
-            }
-
-            if (issueResizeHandle != null)
-            {
-                issueResizeHandle.RegisterCallback<MouseDownEvent>(HandleIssueResizeMouseDown);
-                issueResizeHandle.RegisterCallback<MouseMoveEvent>(HandleIssueResizeMouseMove);
-                issueResizeHandle.RegisterCallback<MouseUpEvent>(HandleIssueResizeMouseUp);
-            }
+            toolbarView = new GraphToolbarView(root);
+            searchView = new GraphSearchView(root);
+            issuePanelView = new IssuePanelView(root);
+            toolbarView.LoadRequested += HandleLoadClicked;
+            toolbarView.DepthChanged += SetExpansionDepth;
+            searchView.QueryChanged += HandleSearchQueryChanged;
+            searchView.NavigationRequested += HandleSearchNavigationRequested;
+            searchView.SuggestionSelected += HandleSearchSuggestionSelected;
+            issuePanelView.NodeFocusRequested += HandleIssueNodeFocusRequested;
 
             var settings = AnalyzerSettings.LoadOrCreateRuntimeSettings();
-            InitializeDepthFields(settings);
+            currentExpansionDepth = DependencyGraphView.ClampExpansionDepth(settings.InitialExpansionDepth);
+            toolbarView.SetDepth(currentExpansionDepth);
             ApplyGraphSettings(settings);
             graphView.NodeSelected += HandleNodeSelected;
             Selection.selectionChanged += HandleEditorSelectionChanged;
@@ -159,16 +68,17 @@ namespace DependencyAnalyzer.Editor.Controller
             {
                 EditorApplication.delayCall += RequestInitialScan;
             }
+
             EditorApplication.hierarchyChanged += HandleHierarchyChanged;
-            root.RegisterCallback<KeyDownEvent>(HandleGlobalKeyDown, TrickleDown.TrickleDown);
-            root.RegisterCallback<MouseDownEvent>(HandleRootMouseDown, TrickleDown.TrickleDown);
-            UpdateSearchState(new DependencyGraphView.SearchResultState(-1, 0));
-            PopulateIssuePanel(null);
-            ApplyIssuePanelHeight();
         }
 
         public void Dispose()
         {
+            if (disposed)
+            {
+                return;
+            }
+
             disposed = true;
             pendingRescan = false;
             hierarchyRefreshQueued = false;
@@ -177,56 +87,74 @@ namespace DependencyAnalyzer.Editor.Controller
             EditorApplication.hierarchyChanged -= HandleHierarchyChanged;
             Selection.selectionChanged -= HandleEditorSelectionChanged;
             graphView.NodeSelected -= HandleNodeSelected;
-
-            if (loadButton != null)
-            {
-                loadButton.clicked -= HandleLoadClicked;
-            }
-
-            if (depthSlider != null)
-            {
-                depthSlider.UnregisterValueChangedCallback(HandleDepthChanged);
-            }
-
-            if (searchField != null)
-            {
-                searchField.UnregisterValueChangedCallback(HandleSearchChanged);
-                searchField.UnregisterCallback<KeyDownEvent>(HandleSearchKeyDown, TrickleDown.TrickleDown);
-                searchField.UnregisterCallback<FocusInEvent>(HandleSearchFocusIn);
-                searchField.UnregisterCallback<FocusOutEvent>(HandleSearchFocusOut);
-            }
-
-            if (searchIcon != null)
-            {
-                searchIcon.UnregisterCallback<MouseDownEvent>(HandleSearchIconMouseDown);
-            }
-
-            if (searchPreviousButton != null)
-            {
-                searchPreviousButton.clicked -= HandleSearchPreviousClicked;
-            }
-
-            if (searchNextButton != null)
-            {
-                searchNextButton.clicked -= HandleSearchNextClicked;
-            }
-
-            if (issueToggleButton != null)
-            {
-                issueToggleButton.clicked -= ToggleIssueList;
-            }
-
-            if (issueResizeHandle != null)
-            {
-                issueResizeHandle.UnregisterCallback<MouseDownEvent>(HandleIssueResizeMouseDown);
-                issueResizeHandle.UnregisterCallback<MouseMoveEvent>(HandleIssueResizeMouseMove);
-                issueResizeHandle.UnregisterCallback<MouseUpEvent>(HandleIssueResizeMouseUp);
-            }
-
-            root?.UnregisterCallback<KeyDownEvent>(HandleGlobalKeyDown, TrickleDown.TrickleDown);
-            root?.UnregisterCallback<MouseDownEvent>(HandleRootMouseDown, TrickleDown.TrickleDown);
-
+            toolbarView.LoadRequested -= HandleLoadClicked;
+            toolbarView.DepthChanged -= SetExpansionDepth;
+            searchView.QueryChanged -= HandleSearchQueryChanged;
+            searchView.NavigationRequested -= HandleSearchNavigationRequested;
+            searchView.SuggestionSelected -= HandleSearchSuggestionSelected;
+            issuePanelView.NodeFocusRequested -= HandleIssueNodeFocusRequested;
+            toolbarView.Dispose();
+            searchView.Dispose();
+            issuePanelView.Dispose();
             CancelActiveScan();
+        }
+
+        private void HandleSearchQueryChanged(string query)
+        {
+            searchView.SetSearchState(graphView.SetSearch(query, true));
+        }
+
+        private void HandleSearchNavigationRequested(bool reverse)
+        {
+            searchView.SetSearchState(graphView.FocusNextSearchResult(reverse));
+        }
+
+        private void HandleSearchSuggestionSelected(DependencyGraphView.SearchSuggestion suggestion)
+        {
+            searchView.SetSearchState(graphView.SetSearch(suggestion.DisplayName, false));
+            graphView.FocusNode(suggestion.NodeId, true);
+        }
+
+        private void HandleIssueNodeFocusRequested(string nodeId)
+        {
+            graphView.FocusNode(nodeId, true);
+        }
+
+        private void ApplyGraphSettings(AnalyzerSettings settings)
+        {
+            graphView.ConfigureZoom(AnalyzerSettings.DefaultZoomMin, AnalyzerSettings.DefaultZoomMax, settings.ZoomStep);
+        }
+
+        private void HandleScanProgress(ScanProgress progress, CancellationTokenSource activeCancellation)
+        {
+            if (!disposed && isLoading && ReferenceEquals(scanCancellation, activeCancellation))
+            {
+                toolbarView.SetProgress(progress.Total <= 0 ? 0f : progress.Ratio);
+            }
+        }
+
+        internal void SetExpansionDepth(int depth)
+        {
+            var nextDepth = DependencyGraphView.ClampExpansionDepth(depth);
+            toolbarView.SetDepth(nextDepth);
+            if (currentExpansionDepth == nextDepth)
+            {
+                return;
+            }
+
+            currentExpansionDepth = nextDepth;
+            graphView.SetExpansionDepth(currentExpansionDepth);
+        }
+
+        internal void CancelActiveScan()
+        {
+            pendingRescan = false;
+            if (scanCancellation == null || scanCancellation.IsCancellationRequested)
+            {
+                return;
+            }
+
+            scanCancellation.Cancel();
         }
 
         private void RequestInitialScan()
@@ -305,8 +233,8 @@ namespace DependencyAnalyzer.Editor.Controller
             var token = activeCancellation.Token;
             cache.Clear();
             isLoading = true;
-            SetLoadControlsEnabled(false);
-            SetLoadProgress(0f);
+            toolbarView.SetLoading(true, hasCompletedLoad);
+            toolbarView.SetProgress(0f);
 
             try
             {
@@ -317,10 +245,9 @@ namespace DependencyAnalyzer.Editor.Controller
                 token.ThrowIfCancellationRequested();
                 currentGraph = scannedGraph;
                 graphView.Populate(currentGraph, currentExpansionDepth);
-                UpdateSearchState(graphView.SetSearch(GetSearchQuery(), false));
-                PopulateIssuePanel(currentGraph);
+                searchView.SetSearchState(graphView.SetSearch(searchView.Query, false));
+                issuePanelView.SetModel(ProjectIssuePanelBuilder.Build(currentGraph));
                 hasCompletedLoad = true;
-                UpdateLoadButtonText();
                 return false;
             }
             catch (OperationCanceledException)
@@ -341,8 +268,10 @@ namespace DependencyAnalyzer.Editor.Controller
                 }
 
                 isLoading = false;
-                HideLoadProgress();
-                SetLoadControlsEnabled(true);
+                if (!disposed)
+                {
+                    toolbarView.SetLoading(false, hasCompletedLoad);
+                }
             }
         }
 

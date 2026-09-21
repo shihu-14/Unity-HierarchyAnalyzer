@@ -1,20 +1,92 @@
+using System;
 using System.Collections.Generic;
-using DependencyAnalyzer.Editor.Core;
 using DependencyAnalyzer.Editor.UI.Controls;
-using DependencyAnalyzer.Editor.UI.Issues;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace DependencyAnalyzer.Editor.Controller
+namespace DependencyAnalyzer.Editor.UI.Issues
 {
-    public sealed partial class DependencyGraphController
+    internal sealed class IssuePanelView : IDisposable
     {
-        private ProjectIssuePanelModel PopulateIssuePanel(DependencyGraph graphData)
+        private const float DefaultIssuePanelHeight = 148f;
+        private const float CollapsedIssuePanelHeight = 36f;
+        private const float MinimumIssuePanelHeight = 64f;
+        private const float MaximumIssuePanelHeight = 460f;
+        private readonly VisualElement root;
+        private readonly VisualElement issuePanel;
+        private readonly VisualElement issueResizeHandle;
+        private readonly ScrollView issueList;
+        private readonly Label issueTitleLabel;
+        private readonly Image issueWarningIcon;
+        private readonly Label issueWarningCountLabel;
+        private readonly Button issueToggleButton;
+        private readonly HashSet<string> expandedIssueGroupIds = new HashSet<string>(StringComparer.Ordinal);
+        private ProjectIssuePanelModel model;
+        private bool issueListVisible = true;
+        private bool isResizingIssuePanel;
+        private float issuePanelHeight = DefaultIssuePanelHeight;
+        private float issueResizeStartMouseY;
+        private float issueResizeStartHeight;
+
+        public IssuePanelView(VisualElement root)
         {
-            var model = ProjectIssuePanelBuilder.Build(graphData);
+            this.root = root;
+            issuePanel = root.Q("issue-panel");
+            issueResizeHandle = root.Q("issue-resize-handle");
+            issueList = root.Q<ScrollView>("issue-list");
+            issueTitleLabel = root.Q<Label>("issue-title-label");
+            issueWarningIcon = root.Q<Image>("issue-warning-icon");
+            issueWarningCountLabel = root.Q<Label>("issue-warning-count-label");
+            issueToggleButton = root.Q<Button>("issue-toggle-button");
+            if (issueToggleButton != null)
+            {
+                issueToggleButton.AddToClassList("dependency-issue-toggle-button");
+                issueToggleButton.clicked += ToggleIssueList;
+                UpdateIssueToggleIcon();
+            }
+
+            if (issueResizeHandle != null)
+            {
+                issueResizeHandle.RegisterCallback<MouseDownEvent>(HandleIssueResizeMouseDown);
+                issueResizeHandle.RegisterCallback<MouseMoveEvent>(HandleIssueResizeMouseMove);
+                issueResizeHandle.RegisterCallback<MouseUpEvent>(HandleIssueResizeMouseUp);
+            }
+
+            SetModel(new ProjectIssuePanelModel(null));
+            ApplyIssuePanelHeight();
+        }
+
+        public event Action<string> NodeFocusRequested;
+
+        public void Dispose()
+        {
+            if (issueToggleButton != null)
+            {
+                issueToggleButton.clicked -= ToggleIssueList;
+            }
+
+            if (issueResizeHandle != null)
+            {
+                issueResizeHandle.UnregisterCallback<MouseDownEvent>(HandleIssueResizeMouseDown);
+                issueResizeHandle.UnregisterCallback<MouseMoveEvent>(HandleIssueResizeMouseMove);
+                issueResizeHandle.UnregisterCallback<MouseUpEvent>(HandleIssueResizeMouseUp);
+                if (MouseCaptureController.HasMouseCapture(issueResizeHandle))
+                {
+                    MouseCaptureController.ReleaseMouse(issueResizeHandle);
+                }
+            }
+
+            isResizingIssuePanel = false;
+            issueList?.Clear();
+            NodeFocusRequested = null;
+        }
+
+        public void SetModel(ProjectIssuePanelModel model)
+        {
+            this.model = model;
             if (issueList == null)
             {
-                return model;
+                return;
             }
 
             if (issueTitleLabel != null)
@@ -30,11 +102,10 @@ namespace DependencyAnalyzer.Editor.Controller
                 var empty = new Label("No issues");
                 empty.AddToClassList("dependency-issue-empty");
                 issueList.Add(empty);
-                return model;
+                return;
             }
 
             AddIssueGroups(model.Groups);
-            return model;
         }
 
         private void AddIssueGroups(IReadOnlyList<ProjectIssueGroup> groups)
@@ -67,7 +138,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 expandedIssueGroupIds.Remove(groupId);
             }
 
-            PopulateIssuePanel(currentGraph);
+            SetModel(model);
         }
 
         private void FocusIssueNode(string targetNodeId)
@@ -77,7 +148,7 @@ namespace DependencyAnalyzer.Editor.Controller
                 return;
             }
 
-            graphView.FocusNode(targetNodeId, true);
+            NodeFocusRequested?.Invoke(targetNodeId);
         }
 
         private void ToggleIssueList()
