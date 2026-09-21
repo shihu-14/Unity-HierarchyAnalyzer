@@ -129,14 +129,14 @@ namespace DependencyAnalyzer.Editor.Controller
             if (searchPreviousButton != null)
             {
                 SetSearchArrowIcon(searchPreviousButton, true);
-                searchPreviousButton.tooltip = "Previous result";
+                searchPreviousButton.tooltip = "Previous";
                 searchPreviousButton.clicked += HandleSearchPreviousClicked;
             }
 
             if (searchNextButton != null)
             {
                 SetSearchArrowIcon(searchNextButton, false);
-                searchNextButton.tooltip = "Next result";
+                searchNextButton.tooltip = "Next";
                 searchNextButton.clicked += HandleSearchNextClicked;
             }
 
