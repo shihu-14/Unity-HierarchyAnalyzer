@@ -1,16 +1,143 @@
 using System;
+using System.Collections;
 using System.Reflection;
 using DependencyAnalyzer.Editor.UI.Controls;
 using DependencyAnalyzer.Editor.UI.GraphView;
 using DependencyAnalyzer.Editor.UI.Issues;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 
 namespace DependencyAnalyzer.Editor.Tests
 {
     public sealed class GraphControlsTests
     {
+        [UnityTest]
+        public IEnumerator Search_InputKeyboardAndSuggestionEventsStopAfterDispose()
+        {
+            var window = ScriptableObject.CreateInstance<EditorWindow>();
+            var root = CreateSearchRoot();
+            window.rootVisualElement.Add(root);
+            window.Show();
+            var view = new GraphSearchView(root);
+            try
+            {
+                yield return null;
+                var field = root.Q<TextField>("search-field");
+                var queryChanges = 0;
+                var query = string.Empty;
+                var reverse = false;
+                var navigationCount = 0;
+                var selectedId = string.Empty;
+                view.QueryChanged += value => { queryChanges++; query = value; };
+                view.NavigationRequested += previous => { navigationCount++; reverse = previous; };
+                view.SuggestionSelected += suggestion => selectedId = suggestion.NodeId;
+                field.value = "Audio";
+                Assert.AreEqual("Audio", query);
+                Assert.AreEqual(1, queryChanges);
+
+                using (var key = KeyDownEvent.GetPooled(new Event { type = EventType.KeyDown, keyCode = KeyCode.Return, modifiers = EventModifiers.Shift }))
+                {
+                    field.SendEvent(key);
+                }
+
+                Assert.AreEqual(1, navigationCount);
+                Assert.IsTrue(reverse);
+                using (var key = KeyDownEvent.GetPooled(new Event { type = EventType.KeyDown, keyCode = KeyCode.F, modifiers = EventModifiers.Control }))
+                {
+                    root.SendEvent(key);
+                }
+
+                var focused = field.focusController.focusedElement as VisualElement;
+                Assert.IsTrue(focused == field || field.Contains(focused));
+                view.SetSearchState(new DependencyGraphView.SearchResultState(0, 1, new[]
+                {
+                    new DependencyGraphView.SearchSuggestion("audio", "Audio Source", "Component", "Main/Audio")
+                }));
+                using (var click = MouseDownEvent.GetPooled(new Event { type = EventType.MouseDown, button = 0 }))
+                {
+                    root.Q(className: "dependency-search-suggestion-row").SendEvent(click);
+                }
+
+                Assert.AreEqual("audio", selectedId);
+                Assert.AreEqual("Audio Source", field.value);
+                Assert.AreEqual(1, queryChanges);
+                using (var key = KeyDownEvent.GetPooled(new Event { type = EventType.KeyDown, keyCode = KeyCode.Escape }))
+                {
+                    field.SendEvent(key);
+                }
+
+                Assert.AreEqual(string.Empty, query);
+                Assert.AreEqual(DisplayStyle.None, root.Q("search-suggestion-list").style.display.value);
+                var changesBeforeDispose = queryChanges;
+                view.Dispose();
+                field.value = "After disposal";
+                using (var key = KeyDownEvent.GetPooled(new Event { type = EventType.KeyDown, keyCode = KeyCode.Return }))
+                {
+                    field.SendEvent(key);
+                }
+
+                Assert.AreEqual(changesBeforeDispose, queryChanges);
+                Assert.AreEqual(1, navigationCount);
+            }
+            finally
+            {
+                view.Dispose();
+                window.Close();
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Issues_ResizeClampsHeightAndDisposeReleasesMouseCapture()
+        {
+            var window = ScriptableObject.CreateInstance<EditorWindow>();
+            var root = CreateIssueRoot();
+            root.style.height = 600f;
+            window.rootVisualElement.Add(root);
+            window.Show();
+            var view = new IssuePanelView(root);
+            try
+            {
+                yield return null;
+                var handle = root.Q("issue-resize-handle");
+                var panel = root.Q("issue-panel");
+                using (var down = MouseDownEvent.GetPooled(new Event { type = EventType.MouseDown, button = 0, mousePosition = new Vector2(5, 200) }))
+                {
+                    handle.SendEvent(down);
+                }
+
+                Assert.IsTrue(MouseCaptureController.HasMouseCapture(handle));
+                using (var move = MouseMoveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = new Vector2(5, -1000) }))
+                {
+                    handle.SendEvent(move);
+                }
+
+                Assert.Greater(panel.style.height.value.value, 148f);
+                Assert.LessOrEqual(panel.style.height.value.value, 460f);
+                using (var move = MouseMoveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = new Vector2(5, 2000) }))
+                {
+                    handle.SendEvent(move);
+                }
+
+                Assert.AreEqual(64f, panel.style.height.value.value);
+                view.Dispose();
+                Assert.IsFalse(MouseCaptureController.HasMouseCapture(handle));
+                using (var move = MouseMoveEvent.GetPooled(new Event { type = EventType.MouseMove, mousePosition = new Vector2(5, -1000) }))
+                {
+                    handle.SendEvent(move);
+                }
+
+                Assert.AreEqual(64f, panel.style.height.value.value);
+            }
+            finally
+            {
+                view.Dispose();
+                window.Close();
+            }
+        }
+
         [Test]
         public void Toolbar_ReflectsLoadingCompletionProgressAndDepth()
         {
