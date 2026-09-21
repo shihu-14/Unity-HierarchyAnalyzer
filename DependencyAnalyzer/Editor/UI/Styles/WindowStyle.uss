@@ -33,12 +33,6 @@
     text-overflow: ellipsis;
 }
 
-.dependency-status-label {
-    color: #d7dae0;
-    -unity-text-align: middle-left;
-    flex-grow: 1;
-}
-
 .dependency-graph-container {
     flex-grow: 1;
     position: relative;

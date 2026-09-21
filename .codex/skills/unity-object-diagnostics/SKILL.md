@@ -1,6 +1,6 @@
 ---
 name: unity-object-diagnostics
-description: Use for Unity warning and error diagnostics that map meaningfully to graph nodes, including missing references, missing components, console-linked script or asset issues, prefab or scene serialization warnings, issue severity, propagation, and debug fixtures.
+description: Use for Unity warning and error diagnostics that map meaningfully to graph nodes, including missing references, missing component scripts, internal scan failures, issue severity, propagation, and test fixtures.
 ---
 
 # unity-object-diagnostics
@@ -21,7 +21,7 @@ Use this skill for warning/error collection that meaningfully maps to graph node
    - `references/diagnostic-scope.md`
    - `references/issue-severity.md`
    - `references/demo-fixtures.md`
-3. Keep issue text close to Unity Console wording when the issue came from the console.
+3. Keep user-facing missing-reference warnings separate from internal scan diagnostics. Do not ingest Unity Console logs.
 4. Keep direct issue target and propagated display target separate.
 5. Verify warning and error behavior independently.
 

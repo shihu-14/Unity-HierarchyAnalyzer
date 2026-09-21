@@ -29,9 +29,9 @@ Inspect contents and usages before changing any folder. The current intended rol
 | Area | Current responsibility |
 |---|---|
 | `Editor/Core` | Graph, node, edge, issue, and cache data structures plus graph-local operations |
-| `Editor/Scanners` | Read Scene, serialized reference, AssetDatabase, and Console state into tool data |
+| `Editor/Scanners` | Read Scene, serialized reference, and AssetDatabase state into tool data; preserve scan failures as internal diagnostics |
 | `Editor/Controller` | Coordinate scan lifecycle, UI state, search, selection, and issue routing |
-| `Editor/UI` | Render and interact through UI Toolkit |
+| `Editor/UI` | Render and interact through UI Toolkit; own control lifecycles and graph traversal indexes |
 | `Editor/Settings` | Store analyzer configuration and expose Project Settings UI |
 | `Editor/Tests` | Edit Mode Tests and fixed broken-data fixtures |
 | `Tests/Runtime` | Test-only components that must compile outside the Editor assembly to attach to GameObjects |

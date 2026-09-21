@@ -17,6 +17,7 @@
 - Push all task commits to the remote at completion.
 - Commit messages must use one approved English prefix followed by `: `.
 - Approved prefixes: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `build`, `ci`, `perf`, `revert`.
+- Add `Co-authored-by: Codex <267193182+codex@users.noreply.github.com>` to new commits with Codex contributions; preserve existing authors and history.
 - Do not commit unrelated files. AGENTS and skill files may be committed when the task explicitly asks for them.
 
 ## Unity Safety
@@ -36,7 +37,7 @@
   - `Scanners`: Unity object, asset, serialized reference, and diagnostic collection.
   - `Controller`: scan orchestration, state, selection sync, and UI coordination.
   - `UI`: UI Toolkit graph, node, edge, toolbar, issue panel, USS, and UXML.
-  - `Debug`: demo fixtures and intentional diagnostic cases.
+  - `Tests`: Edit Mode coverage and intentional broken-reference fixtures; runtime test components remain in their test-only assembly.
 - Prefer targeted changes over broad rewrites.
 - Keep UI visual changes in USS unless runtime geometry or state requires C#.
 

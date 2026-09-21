@@ -1,30 +1,25 @@
 # Diagnostic Scope
 
-## Include
+## User-Facing Issues
 
-- Missing component on a GameObject.
-- Missing object reference in a serialized field.
-- Script compile error that can be linked to a script asset.
-- Asset import warning or error that can be linked to an asset node.
-- Prefab or scene serialization warning that can be linked to a prefab, scene, object, or component.
+- Missing component scripts on a GameObject.
+- Broken object references in serialized fields; unassigned `None` is not missing.
+- Group missing occurrences by referenced Object type. Component and serialized script references share the Script group.
 
-## Usually Exclude
+## Internal Diagnostics
 
-- Generic Editor warnings with no stable object or asset target.
-- Package noise unrelated to visible project nodes.
-- Licensing, entitlement, or Hub messages.
-- Performance logs that do not indicate an object issue.
-- Duplicate logs that cannot improve graph understanding.
+- Keep property, component, and scanner failures in the graph for diagnosis while retaining partial results.
+- Do not add these failures to the user-facing Issues count or automatically log them to Unity Console.
+- An unhandled failure of the complete scan is logged as an exception by the Controller.
 
-## Text
+## Excluded Sources
 
-- Console-originated issues should preserve meaningful console wording.
-- Remove noisy tool prefixes when they do not help the user.
-- Keep property path, asset path, or object path when useful.
-- Avoid inventing issue descriptions not supported by collected data.
+- Do not ingest Unity Console or Editor.log entries, runtime exceptions, compile/import logs, or generic Editor warnings.
+- Do not add project-specific component health rules or infer that an unassigned optional reference is broken.
 
-## Mapping
+## Mapping And Text
 
-- Prefer the direct object, component, script, or asset target.
-- Fall back to nearest visible representative only for display/navigation.
-- Never lose the original target identity during propagation.
+- Preserve source object identity and the serialized member path.
+- Display the source object name and full occurrence path.
+- Navigate to the graph node associated with the occurrence; do not start a new scan for an unresolved location.
+- Preserve the original source identity when its warning is propagated to a visible ancestor.

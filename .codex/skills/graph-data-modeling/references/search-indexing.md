@@ -1,29 +1,18 @@
 # Search Indexing
 
-## Indexed Fields
+## Current Search Contract
 
-- Name, path, type, label, kind, and missing state are common fields.
-- Keep user-visible labels separate from exact lookup keys.
-- Normalize case and whitespace consistently.
-- Preserve original text for display.
-
-## Query Terms
-
-- Support scoped terms only when the data exists.
-- Examples: `name:`, `path:`, `type:`, `label:`, `kind:`, `missing:true`.
-- Unknown scopes should fail softly or be ignored by documented behavior.
-- Avoid adding search syntax that cannot be tested.
+- Match only node display names using case-insensitive contiguous substrings.
+- Trim the query; empty or whitespace-only queries have no results.
+- Treat scoped-looking text such as `type:Audio` literally. Do not restore path, type, label, kind, or missing-state query syntax.
+- Preserve original text for display and graph node order for result navigation.
+- Keep the selected result by stable node ID when it still matches.
 
 ## Navigation
 
-- Maintain a stable match order for a given graph state.
-- Enter advances one match.
-- Shift+Enter or up navigation moves backward.
-- Counter should show current index and total matches.
-
-## Filtering
-
-- Filtering should be a visibility projection.
-- It should preserve parent context needed to understand matches.
-- It must update propagated issues after visibility changes.
-- Do not mutate source graph data when filtering.
+- Enter advances one match; Shift+Enter and previous navigation move backward.
+- Navigation wraps at either end; counters show the current index and total.
+- Suggestions show matching names with type/path detail, without using that detail for matching.
+- Search highlights and focuses matches while preserving nonmatching nodes.
+- `DependencyGraphView.SetSearch(query, focusCurrent)` does not filter visibility.
+- Search controls own input and suggestion rendering; the Controller coordinates graph navigation.
