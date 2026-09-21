@@ -1,30 +1,25 @@
 using System;
-using System.Collections;
 using System.Reflection;
 using DependencyAnalyzer.Editor.UI.Controls;
 using DependencyAnalyzer.Editor.UI.GraphView;
 using DependencyAnalyzer.Editor.UI.Issues;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 
 namespace DependencyAnalyzer.Editor.Tests
 {
     public sealed class GraphControlsTests
     {
-        [UnityTest]
-        public IEnumerator Search_InputKeyboardAndSuggestionEventsStopAfterDispose()
+        [Test]
+        public void Search_InputKeyboardAndSuggestionEventsStopAfterDispose()
         {
-            var window = ScriptableObject.CreateInstance<EditorWindow>();
             var root = CreateSearchRoot();
-            window.rootVisualElement.Add(root);
-            window.Show();
+            var testPanel = new TestPanel(root);
             var view = new GraphSearchView(root);
             try
             {
-                yield return null;
+                testPanel.UpdateLayout();
                 var field = root.Q<TextField>("search-field");
                 var queryChanges = 0;
                 var query = string.Empty;
@@ -85,22 +80,20 @@ namespace DependencyAnalyzer.Editor.Tests
             finally
             {
                 view.Dispose();
-                window.Close();
+                testPanel.Dispose();
             }
         }
 
-        [UnityTest]
-        public IEnumerator Issues_ResizeClampsHeightAndDisposeReleasesMouseCapture()
+        [Test]
+        public void Issues_ResizeClampsHeightAndDisposeReleasesMouseCapture()
         {
-            var window = ScriptableObject.CreateInstance<EditorWindow>();
             var root = CreateIssueRoot();
             root.style.height = 600f;
-            window.rootVisualElement.Add(root);
-            window.Show();
+            var testPanel = new TestPanel(root);
             var view = new IssuePanelView(root);
             try
             {
-                yield return null;
+                testPanel.UpdateLayout();
                 var handle = root.Q("issue-resize-handle");
                 var panel = root.Q("issue-panel");
                 using (var down = MouseDownEvent.GetPooled(new Event { type = EventType.MouseDown, button = 0, mousePosition = new Vector2(5, 200) }))
@@ -134,7 +127,7 @@ namespace DependencyAnalyzer.Editor.Tests
             finally
             {
                 view.Dispose();
-                window.Close();
+                testPanel.Dispose();
             }
         }
 
@@ -266,6 +259,37 @@ namespace DependencyAnalyzer.Editor.Tests
             view.Dispose();
             Click(toggle);
             Assert.AreEqual(DisplayStyle.Flex, root.Q("issue-list").style.display.value);
+        }
+
+        private sealed class TestPanel : IDisposable
+        {
+            private readonly ScriptableObject owner = ScriptableObject.CreateInstance<PanelSettings>();
+            private readonly IPanel panel;
+
+            public TestPanel(VisualElement root)
+            {
+                // Unity's test panel dispatches real UI events without a graphics device or native window.
+                var panelType = typeof(VisualElement).Assembly.GetType("UnityEngine.UIElements.Panel", true);
+                var create = panelType.GetMethod("CreateEditorPanel", BindingFlags.Static | BindingFlags.NonPublic);
+                Assert.IsNotNull(create, "Unity's editor test panel factory is unavailable.");
+                panel = (IPanel)create.Invoke(null, new object[] { owner });
+                panel.visualTree.style.width = 800f;
+                panel.visualTree.style.height = 600f;
+                panel.visualTree.Add(root);
+            }
+
+            public void UpdateLayout()
+            {
+                var validate = panel.GetType().GetMethod("ValidateLayout", BindingFlags.Instance | BindingFlags.Public);
+                Assert.IsNotNull(validate);
+                validate.Invoke(panel, null);
+            }
+
+            public void Dispose()
+            {
+                panel.Dispose();
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
         }
 
         private static VisualElement CreateSearchRoot()
