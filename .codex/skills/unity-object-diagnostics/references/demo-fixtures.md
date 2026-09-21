@@ -10,8 +10,7 @@
 
 - GameObject with missing component.
 - Component with missing serialized object reference.
-- Script asset with a known compile issue fixture when safe.
-- Asset with import warning or error fixture.
+- Internal scan failures that preserve partial results without adding user-facing Issues.
 - Prefab instance with an override that differs from its source.
 - Hidden child issue that propagates to a visible parent.
 
